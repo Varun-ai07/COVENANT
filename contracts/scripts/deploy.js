@@ -1,0 +1,113 @@
+import hre from "hardhat";
+const { ethers } = hre;
+import fs from "fs";
+
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with account:", deployer.address);
+  console.log("Account balance:", (await ethers.provider.getBalance(deployer.address)).toString());
+
+  // Deploy AgentRegistry
+  console.log("\n1. Deploying AgentRegistry...");
+  const Registry = await ethers.getContractFactory("AgentRegistry");
+  const registry = await Registry.deploy();
+  await registry.waitForDeployment();
+  const registryAddress = await registry.getAddress();
+  console.log("AgentRegistry deployed to:", registryAddress);
+
+  // Deploy ReceiptVerifier
+  console.log("\n2. Deploying ReceiptVerifier...");
+  const Verifier = await ethers.getContractFactory("ReceiptVerifier");
+  const verifier = await Verifier.deploy();
+  await verifier.waitForDeployment();
+  const verifierAddress = await verifier.getAddress();
+  console.log("ReceiptVerifier deployed to:", verifierAddress);
+
+  // Deploy TaskEscrow
+  console.log("\n3. Deploying TaskEscrow...");
+  const Escrow = await ethers.getContractFactory("TaskEscrow");
+  const escrow = await Escrow.deploy(registryAddress, verifierAddress);
+  await escrow.waitForDeployment();
+  const escrowAddress = await escrow.getAddress();
+  console.log("TaskEscrow deployed to:", escrowAddress);
+
+  // Configure cross-contract permissions
+  console.log("\n4. Configuring permissions...");
+
+  await registry.addAuthorizedContract(escrowAddress);
+  console.log("Authorized TaskEscrow in AgentRegistry");
+
+  await verifier.addAuthorizedIssuer(escrowAddress);
+  console.log("Authorized TaskEscrow in ReceiptVerifier");
+
+  // Print summary
+  console.log("\n========================================");
+  console.log("DEPLOYMENT COMPLETE");
+  console.log("========================================");
+  console.log("AgentRegistry:  ", registryAddress);
+  console.log("ReceiptVerifier:", verifierAddress);
+  console.log("TaskEscrow:     ", escrowAddress);
+  console.log("========================================");
+
+  // Save addresses
+  const addresses = {
+    AgentRegistry: registryAddress,
+    ReceiptVerifier: verifierAddress,
+    TaskEscrow: escrowAddress,
+    network: hre.network.name,
+    chainId: (await ethers.provider.getNetwork()).chainId.toString(),
+    deployedAt: new Date().toISOString(),
+  };
+
+  fs.writeFileSync(
+    "./deployed-addresses.json",
+    JSON.stringify(addresses, null, 2)
+  );
+  console.log("\nAddresses saved to deployed-addresses.json");
+
+  // Verify contracts if on testnet/mainnet
+  if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {
+    console.log("\nWaiting for block confirmations...");
+    await registry.deploymentTransaction().wait(5);
+    await verifier.deploymentTransaction().wait(5);
+    await escrow.deploymentTransaction().wait(5);
+
+    console.log("\nVerifying contracts on Basescan...");
+    try {
+      await hre.run("verify:verify", {
+        address: registryAddress,
+        constructorArguments: [],
+      });
+      console.log("AgentRegistry verified!");
+    } catch (e) {
+      console.log("AgentRegistry verification failed:", e.message);
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: verifierAddress,
+        constructorArguments: [],
+      });
+      console.log("ReceiptVerifier verified!");
+    } catch (e) {
+      console.log("ReceiptVerifier verification failed:", e.message);
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: escrowAddress,
+        constructorArguments: [registryAddress, verifierAddress],
+      });
+      console.log("TaskEscrow verified!");
+    } catch (e) {
+      console.log("TaskEscrow verification failed:", e.message);
+    }
+  }
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
