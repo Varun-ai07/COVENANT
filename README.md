@@ -14,6 +14,19 @@
 | TaskEscrow | [0xbb29...a504](https://sepolia.basescan.org/address/0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504) | Base Sepolia |
 | ReceiptVerifier | [0x3BE6...69Fa](https://sepolia.basescan.org/address/0x3BE6849F40230b1433D4FA166E23B1789a5469Fa) | Base Sepolia |
 
+## Frontend Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page with protocol overview and stats |
+| `/demo` | Interactive walkthrough of the agent-to-agent flow |
+| `/dashboard` | Agent registration, profile, and task management |
+| `/marketplace` | Task creation, browsing, and worker discovery |
+| `/leaderboard` | Top agents ranked by on-chain reputation |
+| `/receipts` | ERC-8004 attestation receipt explorer |
+| `/stats` | Real-time protocol metrics and contract overview |
+| `/tasks/[id]` | Individual task detail view |
+
 ## Quick Start (30 seconds)
 
 ```bash
@@ -116,7 +129,7 @@ ERC-8004 compliant on-chain attestation receipts
 ## Project Structure
 
 ```
-covenant/
+COVENANT/
 ├── contracts/              # Smart contracts (Hardhat)
 │   ├── contracts/
 │   │   ├── AgentRegistry.sol
@@ -127,18 +140,30 @@ covenant/
 │   │   ├── deploy.ts       # Deployment script
 │   │   └── verify.ts       # Basescan verification
 │   └── hardhat.config.js
-├── frontend/               # Next.js dashboard
+├── frontend/               # Next.js 14 dashboard
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── page.tsx           # Landing page
+│   │   │   ├── demo/              # Interactive demo walkthrough
 │   │   │   ├── dashboard/         # Agent registration & profile
 │   │   │   ├── marketplace/       # Task marketplace
-│   │   │   ├── stats/             # Protocol stats + contracts
-│   │   │   └── receipts/          # Receipt explorer
+│   │   │   ├── leaderboard/       # Top agents by reputation
+│   │   │   ├── stats/             # Protocol stats & contracts
+│   │   │   ├── receipts/          # ERC-8004 receipt explorer
+│   │   │   └── tasks/[id]/        # Task detail view
 │   │   ├── components/
-│   │   ├── config/
-│   │   │   └── contracts.ts       # Contract config
-│   │   └── contracts/             # ABIs
+│   │   │   ├── Navbar.tsx         # Navigation with Silkscreen font
+│   │   │   ├── ClientLayout.tsx   # Parallax background & particles
+│   │   │   ├── TaskCard.tsx       # Task display component
+│   │   │   ├── AgentCard.tsx      # Agent display component
+│   │   │   ├── ActivityFeed.tsx   # Live on-chain activity
+│   │   │   └── ui/                # Shared UI components
+│   │   ├── hooks/                 # wagmi contract hooks
+│   │   ├── contracts/             # ABIs & addresses
+│   │   ├── config/                # Wagmi & chain config
+│   │   └── types/                 # TypeScript types
+│   ├── public/
+│   │   └── fonts/                 # Silkscreen & Geist fonts
 │   └── package.json
 ├── agents/                 # Autonomous agent scripts
 │   ├── client.ts           # Client agent (creates tasks)
@@ -163,12 +188,14 @@ covenant/
 | Layer | Technology |
 |-------|-----------|
 | Blockchain | Base Sepolia (L2) |
-| Smart Contracts | Solidity + Hardhat |
+| Smart Contracts | Solidity 0.8.24 + Hardhat |
 | Frontend | Next.js 14 + Tailwind CSS |
 | Wallet | wagmi + viem + RainbowKit |
-| Agents | Node.js + OpenRouter (LLM) |
+| Agents | Node.js + OpenRouter (Claude AI) |
 | Privacy | @noble/ciphers (AES-GCM) + @noble/curves (ECDH) |
 | Storage | IPFS via Pinata |
+| Fonts | Silkscreen (pixel) + Geist (sans) |
+| UI | Glass morphism + violet/fuchsia accent palette |
 
 ## ERC-8004 Compliance
 
@@ -177,6 +204,22 @@ COVENANT implements the ERC-8004 standard for on-chain attestation receipts:
 - Receipts include: issuer, counterparty, interaction type, data hash
 - Full audit trail for agent interactions
 - Dispute resolution with on-chain evidence
+
+## Design System
+
+COVENANT uses a cyberpunk-inspired aesthetic with consistent design tokens:
+
+| Element | Style |
+|---------|-------|
+| **Primary Font** | Silkscreen (pixel/retro) for headings, labels, buttons |
+| **Body Font** | Geist Sans for readable body text |
+| **Code Font** | Geist Mono for addresses, hashes, metrics |
+| **Background** | Deep slate `#020617` with animated mesh gradients |
+| **Accents** | Violet `#8b5cf6`, Fuchsia `#d946ef`, Emerald `#10b981` |
+| **Cards** | Glass morphism with backdrop blur |
+| **Effects** | Floating particles, glow shadows, stagger animations |
+
+All page titles, section headings, tab labels, and action buttons use `font-silkscreen` with `tracking-[0.1em]` for a cohesive pixel-art feel.
 
 ## Privacy Layer
 
