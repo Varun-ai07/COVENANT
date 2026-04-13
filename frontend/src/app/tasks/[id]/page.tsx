@@ -5,7 +5,7 @@ import { useAccount } from "wagmi";
 import { formatEther } from "viem";
 import { useTask } from "@/hooks/useTask";
 import { useAgentByAddress } from "@/hooks/useAgent";
-import { TaskStatus, TASK_STATUS_LABELS, TASK_STATUS_COLORS, formatAddress, getReputationLevel } from "@/types";
+import { TaskStatus, TASK_STATUS_LABELS, TASK_STATUS_COLORS, formatAddress, getReputationLevel, Agent } from "@/types";
 import { TaskTimeline } from "@/components/TaskTimeline";
 import { TaskActions } from "@/components/TaskActions";
 import { IPFSViewer } from "@/components/IPFSViewer";

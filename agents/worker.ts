@@ -5,6 +5,7 @@ import { AgentRegistryABI, TaskEscrowABI } from "./lib/abis.js";
 import { generateKeyPair, deriveSharedSecret, decrypt, fromHex, toHex } from "./lib/crypto.js";
 import { uploadToIPFS, downloadFromIPFS, isPinataConfigured } from "./lib/ipfs.js";
 import { generateCompletion } from "./lib/llm.js";
+import { EventListener } from "./lib/eventListener.js";
 
 dotenv.config();
 
@@ -67,15 +68,15 @@ async function getTaskDetails(
   taskData: any,
   workerPrivateKey: Uint8Array
 ): Promise<string> {
-  // Check if data is encrypted
-  if (taskData.encrypted) {
-    console.log("Decrypting task details...");
-    const clientPublicKey = fromHex(taskData.clientPublicKey);
-    const ciphertext = fromHex(taskData.ciphertext);
-    const iv = fromHex(taskData.iv);
-    const sharedSecret = deriveSharedSecret(workerPrivateKey, clientPublicKey);
-    return decrypt(ciphertext, sharedSecret, iv);
-  }
+   // Check if data is encrypted
+   if (taskData.encrypted) {
+     console.log("Decrypting task details with Lit Protocol...");
+     const clientPublicKey = fromHex(taskData.clientPublicKey);
+     const ciphertext = fromHex(taskData.ciphertext);
+     const iv = fromHex(taskData.iv);
+     const sharedSecret = await deriveSharedSecret(workerPrivateKey, clientPublicKey);
+     return await decrypt(ciphertext, sharedSecret, iv);
+   }
 
   // Unencrypted - just return the description
   console.log("Task is not encrypted (demo mode)");
@@ -142,7 +143,7 @@ async function processTask(
 }
 
 async function main() {
-  const { WORKER_PRIVATE_KEY } = process.env;
+  const { WORKER_PRIVATE_KEY, BASE_SEPOLIA_RPC_URL } = process.env;
 
   if (!WORKER_PRIVATE_KEY) {
     console.error("Missing WORKER_PRIVATE_KEY in .env");
@@ -150,19 +151,18 @@ async function main() {
   }
 
   const { wallet, account, publicClient } = createWallet(WORKER_PRIVATE_KEY);
+  const workerKeyPair = await generateKeyPair();
 
-  console.log("=== WORKER AGENT ===");
+  console.log("=== WORKER AGENT (EVENT-DRIVEN) ===");
   console.log(`Address: ${account.address}`);
-
-  // Generate worker key pair for encryption
-  const workerKeyPair = generateKeyPair();
   console.log(`Encryption public key: ${toHex(workerKeyPair.publicKey)}`);
 
   // Check balance
   const balance = await publicClient.getBalance({ address: account.address });
   console.log(`Balance: ${formatEther(balance)} ETH`);
 
-  // Get my tasks
+  // Step 1: Process any existing InProgress tasks on startup
+  console.log("\n[STARTUP] Checking for existing InProgress tasks...");
   const myTaskIds = await publicClient.readContract({
     address: CONTRACTS.TaskEscrow,
     abi: TaskEscrowABI,
@@ -170,9 +170,7 @@ async function main() {
     args: [account.address],
   }) as bigint[];
 
-  console.log(`\nFound ${myTaskIds.length} tasks assigned to me`);
-
-  // Process each task in "InProgress" status
+  let processedCount = 0;
   for (const taskId of myTaskIds) {
     const taskData = await publicClient.readContract({
       address: CONTRACTS.TaskEscrow,
@@ -191,15 +189,95 @@ async function main() {
       status: Number(taskData.status),
     };
 
-    // Status 2 = InProgress
-    if (task.status === 2) {
+    if (task.status === 2) { // InProgress
+      console.log(`\n[STARTUP] Processing existing task #${taskId}...`);
       await processTask(wallet, publicClient, account, task, workerKeyPair);
-    } else {
-      console.log(`\nTask #${taskId}: Status = ${task.status} (skipping)`);
+      processedCount++;
     }
   }
 
-  console.log("\n=== Worker agent finished ===");
+  if (processedCount === 0) {
+    console.log("[STARTUP] No existing InProgress tasks found");
+  } else {
+    console.log(`[STARTUP] Processed ${processedCount} existing task(s)`);
+  }
+
+  // Step 2: Start event-driven listener for new tasks
+  console.log("\n[EVENT LISTENER] Starting WebSocket listener for new tasks...");
+
+  // Use WebSocket RPC if available, fallback to HTTP polling
+  const wsUrl = BASE_SEPOLIA_RPC_URL?.replace('https', 'wss')?.replace('http', 'ws') || 'wss://sepolia.base.org';
+
+  try {
+    const eventListener = new EventListener(wsUrl);
+
+    eventListener.subscribe(
+      CONTRACTS.TaskEscrow,
+      TaskEscrowABI,
+      'TaskFunded',
+      async (event) => {
+        const taskId = event.args.taskId as bigint;
+        const worker = event.args.worker as string;
+        const payment = event.args.payment as bigint;
+        const deadline = event.args.deadline as bigint;
+        const specHash = event.args.specHash as string;
+
+        console.log(`\n[EVENT] Received TaskFunded event for task #${taskId}`);
+        console.log(`  Worker: ${worker}`);
+        console.log(`  Payment: ${formatEther(payment)} ETH`);
+
+        // Only process if this task is assigned to this worker
+        if (worker.toLowerCase() === account.address.toLowerCase()) {
+          console.log(`  → Task assigned to me! Processing...`);
+
+          const task: TaskInfo = {
+            id: taskId,
+            client: '', // Will be filled by getTask
+            worker: worker,
+            payment: payment,
+            deadline: deadline,
+            descriptionHash: specHash,
+            status: 2, // InProgress (TaskFunded auto-starts task)
+          };
+
+          // Fetch full task details to get client address
+          try {
+            const fullTaskData = await publicClient.readContract({
+              address: CONTRACTS.TaskEscrow,
+              abi: TaskEscrowABI,
+              functionName: "getTask",
+              args: [taskId],
+            }) as any;
+
+            task.client = fullTaskData.client;
+            task.status = Number(fullTaskData.status);
+          } catch (err) {
+            console.warn(`  Could not fetch full task details: ${err}`);
+          }
+
+          // Process the task
+          await processTask(wallet, publicClient, account, task, workerKeyPair);
+        } else {
+          console.log(`  → Task assigned to another worker (${worker.slice(0,10)}...), skipping`);
+        }
+      }
+    );
+
+    console.log("\n[EVENT LISTENER] Listening for TaskFunded events...");
+    console.log("[EVENT LISTENER] Worker agent is now running continuously. Press Ctrl+C to stop.");
+
+    // Keep process alive
+    await new Promise(() => {
+      // Intentionally never resolve
+    });
+  } catch (error) {
+    console.error("[EVENT LISTENER] Failed to start WebSocket listener:", error);
+    console.log("[FALLBACK] WebSocket unavailable. Consider checking RPC connectivity.");
+
+    // Could fall back to polling mode here if needed
+    // For now, just exit with error
+    process.exit(1);
+  }
 }
 
 main().catch(console.error);

@@ -1,0 +1,518 @@
+================================================================
+AGENT PROTOCOL — CIRCUIT DOCUMENTATION (FINAL)
+==============================================
+
+This system consists of 3 zero-knowledge circuits:
+
+1. Reputation Range Proof (WHO is trustworthy)
+2. Capability Proof (WHAT agent can do)
+3. Task Output Proof (DID agent do the work correctly)
+
+Together → Full trustless agent verification stack.
+
+================================================================
+GENERAL RULES (IMPORTANT)
+=========================
+
+* All inputs must be STRINGS in input.json
+* Use decimal (NOT hex)
+* Poseidon must be SAME implementation everywhere
+* Field: BN254
+
+If anything mismatches → proof FAILS
+
+================================================================
+CIRCUIT 1 — REPUTATION RANGE PROOF
+==================================
+
+PURPOSE:
+Prove:
+
+```
+Reputation >= threshold
+```
+
+WITHOUT revealing actual reputation.
+
+---
+
+## PRIVATE INPUTS
+
+Reputation      → actual score (0–1000)
+salt            → random non-zero value
+
+---
+
+## PUBLIC INPUTS
+
+threshold       → minimum required reputation
+Agentaddress    → binds proof to agent
+
+---
+
+## OUTPUTS
+
+isEligible      → 1 if Reputation >= threshold
+Commitment      → Poseidon(agentAddress, reputation, salt)
+
+---
+
+## WHAT IT GUARANTEES
+
+✔ Reputation is within [0,1000]
+✔ Threshold is within [0,1000]
+✔ Reputation >= threshold
+✔ Salt is non-zero
+✔ Commitment binds agent → reputation
+
+---
+
+## INPUT GENERATION
+
+1. Choose:
+   Reputation = actual score (e.g. 720)
+
+2. Choose:
+   salt = random large number (NEVER 0)
+
+3. Compute:
+   Commitment = Poseidon(Agentaddress, Reputation, salt)
+
+---
+
+## SAMPLE input.json
+
+{
+"Reputation": "720",
+"salt": "987654321",
+
+"threshold": "500",
+"Agentaddress": "12345678901234567890"
+}
+
+---
+
+## IMPORTANT NOTE
+
+This circuit currently does NOT prevent replay.
+
+To upgrade later:
+→ add nullifier = Poseidon(salt, Agentaddress)
+
+================================================================
+CIRCUIT 2 — CAPABILITY PROOF
+============================
+
+PURPOSE:
+Prove agent owns a capability WITHOUT revealing model or logic.
+
+---
+
+## PRIVATE INPUTS
+
+capabilitySecret  → secret per capability
+modelHash         → Poseidon(model + prompt + version)
+sessionNonce      → replay protection
+
+---
+
+## PUBLIC INPUTS
+
+capabilityId
+agentAddress
+registeredCommitment
+
+---
+
+## OUTPUTS
+
+commitment
+nullifier
+
+---
+
+## INPUT GENERATION
+
+1. Compute commitment (registration phase):
+
+   commitment = Poseidon(
+   capabilitySecret,
+   modelHash,
+   capabilityId,
+   agentAddress
+   )
+
+2. Store on-chain
+
+3. For proof:
+
+   * reuse same secret + modelHash
+   * generate new sessionNonce
+
+---
+
+## SAMPLE input.json
+
+{
+"capabilitySecret": "111222333",
+"modelHash": "987654321",
+"sessionNonce": "555",
+
+"capabilityId": "3",
+"agentAddress": "12345678901234567890",
+"registeredCommitment": "..."
+}
+
+---
+
+## WHAT IT GUARANTEES
+
+✔ Agent owns capability
+✔ Cannot fake capability
+✔ Cannot reuse capability across agents
+✔ Model remains private
+✔ Replay protection via nullifier
+
+================================================================
+CIRCUIT 3 — TASK OUTPUT PROOF
+=============================
+
+PURPOSE:
+Prove output meets requirements WITHOUT revealing output.
+
+---
+
+## PRIVATE INPUTS
+
+outputValues[N]   → computed metrics
+rawDataHash       → Poseidon(dataset)
+sessionNonce      → replay protection
+
+---
+
+## PUBLIC INPUTS
+
+thresholds[N]
+specHash          → Poseidon(thresholds)
+taskId
+
+---
+
+## OUTPUTS
+
+allCriteriaMet
+deliverableCommitment
+nullifier
+
+---
+
+## INPUT GENERATION
+
+1. Compute:
+
+   specHash = Poseidon(thresholds)
+
+2. Compute:
+
+   outputHash = Poseidon(outputValues)
+
+3. Compute:
+
+   deliverableCommitment =
+   Poseidon(outputHash, rawDataHash, taskId)
+
+4. Ensure:
+
+   outputValues[i] >= thresholds[i]
+
+---
+
+## SAMPLE input.json
+
+{
+"outputValues": ["92", "1", "4", "1"],
+"rawDataHash": "111111",
+
+"sessionNonce": "777",
+
+"thresholds": ["75", "1", "3", "1"],
+"specHash": "...",
+"taskId": "42"
+}
+
+---
+
+## WHAT IT GUARANTEES
+
+✔ Output satisfies all conditions
+✔ Output tied to dataset
+✔ Output tied to task
+✔ Cannot fake metrics
+✔ Cannot reuse proof
+
+================================================================
+HOW TO RUN (ALL CIRCUITS)
+=========================
+
+1. Compile:
+
+   circom circuit.circom --r1cs --wasm --sym
+
+2. Generate witness:
+
+   node generate_witness.js circuit.wasm input.json witness.wtns
+
+3. Generate proof:
+
+   snarkjs groth16 prove circuit_final.zkey witness.wtns proof.json public.json
+
+4. Verify:
+
+   snarkjs groth16 verify verification_key.json public.json proof.json
+
+================================================================
+DEBUG CHECKLIST
+===============
+
+If proof fails:
+
+[ ] Poseidon input order mismatch
+[ ] Wrong commitment formula
+[ ] Wrong specHash
+[ ] Incorrect Merkle/SMT proof (if used)
+[ ] outputValues < thresholds
+[ ] salt = 0
+[ ] reused nullifier
+
+================================================================
+MENTAL MODEL
+============
+
+Circuit 1 → TRUST LEVEL (reputation)
+Circuit 2 → CAPABILITY (skills)
+Circuit 3 → EXECUTION (output correctness)
+
+Together:
+
+→ Full trustless agent verification system
+
+
+🧠 CIRCUIT 4 — IDENTITY BINDER
+🎯 PURPOSE
+
+This circuit proves:
+
+“I control a private key that deterministically maps to a public identity,
+and I’m generating a unique, non-replayable proof for a specific context.”
+
+Without revealing:
+
+❌ privateKey
+🔐 WHAT THIS CIRCUIT ACTUALLY DOES
+
+It combines 3 things:
+
+1. Identity derivation (private key → public key)
+2. Identity commitment (public key → hash)
+3. Replay protection (nullifier)
+⚙️ STEP-BY-STEP EXPLANATION
+1. Private Key → Public Key
+component pubKey = BabyPbk();
+pubKey.in <== privateKey;
+
+👉 This uses Baby Jubjub elliptic curve
+
+Result:
+
+pubKey.Ax
+pubKey.Ay
+
+So now:
+
+privateKey → (Ax, Ay)
+2. Public Key → Public Identity Hash
+component pubKeyHasher = Poseidon(2);
+pubKeyHasher.inputs[0] <== pubKey.Ax;
+pubKeyHasher.inputs[1] <== pubKey.Ay;
+
+publickeyHash <== pubKeyHasher.out;
+
+👉 This creates:
+
+publickeyHash = Poseidon(pubKey)
+
+This becomes your:
+
+agent identity commitment
+3. Nonce Check
+component nonceCheck = IsZero();
+nonceCheck.in <== nonce;
+
+⚠️ IMPORTANT:
+
+This currently does NOT enforce anything.
+
+Right now:
+
+nonce can be 0 → BAD
+
+👉 You need:
+
+nonceCheck.out === 0;
+
+Otherwise:
+
+replay protection is weak
+4. Nullifier (CRITICAL)
+nullifier = Poseidon(privateKey, nonce, contextHash)
+
+👉 This creates:
+
+unique proof ID per context
+
+So:
+
+same key + same context + same nonce → same nullifier
+different nonce → different nullifier
+5. Address Binding
+signal addressSquared <== address * address;
+
+👉 This is a trick:
+
+forces address into constraint system
+
+Without this:
+
+address is UNUSED → attacker can spoof it
+🧠 WHAT THIS CIRCUIT GUARANTEES
+✔ Prover owns a valid private key
+✔ Public key is derived correctly
+✔ Identity commitment is valid
+✔ Proof is tied to context (contextHash)
+✔ Proof is non-replayable (via nonce)
+✔ Address is bound to proof
+⚠️ CRITICAL IMPROVEMENT (YOU SHOULD DO THIS)
+
+Right now:
+
+nonceCheck.in <== nonce;
+
+Fix it:
+
+nonceCheck.out === 0;
+
+Otherwise:
+
+nonce = 0 allowed → replay risk
+🧠 MENTAL MODEL
+privateKey → publicKey → identityHash
+                         ↓
+                     nullifier
+
+This is basically:
+
+Semaphore-style identity system
+📦 INPUT.JSON STRUCTURE
+✅ FULL INPUT FORMAT
+{
+  "privateKey": "123456789",
+  "nonce": "987654321",
+
+  "address": "12345678901234567890",
+  "contextHash": "555555555"
+}
+🧾 FIELD-BY-FIELD EXPLANATION
+🔑 privateKey (PRIVATE)
+Type: field element
+Your secret identity key
+Must be:
+< babyjub subgroup order
+
+Example:
+
+"privateKey": "123456789"
+🔁 nonce (PRIVATE)
+Type: random number
+Must be:
+non-zero
+unique per proof
+
+Example:
+
+"nonce": "987654321"
+🧾 address (PUBLIC)
+Type: uint160 (Ethereum address as number)
+
+Example:
+
+"address": "12345678901234567890"
+
+👉 Important:
+
+Convert from hex → decimal before passing
+🌐 contextHash (PUBLIC)
+Type: Poseidon hash
+
+Represents:
+
+session / app / domain / task
+
+Example:
+
+"contextHash": "555555555"
+🧠 HOW TO GENERATE INPUTS (REAL FLOW)
+Step 1 — Generate private key
+const privateKey = randomBigInt();
+Step 2 — Choose nonce
+const nonce = randomBigInt();
+Step 3 — Define context
+const contextHash = poseidon(["task-42"]);
+Step 4 — Convert address
+const address = BigInt("0xabc...").toString();
+⚡ OUTPUTS (IMPORTANT)
+
+After proof:
+
+publickeyHash → identity commitment
+nullifier     → replay protection
+🔐 HOW IT’S USED ON-CHAIN
+
+Contract should:
+
+require(!usedNullifiers[nullifier]);
+usedNullifiers[nullifier] = true;
+🧠 WHERE THIS FITS IN YOUR SYSTEM
+
+Now your stack becomes:
+
+Circuit 1 → Reputation
+Circuit 2 → Capability
+Circuit 3 → Output
+Circuit 4 → Identity
+🚀 BIG INSIGHT (DON’T MISS THIS)
+
+This circuit enables:
+
+→ pseudonymous identity
+→ reusable identity across apps
+→ unlinkable sessions
+→ zk login system
+
+This is basically:
+
+"Sign in with ZK identity"
+⚠️ FINAL WARNING
+
+If you don’t fix nonce constraint:
+
+system becomes replayable
+🧠 FINAL SUMMARY
+This circuit proves:
+"I own a valid identity and I am acting in this context"
+
+Without revealing:
+
+private key
+================================================================
+END
+===

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fontsource/silkscreen": "^5.2.8",
+    "@lit-protocol/lit-node-client": "^7.4.0",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",

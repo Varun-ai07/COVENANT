@@ -1,0 +1,8 @@
+{
+  "AgentRegistry": "0x29f46a8a520606E7BfCe2f25668De7793D10F6eD",
+  "ReceiptVerifier": "0xfda272BE2E4A1A18D5046554faE41D9412e5100a",
+  "TaskEscrow": "0x8fC37c77298641dE261c4988Ef2C728668A81F05",
+  "network": "baseSepolia",
+  "chainId": "84532",
+  "deployedAt": "2026-03-25T19:19:15.070Z"
+}

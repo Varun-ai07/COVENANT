@@ -20,17 +20,20 @@ if [ "$1" = "local" ]; then
   echo ""
   echo "Starting Hardhat node in background..."
   cd contracts
-  npx hardhat node &
+  # Direct node call to bypass vfat execution restrictions
+  node node_modules/hardhat/internal/cli/cli.js node &
   HARDHAT_PID=$!
   sleep 3
 
   echo "Deploying to local node..."
-  npx hardhat run scripts/deploy.ts --network localhost
+  # Direct node call for deployment
+  node node_modules/hardhat/internal/cli/cli.js run scripts/deploy.ts --network localhost
 
   echo "Running demo..."
   cd ../agents
   export BASE_SEPOLIA_RPC_URL=http://127.0.0.1:8545
-  npx tsx demo.ts
+  # Using direct node path for tsx as well
+  node ../contracts/node_modules/tsx/dist/cli.mjs demo.ts
 
   # Cleanup
   kill $HARDHAT_PID 2>/dev/null || true
@@ -42,7 +45,8 @@ echo "Running TESTNET demo (Base Sepolia)..."
 echo ""
 
 cd agents
-npx tsx demo.ts
+# Using direct node path for tsx
+node ../contracts/node_modules/tsx/dist/cli.mjs demo.ts
 
 echo ""
 echo "✓ Demo complete!"

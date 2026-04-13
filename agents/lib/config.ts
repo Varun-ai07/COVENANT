@@ -28,6 +28,9 @@ export const CONTRACTS = {
   AgentRegistry: (process.env.REGISTRY_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
   TaskEscrow: (process.env.ESCROW_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
   ReceiptVerifier: (process.env.VERIFIER_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
+  OpenTaskMarket: (process.env.MARKET_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
+  ParallelTaskBatch: (process.env.BATCH_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
+  AgentCollective: (process.env.COLLECTIVE_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
 };
 
 // Testnet configuration for gas optimization
