@@ -1,6 +1,6 @@
 # COVENANT — The Autonomous Agent Enforcement Protocol
 
-**Built for Synthesis Hackathon 2026**
+**Built to change the Revolution of the Agentic Era**
 
 ![COVENANT](https://img.shields.io/badge/COVENANT-Agent%20Protocol-purple)
 ![Base](https://img.shields.io/badge/Base-Sepolia%20L2-blue)
