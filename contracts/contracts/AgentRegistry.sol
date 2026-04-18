@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./ReputationVerifier.sol";
 
 contract AgentRegistry is Ownable {
     // Events
@@ -52,7 +53,7 @@ contract AgentRegistry is Ownable {
      * @notice Set the reputation verifier address (owner only)
      * @param verifier Address of the reputation verifier contract
      */
-    function setReputationVerifier(address verifier) external onlyOwner {
+    function setGroth16Verifier(address verifier) external onlyOwner {
         reputationVerifier = verifier;
     }
 
@@ -289,10 +290,10 @@ contract AgentRegistry is Ownable {
      * @notice Verify a ZK reputation range proof
      * @param agent The agent address
      * @param threshold The minimum reputation threshold required
-     * @param proof The ZK proof data [A, B, C, publicSignals]
+     * @param proofA The first proof component [A, B, C, publicSignals]
      * @return valid Whether the proof is valid
      */
-    function verifyReputationProof(
+    function verifyProof(
         address agent,
         uint256 threshold,
         uint[2] calldata proofA,
@@ -303,7 +304,7 @@ contract AgentRegistry is Ownable {
         require(address(reputationVerifier) != address(0), "Reputation verifier not set");
         
         // Call the reputation verifier contract
-        ReputationVerifier(reputationVerifier).verifyReputationProof(
+        Groth16Verifier(reputationVerifier).verifyProof(
             proofA, proofB, proofC, proofPublicSignals
         );
     }
@@ -312,7 +313,7 @@ contract AgentRegistry is Ownable {
      * @notice Verify a ZK capability proof (stub - integrate real ZK verifier)
      * @param agent The agent address
      * @param capability The capability to verify
-     * @param proof The ZK proof data
+     * @param proof The proof data
      * @return valid Whether the proof is valid
      * @return nullifier The nullifier to prevent replay attacks
      */

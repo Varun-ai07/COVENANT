@@ -366,7 +366,6 @@ async function main() {
     console.log(`Payment: ${task.payment} ETH`);
     console.log(`IPFS: ${ipfsHash}`);
     console.log(`Deadline: ${new Date(Number(deadline) * 1000).toLocaleString()}`);
-  }
 }
 
 main().catch(console.error);

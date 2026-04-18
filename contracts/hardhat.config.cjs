@@ -1,6 +1,5 @@
-import "@nomicfoundation/hardhat-toolbox";
-import * as dotenv from "dotenv";
-dotenv.config();
+require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 const config = {
@@ -52,4 +51,4 @@ const config = {
   },
 };
 
-export default config;
+module.exports = config;
