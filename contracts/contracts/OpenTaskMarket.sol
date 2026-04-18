@@ -160,6 +160,15 @@ contract OpenTaskMarket is Ownable {
         return taskCounter;
     }
 
+    function postOpenTask(
+        uint256 maxPayment,
+        uint256 deadline,
+        string calldata descriptionHash
+    ) external payable returns (uint256) {
+        return this.postTask(maxPayment, deadline, descriptionHash);
+    }
+
+
     /**
      * @notice Submit a bid on an open task
      * @param taskId The ID of the task to bid on
