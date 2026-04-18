@@ -1,20 +1,49 @@
-// Contract configuration for COVENANT
-export const CONTRACTS = {
-  AgentRegistry: process.env.NEXT_PUBLIC_REGISTRY_ADDRESS as string,
-  TaskEscrow: process.env.NEXT_PUBLIC_ESCROW_ADDRESS as string,
-  ReceiptVerifier: process.env.NEXT_PUBLIC_VERIFIER_ADDRESS as string,
-  chainId: Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 84532,
-  explorerUrl: "https://sepolia.basescan.org",
-};
+// Contract addresses - Base Sepolia Verified Addresses
+const REGISTRY = process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "0xd92A88ac4806656CB03bF0400cC2c560df995a75";
+const ESCROW = process.env.NEXT_PUBLIC_ESCROW_ADDRESS || "0xcF4cF5140Bf42beE15D3b3462f3eF1af38161f18";
+const VERIFIER = process.env.NEXT_PUBLIC_VERIFIER_ADDRESS || "0x62C924b8d5eA3F7fA932b1B683eB5eB3c10d66F8";
+const MARKET = process.env.NEXT_PUBLIC_MARKET_ADDRESS || "0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504";
+const BATCH = process.env.NEXT_PUBLIC_BATCH_ADDRESS || "0x0000000000000000000000000000000000000000";
+const COLLECTIVE = process.env.NEXT_PUBLIC_COLLECTIVE_ADDRESS || "0x0000000000000000000000000000000000000000";
+const INSURANCE = process.env.NEXT_PUBLIC_INSURANCE_ADDRESS || "0x0000000000000000000000000000000000000000";
+const DISPUTE = process.env.NEXT_PUBLIC_DISPUTE_ADDRESS || "0x0000000000000000000000000000000000000000";
 
-export function getExplorerLink(
-  type: "address" | "tx",
-  value: string
-): string {
-  return `${CONTRACTS.explorerUrl}/${type}/${value}`;
-}
+export const CONTRACT_ADDRESSES = {
+  // Localhost (Hardhat) - uses local deployment
+  31337: {
+    AgentRegistry: "0x7eC229b9319f8a32D0A852fF42CC43563B461593",
+    TaskEscrow: "0x44AF51b80E50c502C2d7475f428c6512B83e3071",
+    ReceiptVerifier: "0xabe43F98b5E1bcb79dB7FC5c5C9FD5E749EF8142",
+    OpenTaskMarket: MARKET,
+    ParallelTaskBatch: BATCH,
+    AgentCollective: COLLECTIVE,
+    AgentInsurance: INSURANCE,
+    DisputeArbitration: DISPUTE,
+  },
+  // Base Sepolia (testnet) - VERIFIED ON EXPLORER
+  84532: {
+    AgentRegistry: REGISTRY,
+    TaskEscrow: ESCROW,
+    ReceiptVerifier: VERIFIER,
+    OpenTaskMarket: MARKET,
+    ParallelTaskBatch: BATCH,
+    AgentCollective: COLLECTIVE,
+    AgentInsurance: INSURANCE,
+    DisputeArbitration: DISPUTE,
+  },
+  // Base Mainnet
+  8453: {
+    AgentRegistry: "0x0000000000000000000000000000000000000000",
+    TaskEscrow: "0x0000000000000000000000000000000000000000",
+    ReceiptVerifier: "0x0000000000000000000000000000000000000000",
+    OpenTaskMarket: "0x0000000000000000000000000000000000000000",
+    ParallelTaskBatch: "0x0000000000000000000000000000000000000000",
+    AgentCollective: "0x0000000000000000000000000000000000000000",
+    AgentInsurance: "0x0000000000000000000000000000000000000000",
+    DisputeArbitration: "0x0000000000000000000000000000000000000000",
+  },
+} as const;
 
-export function shortenAddress(address: string, chars = 6): string {
-  if (!address) return "";
-  return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
+export function getContractAddresses(chainId: number) {
+  return CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES] || CONTRACT_ADDRESSES[84532];
 }
