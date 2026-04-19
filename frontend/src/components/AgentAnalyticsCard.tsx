@@ -83,7 +83,7 @@ export default function AgentAnalyticsCard({ agent, timeRange }: AgentAnalyticsC
           <div className="text-center">
             <div className="text-slate-400 text-xs">Reputation Δ</div>
             <div className={`font-silkscreen text-2xl ${stats.reputationChange >= 0 ? "text-green-400" : "text-red-400"}`}>
-              {stats.reputationChange:+d}
+              {stats.reputationChange >= 0 ? '+' : ''}{stats.reputationChange}
             </div>
           </div>
         </div>

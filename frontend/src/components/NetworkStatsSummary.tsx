@@ -8,7 +8,7 @@ interface NetworkStatsSummaryProps {
   lastUpdate: number;
 }
 
-export default function NetworkStatsSummary({ 
+function NetworkStatsSummary({ 
   agentCount, 
   taskCount, 
   receiptCount, 
@@ -87,3 +87,5 @@ export default function NetworkStatsSummary({
     </div>
   );
 }
+
+export default NetworkStatsSummary;

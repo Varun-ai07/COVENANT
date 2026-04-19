@@ -19,6 +19,26 @@ interface TaskInfo {
   status: number;
 }
 
+function isLikelyLegacyPlaceholderHash(hash: string): boolean {
+  return /^Qm[a-z0-9]{8,14}$/i.test((hash || "").trim());
+}
+
+function canAttemptTaskNow(task: TaskInfo): { ok: boolean; reason?: string } {
+  if (task.status !== 2) {
+    return { ok: false, reason: `status=${task.status}, expected InProgress(2)` };
+  }
+
+  if (Number(task.deadline) <= Math.floor(Date.now() / 1000)) {
+    return { ok: false, reason: "deadline already passed" };
+  }
+
+  if (!task.descriptionHash || isLikelyLegacyPlaceholderHash(task.descriptionHash)) {
+    return { ok: false, reason: "invalid/legacy description hash" };
+  }
+
+  return { ok: true };
+}
+
 async function executeWork(taskDescription: string): Promise<string> {
   console.log("\nExecuting work with LLM (OpenRouter)...");
 
@@ -93,7 +113,7 @@ async function processTask(
   account: any,
   task: TaskInfo,
   workerKeyPair: { privateKey: Uint8Array; publicKey: Uint8Array }
-) {
+): Promise<boolean> {
   console.log(`\n=== Processing Task #${task.id} ===`);
   console.log(`Client: ${task.client.slice(0, 10)}...`);
   console.log(`Payment: ${formatEther(task.payment)} ETH`);
@@ -137,8 +157,60 @@ async function processTask(
     console.log(`Confirmed in block ${receipt.blockNumber}`);
 
     console.log("\n=== Work Submitted Successfully ===");
+    return true;
   } catch (error) {
     console.error("Error processing task:", error);
+    return false;
+  }
+}
+
+async function pollForAssignedTasks(
+  publicClient: any,
+  wallet: any,
+  account: any,
+  workerKeyPair: { privateKey: Uint8Array; publicKey: Uint8Array },
+  attemptedTaskIds: Set<string>
+): Promise<void> {
+  const myTaskIds = await publicClient.readContract({
+    address: CONTRACTS.TaskEscrow,
+    abi: TaskEscrowABI,
+    functionName: "getWorkerTasks",
+    args: [account.address],
+  }) as bigint[];
+
+  for (const taskId of myTaskIds) {
+    const taskKey = taskId.toString();
+    if (attemptedTaskIds.has(taskKey)) {
+      continue;
+    }
+
+    const taskData = await publicClient.readContract({
+      address: CONTRACTS.TaskEscrow,
+      abi: TaskEscrowABI,
+      functionName: "getTask",
+      args: [taskId],
+    }) as any;
+
+    const task: TaskInfo = {
+      id: taskId,
+      client: taskData.client,
+      worker: taskData.worker,
+      payment: taskData.payment,
+      deadline: taskData.deadline,
+      descriptionHash: taskData.descriptionHash,
+      status: Number(taskData.status),
+    };
+
+    const eligibility = canAttemptTaskNow(task);
+    if (!eligibility.ok) {
+      console.log(`[POLL] Skipping task #${taskId}: ${eligibility.reason}`);
+      attemptedTaskIds.add(taskKey);
+      continue;
+    }
+
+    console.log(`\n[POLL] Auto-processing task #${taskId}...`);
+    await processTask(wallet, publicClient, account, task, workerKeyPair);
+    attemptedTaskIds.add(taskKey);
   }
 }
 
@@ -160,6 +232,7 @@ async function main() {
   // Check balance
   const balance = await publicClient.getBalance({ address: account.address });
   console.log(`Balance: ${formatEther(balance)} ETH`);
+  const attemptedTaskIds = new Set<string>();
 
   // Step 1: Process any existing InProgress tasks on startup
   console.log("\n[STARTUP] Checking for existing InProgress tasks...");
@@ -190,8 +263,16 @@ async function main() {
     };
 
     if (task.status === 2) { // InProgress
+      const eligibility = canAttemptTaskNow(task);
+      if (!eligibility.ok) {
+        console.log(`[STARTUP] Skipping task #${taskId}: ${eligibility.reason}`);
+        attemptedTaskIds.add(taskId.toString());
+        continue;
+      }
+
       console.log(`\n[STARTUP] Processing existing task #${taskId}...`);
       await processTask(wallet, publicClient, account, task, workerKeyPair);
+      attemptedTaskIds.add(taskId.toString());
       processedCount++;
     }
   }
@@ -205,10 +286,11 @@ async function main() {
   // Step 2: Start event-driven listener for new tasks
   console.log("\n[EVENT LISTENER] Starting WebSocket listener for new tasks...");
 
-  // Use WebSocket RPC if available, fallback to HTTP polling
-  const wsUrl = BASE_SEPOLIA_RPC_URL?.replace('https', 'wss')?.replace('http', 'ws') || 'wss://sepolia.base.org';
+  // Use explicit WebSocket RPC if provided; otherwise fall back to HTTP polling.
+  const wsUrl = process.env.BASE_SEPOLIA_WS_URL;
 
-  try {
+  if (wsUrl) {
+    try {
     const eventListener = new EventListener(wsUrl);
 
     eventListener.subscribe(
@@ -216,49 +298,50 @@ async function main() {
       TaskEscrowABI,
       'TaskFunded',
       async (event) => {
-        const taskId = event.args.taskId as bigint;
-        const worker = event.args.worker as string;
-        const payment = event.args.payment as bigint;
-        const deadline = event.args.deadline as bigint;
-        const specHash = event.args.specHash as string;
+        try {
+          const taskId = event.args.taskId as bigint;
 
-        console.log(`\n[EVENT] Received TaskFunded event for task #${taskId}`);
-        console.log(`  Worker: ${worker}`);
-        console.log(`  Payment: ${formatEther(payment)} ETH`);
+          console.log(`\n[EVENT] Received TaskFunded event for task #${taskId}`);
 
-        // Only process if this task is assigned to this worker
-        if (worker.toLowerCase() === account.address.toLowerCase()) {
-          console.log(`  → Task assigned to me! Processing...`);
+          // TaskFunded only emits (taskId, amount). Fetch full task details from contract.
+          const fullTaskData = await publicClient.readContract({
+            address: CONTRACTS.TaskEscrow,
+            abi: TaskEscrowABI,
+            functionName: "getTask",
+            args: [taskId],
+          }) as any;
 
           const task: TaskInfo = {
             id: taskId,
-            client: '', // Will be filled by getTask
-            worker: worker,
-            payment: payment,
-            deadline: deadline,
-            descriptionHash: specHash,
-            status: 2, // InProgress (TaskFunded auto-starts task)
+            client: fullTaskData.client,
+            worker: fullTaskData.worker,
+            payment: fullTaskData.payment,
+            deadline: fullTaskData.deadline,
+            descriptionHash: fullTaskData.descriptionHash,
+            status: Number(fullTaskData.status),
           };
 
-          // Fetch full task details to get client address
-          try {
-            const fullTaskData = await publicClient.readContract({
-              address: CONTRACTS.TaskEscrow,
-              abi: TaskEscrowABI,
-              functionName: "getTask",
-              args: [taskId],
-            }) as any;
+          console.log(`  Worker: ${task.worker}`);
+          console.log(`  Payment: ${formatEther(task.payment)} ETH`);
 
-            task.client = fullTaskData.client;
-            task.status = Number(fullTaskData.status);
-          } catch (err) {
-            console.warn(`  Could not fetch full task details: ${err}`);
+          // Only process if this task is assigned to this worker
+          if (task.worker.toLowerCase() !== account.address.toLowerCase()) {
+            console.log(`  → Task assigned to another worker (${task.worker.slice(0, 10)}...), skipping`);
+            return;
           }
 
-          // Process the task
+          const eligibility = canAttemptTaskNow(task);
+          if (!eligibility.ok) {
+            console.log(`  → Skipping task #${taskId}: ${eligibility.reason}`);
+            attemptedTaskIds.add(taskId.toString());
+            return;
+          }
+
+          console.log(`  → Task assigned to me! Processing...`);
           await processTask(wallet, publicClient, account, task, workerKeyPair);
-        } else {
-          console.log(`  → Task assigned to another worker (${worker.slice(0,10)}...), skipping`);
+          attemptedTaskIds.add(taskId.toString());
+        } catch (err) {
+          console.error(`[EVENT] Failed to process TaskFunded event:`, err);
         }
       }
     );
@@ -270,13 +353,25 @@ async function main() {
     await new Promise(() => {
       // Intentionally never resolve
     });
-  } catch (error) {
-    console.error("[EVENT LISTENER] Failed to start WebSocket listener:", error);
-    console.log("[FALLBACK] WebSocket unavailable. Consider checking RPC connectivity.");
+    } catch (error) {
+      console.error("[EVENT LISTENER] Failed to start WebSocket listener:", error);
+      console.log("[FALLBACK] Switching to polling mode every 15 seconds.");
+    }
+  }
 
-    // Could fall back to polling mode here if needed
-    // For now, just exit with error
-    process.exit(1);
+  if (!wsUrl) {
+    console.log("[FALLBACK] BASE_SEPOLIA_WS_URL not set. Using polling mode every 15 seconds.");
+  }
+
+  // HTTP polling fallback (works when WS is blocked/unsupported by RPC endpoint)
+  while (true) {
+    try {
+      await pollForAssignedTasks(publicClient, wallet, account, workerKeyPair, attemptedTaskIds);
+    } catch (error) {
+      console.error("[POLL] Error while checking tasks:", error);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 15000));
   }
 }
 

@@ -29,7 +29,7 @@ interface NetworkLink {
   status: number;
 }
 
-export function NetworkGraph() {
+function NetworkGraph() {
   const svgRef = useRef<SVGSVGElement>(null);
   const { chain: _chain } = useAccount();
   const taskCount = useTaskCounter();
@@ -311,3 +311,7 @@ export function NetworkGraph() {
     </div>
   );
 }
+
+export const NetworkGraphWrapper = NetworkGraph;
+
+export default NetworkGraph;

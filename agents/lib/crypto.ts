@@ -28,8 +28,12 @@ export async function initLitClient(): Promise<void> {
  * for compatibility with existing code that expects a key pair
  */
 export async function generateKeyPair(): Promise<{ privateKey: Uint8Array; publicKey: Uint8Array }> {
-  // Ensure Lit client is initialized
-  await initLitClient();
+  // Best-effort Lit initialization. Worker flow should continue even if Lit is unreachable.
+  try {
+    await initLitClient();
+  } catch (error) {
+    console.warn("[Crypto] Lit initialization unavailable, using local placeholder keys:", error);
+  }
   
   // With Lit Protocol, we don't generate traditional key pairs locally
   // Instead, we rely on the network for key management
@@ -60,8 +64,11 @@ export async function deriveSharedSecret(
   myPrivateKey: Uint8Array,
   theirPublicKey: Uint8Array
 ): Promise<Uint8Array> {
-  // Ensure Lit client is initialized
-  await initLitClient();
+  try {
+    await initLitClient();
+  } catch {
+    // Continue with compatibility placeholder when Lit is unavailable.
+  }
   
   // With Lit Protocol, we don't derive shared secrets manually
   // Encryption/decryption is handled through the Lit Protocol network

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import NetworkGraph from "@/components/NetworkGraph";
 import { useAgentCount, useTaskCount, useReceiptCount } from "@/hooks/useStats";
-import { NetworkStatsSummary } from "@/components/NetworkStatsSummary";
+import NetworkStatsSummary from "@/components/NetworkStatsSummary";
 
 export default function NetworkPage() {
   const { address, isConnected } = useAccount();

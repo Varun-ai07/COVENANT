@@ -89,12 +89,16 @@ export function useCreateTask() {
     descriptionHash: string
   ) => {
     const paymentWei = parseEther(payment);
+    // TaskEscrow defaults to Priority.Medium in createAndFundTask, which adds a 1% fee.
+    const priorityFeeWei = paymentWei / 100n;
+    const totalFundingWei = paymentWei + priorityFeeWei;
+
     writeContract({
       address: contracts.TaskEscrow as `0x${string}`,
       abi: TaskEscrowABI,
       functionName: "createAndFundTask",
       args: [worker, paymentWei, deadline, descriptionHash],
-      value: paymentWei,
+      value: totalFundingWei,
     });
   };
 
@@ -175,6 +179,48 @@ export function useDisputeTask() {
 
   return {
     disputeTask,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error,
+    hash,
+  };
+}
+
+export function useTaskEscrowOwner() {
+  const { chain } = useAccount();
+  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+
+  const { data: owner, isLoading, refetch } = useReadContract({
+    address: contracts.TaskEscrow as `0x${string}`,
+    abi: TaskEscrowABI,
+    functionName: "owner",
+  });
+
+  return {
+    owner: owner as `0x${string}` | undefined,
+    isLoading,
+    refetch,
+  };
+}
+
+export function useResolveDispute() {
+  const { chain } = useAccount();
+  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const resolveDispute = (taskId: bigint, workerWins: boolean) => {
+    writeContract({
+      address: contracts.TaskEscrow as `0x${string}`,
+      abi: TaskEscrowABI,
+      functionName: "resolveDispute",
+      args: [taskId, workerWins],
+    });
+  };
+
+  return {
+    resolveDispute,
     isPending,
     isConfirming,
     isSuccess,

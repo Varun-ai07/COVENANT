@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
 import { formatEther, parseEther } from "viem";
@@ -14,7 +15,6 @@ import { useToast } from "@/components/Toast";
 type Tab = "profile" | "client" | "worker" | "verifier";
 
 const SUPPORTED_CHAIN_IDS = [31337, 84532];
-const isDevelopment = process.env.NODE_ENV === "development";
 
 export default function DashboardPage() {
   const { address, isConnected, chain } = useAccount();
@@ -72,7 +72,7 @@ export default function DashboardPage() {
       });
       reset();
     }
-  }, [isSuccess, hash]);
+  }, [isSuccess, hash, refetchAgent, refetchClientTasks, refetchWorkerTasks, addToast, reset]);
 
   useEffect(() => {
     if (writeError) {
@@ -85,7 +85,7 @@ export default function DashboardPage() {
         message,
       });
     }
-  }, [writeError]);
+  }, [writeError, addToast]);
 
   useEffect(() => {
     if (txError) {
@@ -95,7 +95,7 @@ export default function DashboardPage() {
         message: txError.message?.slice(0, 100) || "Transaction reverted",
       });
     }
-  }, [txError]);
+  }, [txError, addToast]);
 
   const reputationLevel = agent ? getReputationLevel(Number(agent.reputation)) : null;
 
@@ -108,13 +108,11 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Page Header */}
       <div className="mb-8">
         <h1 className="font-silkscreen text-2xl text-white mb-2 tracking-[0.15em]">DASHBOARD</h1>
         <p className="text-white/40 text-sm">Manage your agent profile and track your tasks</p>
       </div>
 
-      {/* Network Warning */}
       {isWrongNetwork && (
         <div className="mb-6 p-4 rounded-2xl bg-red-500/5 border border-red-500/20 backdrop-blur-sm">
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -142,7 +140,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Connected Network Status */}
       {isConnected && !isWrongNetwork && (
         <div className="mb-6 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 backdrop-blur-sm">
           <div className="flex items-center gap-3">
@@ -173,7 +170,6 @@ export default function DashboardPage() {
             <p className="text-slate-600 text-sm">Use the Connect button in the navigation bar</p>
           </div>
 
-          {/* Hardhat Setup */}
           <div className="glass-card p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +210,6 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          {/* Tabs */}
           <div className="flex gap-1 mb-8 bg-white/5 p-1 rounded-xl w-fit backdrop-blur-sm border border-white/5">
             {tabs.map((tab) => (
               <button
@@ -239,10 +234,8 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Tab Content */}
           {activeTab === "profile" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Agent Profile */}
               <div className="glass-card p-6">
                 <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
                   <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,7 +261,6 @@ export default function DashboardPage() {
                   </div>
                 ) : isRegistered ? (
                   <div className="space-y-6">
-                    {/* Avatar & Name */}
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl blur-md opacity-40" />
@@ -284,13 +276,11 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* DID */}
                     <div className="bg-black/20 rounded-xl p-4 border border-white/5">
                       <p className="text-slate-500 text-xs mb-1">DID (ERC-8004)</p>
                       <p className="text-slate-300 text-sm font-mono truncate">{agent?.did}</p>
                     </div>
 
-                    {/* Reputation Bar */}
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-slate-400 text-sm">Reputation</span>
@@ -306,7 +296,6 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-black/20 rounded-xl p-4 border border-white/5">
                         <p className="text-slate-500 text-xs mb-1">Staked</p>
@@ -326,7 +315,6 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* Capabilities */}
                     <div>
                       <p className="text-slate-500 text-xs mb-2">Capabilities</p>
                       <div className="flex flex-wrap gap-2">
@@ -362,7 +350,6 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* Registration Form or Quick Stats */}
               {!isRegistered ? (
                 <div className="glass-card p-6">
                   <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
@@ -494,40 +481,51 @@ export default function DashboardPage() {
             </div>
           )}
 
-           {activeTab === "worker" && (
-             <div>
-               <div className="flex items-center justify-between mb-6">
-                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                   <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                   </svg>
-                   <span className="font-silkscreen text-xs tracking-[0.1em]">TASKS ASSIGNED TO ME</span>
-                 </h2>
-                 <span className="text-slate-500 text-sm">{workerTaskIds.length} total</span>
-               </div>
-               {workerTaskIds.length === 0 ? (
-                 <div className="glass-card p-12 text-center">
-                   <div className="w-16 h-16 mx-auto mb-4 bg-white/5 rounded-2xl flex items-center justify-center">
-                     <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                     </svg>
-                   </div>
-                   <p className="text-slate-400">No tasks assigned to you yet</p>
-                   <p className="text-slate-600 text-sm mt-1">Make sure your capabilities match what clients are looking for</p>
-                 </div>
-               ) : (
-                 <div className="grid gap-4">
-                   {workerTaskIds.map((taskId) => (
-                     <TaskCard key={taskId.toString()} taskId={taskId} contracts={contracts} highlight />
-                   ))}
-                 </div>
-               )}
-             </div>
-           )}
-           
-           {activeTab === "verifier" && (
-             <VerifierDashboard />
-           )}
+          {activeTab === "worker" && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span className="font-silkscreen text-xs tracking-[0.1em]">TASKS ASSIGNED TO ME</span>
+                </h2>
+                <span className="text-slate-500 text-sm">{workerTaskIds.length} total</span>
+              </div>
+              {workerTaskIds.length === 0 ? (
+                <div className="glass-card p-12 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-white/5 rounded-2xl flex items-center justify-center">
+                    <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-slate-400">No tasks assigned to you yet</p>
+                  <p className="text-slate-600 text-sm mt-1">Make sure your capabilities match what clients are looking for</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {workerTaskIds.map((taskId) => (
+                    <TaskCard key={taskId.toString()} taskId={taskId} contracts={contracts} highlight />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "verifier" && (
+            <div className="glass-card p-8 text-center">
+              <h3 className="text-lg font-semibold text-white mb-2">Verifier Workspace</h3>
+              <p className="text-slate-400 mb-6">
+                Open the dedicated verifier module to validate submitted work, manage verifier actions, and monitor verification flow.
+              </p>
+              <Link
+                href="/verifier"
+                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-glow-violet transition-all duration-300 font-silkscreen text-xs tracking-[0.1em]"
+              >
+                OPEN VERIFIER MODULE
+              </Link>
+            </div>
+          )}
         </>
       )}
     </div>

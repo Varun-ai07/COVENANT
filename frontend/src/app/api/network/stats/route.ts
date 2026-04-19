@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getContractAddresses } from "@/contracts/addresses";
 import AgentRegistryABI from "@/contracts/AgentRegistry.json";
 import TaskEscrowABI from "@/contracts/TaskEscrow.json";
@@ -14,27 +14,40 @@ const publicClient = createPublicClient({
 export async function GET() {
   try {
     const contracts = getContractAddresses(baseSepolia.id);
-    
-    // Get agent count
-    const agentCount = await publicClient.readContract({
-      address: contracts.AgentRegistry as `0x${string}`,
-      abi: AgentRegistryABI,
-      functionName: "getAgentCount",
-    }) as bigint;
-    
-    // Get task count
-    const taskCount = await publicClient.readContract({
-      address: contracts.TaskEscrow as `0x${string}`,
-      abi: TaskEscrowABI,
-      functionName: "taskCounter",
-    }) as bigint;
-    
-    // Get receipt count
-    const receiptCount = await publicClient.readContract({
-      address: contracts.ReceiptVerifier as `0x${string}`,
-      abi: ReceiptVerifierABI,
-      functionName: "receiptCounter",
-    }) as bigint;
+    const safeRead = async (reader: () => Promise<bigint>, fallback = 0n) => {
+      try {
+        return await reader();
+      } catch {
+        return fallback;
+      }
+    };
+
+    const [agentCount, taskCount, receiptCount] = await Promise.all([
+      safeRead(
+        () =>
+          publicClient.readContract({
+            address: contracts.AgentRegistry as `0x${string}`,
+            abi: AgentRegistryABI,
+            functionName: "getAgentCount",
+          }) as Promise<bigint>
+      ),
+      safeRead(
+        () =>
+          publicClient.readContract({
+            address: contracts.TaskEscrow as `0x${string}`,
+            abi: TaskEscrowABI,
+            functionName: "taskCounter",
+          }) as Promise<bigint>
+      ),
+      safeRead(
+        () =>
+          publicClient.readContract({
+            address: contracts.ReceiptVerifier as `0x${string}`,
+            abi: ReceiptVerifierABI,
+            functionName: "receiptCounter",
+          }) as Promise<bigint>
+      ),
+    ]);
     
     // Get agent stats (mock data since we don't have view functions for all stats)
     // In production, these would come from subgraphs or additional view functions
@@ -55,7 +68,7 @@ export async function GET() {
     ];
     
     // Ensure counts don't exceed total agent count
-    let totalDistributed = reputationDistribution.reduce((sum, item) => sum + item.count, 0);
+    const totalDistributed = reputationDistribution.reduce((sum, item) => sum + item.count, 0);
     if (totalDistributed > Number(agentCount)) {
       // Scale down proportionally
       const scaleFactor = Number(agentCount) / totalDistributed;
@@ -75,9 +88,24 @@ export async function GET() {
     return NextResponse.json(stats);
   } catch (error) {
     console.error("Error fetching network stats:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch network stats" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      agentCount: 0,
+      taskCount: 0,
+      receiptCount: 0,
+      agentStats: {
+        activeTasks: 0,
+        completedToday: 0,
+        totalVolumeETH: 0,
+        successRate: 0,
+        avgReputation: 0,
+      },
+      reputationDistribution: [
+        { range: "0-399", count: 0 },
+        { range: "400-599", count: 0 },
+        { range: "600-799", count: 0 },
+        { range: "800-1000", count: 0 },
+      ],
+      degraded: true,
+    });
   }
 }

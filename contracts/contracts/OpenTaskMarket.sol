@@ -64,6 +64,22 @@ contract OpenTaskMarket is Ownable {
         uint256 payment
     );
 
+    // Debug event for AgentNotActive troubleshooting
+    event DebugAgentNotActive(
+        address msgSender,
+        address registryAddress,
+        bool isActive,
+        string name
+    );
+
+    // Debug event for general agent info
+    event DebugAgentInfo(
+        address msgSender,
+        address registryAddress,
+        bool isActive,
+        string name
+    );
+
     // ============ STRUCTURES ============
     enum TaskStatus {
         Open,
@@ -71,6 +87,15 @@ contract OpenTaskMarket is Ownable {
         Completed,
         Cancelled
     }
+
+    // ============ CUSTOM ERRORS ============
+    error ZeroPayment();
+    error DeadlinePast();
+    error EmptyDescriptionHash();
+    error AgentNotActive();
+    error AlreadyBidded();
+    error BidBelowMin();
+    error ProposalHashRequired();
 
     struct Task {
         address client;
@@ -133,13 +158,24 @@ contract OpenTaskMarket is Ownable {
         uint256 deadline,
         string calldata descriptionHash
     ) external payable returns (uint256) {
-        require(maxPayment > 0, "Max payment must be positive");
-        require(deadline > block.timestamp, "Deadline must be in the future");
-        require(bytes(descriptionHash).length > 0, "Description hash required");
+        // Validate inputs first (before any state changes)
+        if (maxPayment == 0) revert ZeroPayment();
+        if (deadline <= block.timestamp) revert DeadlinePast();
+        if (bytes(descriptionHash).length == 0) revert EmptyDescriptionHash();
+
+        // Debug: Let's see if we even get here
+        emit DebugAgentInfo(msg.sender, address(agentRegistry), true, "debug");
 
         // Verify client is a registered agent
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        require(clientAgent.isActive, "Client not registered");
+        // Debug: Log agent info (would need events or revert with data for debugging)
+        emit DebugAgentInfo(msg.sender, address(agentRegistry), clientAgent.isActive, clientAgent.name);
+        if (!clientAgent.isActive) {
+            // Temporary debug: let's see what we're working with
+            // Let's add more info to help debug
+            emit DebugAgentNotActive(msg.sender, address(agentRegistry), clientAgent.isActive, clientAgent.name);
+            revert AgentNotActive();
+        }
 
         taskCounter++;
 
@@ -165,7 +201,38 @@ contract OpenTaskMarket is Ownable {
         uint256 deadline,
         string calldata descriptionHash
     ) external payable returns (uint256) {
-        return this.postTask(maxPayment, deadline, descriptionHash);
+        uint256 taskId = this.postTask(maxPayment, deadline, descriptionHash);
+        emit TaskPosted(taskId, msg.sender, maxPayment, deadline, descriptionHash);
+        return taskId;
+    }
+
+    function makeCounterOffer(
+        uint256 taskId,
+        address bidder,
+        uint256 counterPrice,
+        uint256 counterTimeEstimate,
+        string calldata counterProposalHash
+    ) external onlyClient(taskId) {
+        Task storage task = tasks[taskId];
+        require(task.status == TaskStatus.Open, "Task is not open for counter-offer");
+        require(bids[taskId][bidder].price > 0, "Bidder has not bid on this task");
+        require(counterPrice > 0, "Counter price must be positive");
+        require(counterTimeEstimate > 0, "Counter time estimate must be positive");
+        require(bytes(counterProposalHash).length > 0, "Counter proposal hash required");
+
+        Bid storage bid = bids[taskId][bidder];
+        bid.hasCounter = true;
+        bid.counterPrice = counterPrice;
+        bid.counterTimeEstimate = counterTimeEstimate;
+        bid.counterProposalHash = counterProposalHash;
+
+        emit CounterOfferMade(
+            taskId,
+            bidder,
+            counterPrice,
+            counterTimeEstimate,
+            counterProposalHash
+        );
     }
 
 
@@ -391,6 +458,15 @@ contract OpenTaskMarket is Ownable {
             task.selectedTimeEstimate,
             task.selectedProposalHash
         );
+    }
+
+    /**
+     * @notice Debug function to check agent status (for testing)
+     * @dev Returns whether the msg.sender is an active agent
+     */
+    function debugCheckAgentStatus() external view returns (bool) {
+        AgentRegistry.Agent memory agent = agentRegistry.getAgent(msg.sender);
+        return agent.isActive;
     }
 
     /**

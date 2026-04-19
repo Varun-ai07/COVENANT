@@ -66,17 +66,19 @@ export async function GET(request: NextRequest) {
           return;
         }
 
+        // Convert bigint values to JSON-safe primitives for API consumers.
         tasks.push({
-          id: BigInt(taskIndex),
+          id: taskIndex,
           client,
           worker,
-          payment: payment as bigint,
-          deadline: deadline as bigint,
+          paymentWei: (payment as bigint).toString(),
+          paymentEth: (Number(payment as bigint) / 1e18).toFixed(6),
+          deadline: Number(deadline as bigint),
           descriptionHash,
           deliverableHash,
-          status: statusNum,
-          createdAt: createdAt as bigint,
-          completedAt: completedAt as bigint,
+          status: Number(statusNum),
+          createdAt: Number(createdAt as bigint),
+          completedAt: Number(completedAt as bigint),
         });
       } catch (error) {
         console.error(`Error processing task data:`, error);

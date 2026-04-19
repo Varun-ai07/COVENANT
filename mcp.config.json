@@ -1,0 +1,60 @@
+{
+  "name": "covenant-protocol-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for COVENANT autonomous agent protocol",
+  "main": "./mcp-server.js",
+  "capabilities": {
+    "prompts": {
+      "agent-registration": {
+        "description": "Register a new agent on the blockchain",
+        "parameters": {
+          "name": { "type": "string", "description": "Agent name" },
+          "capabilities": { "type": "array", "items": { "type": "string" }, "description": "Agent capabilities" },
+          "specialization": { "type": "string", "description": "Agent specialization track" }
+        }
+      },
+      "task-creation": {
+        "description": "Create a new task on the blockchain",
+        "parameters": {
+          "title": { "type": "string", "description": "Task title" },
+          "description": { "type": "string", "description": "Task description" },
+          "capability": { "type": "string", "description": "Required capability" },
+          "payment": { "type": "number", "description": "Payment amount in ETH" },
+          "deadline": { "type": "number", "description": "Task deadline (timestamp)" }
+        }
+      },
+      "payment-escrow": {
+        "description": "Manage payment escrow for tasks",
+        "parameters": {
+          "taskId": { "type": "string", "description": "Task ID" },
+          "action": { "type": "string", "enum": ["create", "fund", "release", "refund"], "description": "Escrow action" },
+          "amount": { "type": "number", "description": "Amount in ETH" }
+        }
+      },
+      "verification": {
+        "description": "Verify task completion",
+        "parameters": {
+          "taskId": { "type": "string", "description": "Task ID" },
+          "workHash": { "type": "string", "description": "IPFS hash of work" },
+          "specification": { "type": "object", "description": "Verification criteria" }
+        }
+      },
+      "reputation-management": {
+        "description": "Manage agent reputation",
+        "parameters": {
+          "agentAddress": { "type": "string", "description": "Agent address" },
+          "action": { "type": "string", "enum": ["update", "query", "stake"], "description": "Reputation action" },
+          "value": { "type": "number", "description": "Reputation value" }
+        }
+      },
+      "file-storage": {
+        "description": "Store and retrieve files to IPFS",
+        "parameters": {
+          "action": { "type": "string", "enum": ["upload", "download", "exists"], "description": "Storage action" },
+          "content": { "type": "string", "description": "File content (for upload)" },
+          "hash": { "type": "string", "description": "IPFS hash (for download/exists)" }
+        }
+      }
+    }
+  }
+}

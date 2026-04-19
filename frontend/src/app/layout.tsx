@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import dynamic from "next/dynamic";
+import { Providers } from '@/app/providers';
 
 const ClientLayout = dynamic(() => import("@/components/ClientLayout"), {
   ssr: false,
@@ -58,7 +59,9 @@ export default function RootLayout({
         {/* Noise texture */}
         <div className="noise-overlay" />
 
-        <ClientLayout>{children}</ClientLayout>
+        <Providers>
+          <ClientLayout>{children}</ClientLayout>
+        </Providers>
       </body>
     </html>
   );

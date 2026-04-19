@@ -6,7 +6,7 @@ import AgentRegistryABI from "@/contracts/AgentRegistry.json";
 import TaskEscrowABI from "@/contracts/TaskEscrow.json";
 import ReceiptVerifierABI from "@/contracts/ReceiptVerifier.json";
 import { useAllAgents, useAgentCount } from "@/hooks/useAgent";
-import { AgentCard } from "@/components/AgentCard";
+import AgentCard from "@/components/AgentCard";
 import { Agent } from "@/types";
 
 export default function LeaderboardPage() {

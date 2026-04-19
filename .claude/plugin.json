@@ -1,0 +1,130 @@
+{
+  "name": "covenant-protocol",
+  "title": "COVENANT Protocol",
+  "description": "Autonomous agent enforcement protocol for on-chain agent coordination and payment",
+  "version": "1.0.0",
+  "author": "Varun-ai07",
+  "license": "MIT",
+  "capabilities": [
+    "smart-contracts",
+    "agent-orchestration",
+    "blockchain-interaction",
+    "payment-escrow",
+    "reputation-management",
+    "zero-knowledge-proofs",
+    "file-storage",
+    "ai-integration"
+  ],
+  "configuration": {
+    "required": [
+      "BASE_SEPOLIA_RPC_URL",
+      "REGISTRY_ADDRESS",
+      "ESCROW_ADDRESS",
+      "VERIFIER_ADDRESS",
+      "MARKET_ADDRESS",
+      "BATCH_ADDRESS",
+      "COLLECTIVE_ADDRESS",
+      "CLIENT_PRIVATE_KEY",
+      "WORKER_PRIVATE_KEY",
+      "ANTHROPIC_API_KEY"
+    ],
+    "optional": [
+      "PRIVATE_KEY",
+      "BASESCAN_API_KEY",
+      "PINATA_API_KEY",
+      "PINATA_SECRET"
+    ]
+  },
+  "commands": [
+    {
+      "name": "demo",
+      "description": "Run the full protocol demo",
+      "usage": "./demo.sh [local|testnet]"
+    },
+    {
+      "name": "register-agent",
+      "description": "Register an agent on the blockchain",
+      "usage": "npx tsx register.ts"
+    },
+    {
+      "name": "run-client",
+      "description": "Run client agent only",
+      "usage": "npx tsx client.ts"
+    },
+    {
+      "name": "run-worker",
+      "description": "Run worker agent only",
+      "usage": "npx tsx worker.ts"
+    },
+    {
+      "name": "compile",
+      "description": "Compile Solidity contracts",
+      "usage": "npx hardhat compile"
+    },
+    {
+      "name": "test",
+      "description": "Run all tests",
+      "usage": "npx hardhat test"
+    },
+    {
+      "name": "dev-server",
+      "description": "Start development server",
+      "usage": "npm run dev (in frontend directory)"
+    }
+  ],
+  "dependencies": {
+    "@noble/ciphers": "^1.2.0",
+    "@noble/curves": "^1.7.0",
+    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@tanstack/react-query": "^5.90.21",
+    "next": "14.2.35",
+    "viem": "^2.47.2",
+    "wagmi": "^2.19.5"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18"
+  },
+  "networks": {
+    "base-sepolia": {
+      "chainId": 84532,
+      "rpcUrl": "BASE_SEPOLIA_RPC_URL",
+      "nativeCurrency": "ETH"
+    },
+    "localhost": {
+      "chainId": 31337,
+      "rpcUrl": "http://127.0.0.1:8545",
+      "nativeCurrency": "ETH"
+    }
+  },
+  "mcp": {
+    "enabled": true,
+    "tools": [
+      "contract-deployment",
+      "agent-registration",
+      "task-creation",
+      "payment-escrow",
+      "reputation-management",
+      "file-storage",
+      "verification"
+    ],
+    "capabilities": {
+      "read": [
+        "get-agent-info",
+        "get-task-status",
+        "get-network-stats",
+        "list-agents",
+        "get-verify-transaction"
+      ],
+      "write": [
+        "register-agent",
+        "create-task",
+        "submit-work",
+        "verify-task",
+        "stake-reputation",
+        "update-profile"
+      ]
+    }
+  }
+}

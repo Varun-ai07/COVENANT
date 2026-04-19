@@ -2,6 +2,7 @@
 
 import { formatEther } from "viem";
 import { Agent, getReputationLevel, formatAddress } from "@/types";
+import { memo } from "react";
 
 interface AgentCardProps {
   agent: Agent;
@@ -10,7 +11,7 @@ interface AgentCardProps {
   compact?: boolean;
 }
 
-export function AgentCard({ agent, address, rank, compact = false }: AgentCardProps) {
+const AgentCardFunction = memo(function AgentCard({ agent, address, rank, compact = false }: AgentCardProps) {
   const reputationLevel = getReputationLevel(Number(agent.reputation));
 
   if (compact) {
@@ -127,4 +128,8 @@ export function AgentCard({ agent, address, rank, compact = false }: AgentCardPr
       </div>
     </div>
   );
-}
+})
+
+export const AgentCard = memo(AgentCardFunction);
+
+export default memo(AgentCardFunction);

@@ -167,3 +167,6 @@ export function useParallelTaskBatch() {
     useWatchBatchVerified,
   };
 }
+
+// Re-export for backward compatibility
+export { useParallelTaskBatch as useParallelBatch };

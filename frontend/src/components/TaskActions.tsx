@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { useAccount } from "wagmi";
 import { TaskStatus } from "@/types";
-import { useSubmitWork, useVerifyTask, useDisputeTask } from "@/hooks/useTask";
+import { useSubmitWork, useVerifyTask, useDisputeTask, useTaskEscrowOwner, useResolveDispute } from "@/hooks/useTask";
 import { useToast } from "@/components/Toast";
 
 interface TaskActionsProps {
@@ -14,7 +15,9 @@ interface TaskActionsProps {
 }
 
 export function TaskActions({ taskId, status, isClient, isWorker, onSuccess }: TaskActionsProps) {
+  const { address } = useAccount();
   const { addToast } = useToast();
+  const { owner: escrowOwner } = useTaskEscrowOwner();
 
   const {
     submitWork,
@@ -43,6 +46,15 @@ export function TaskActions({ taskId, status, isClient, isWorker, onSuccess }: T
     error: disputeError,
   } = useDisputeTask();
 
+  const {
+    resolveDispute,
+    isPending: isResolvePending,
+    isConfirming: isResolveConfirming,
+    isSuccess: isResolveSuccess,
+    hash: resolveHash,
+    error: resolveError,
+  } = useResolveDispute();
+
   useEffect(() => {
     if (isSubmitSuccess) {
       addToast({ type: "success", title: "Work Submitted", message: "Deliverable uploaded successfully", txHash: submitHash });
@@ -65,6 +77,18 @@ export function TaskActions({ taskId, status, isClient, isWorker, onSuccess }: T
   }, [isDisputeSuccess, disputeHash]);
 
   useEffect(() => {
+    if (isResolveSuccess) {
+      addToast({
+        type: "success",
+        title: "Dispute Resolved",
+        message: "Arbitration completed and task state updated",
+        txHash: resolveHash,
+      });
+      onSuccess?.();
+    }
+  }, [isResolveSuccess, resolveHash]);
+
+  useEffect(() => {
     if (submitError) {
       const msg = submitError.message?.includes("User rejected") ? "Transaction rejected" : submitError.message?.slice(0, 100);
       addToast({ type: "error", title: "Submit Failed", message: msg });
@@ -85,8 +109,44 @@ export function TaskActions({ taskId, status, isClient, isWorker, onSuccess }: T
     }
   }, [disputeError]);
 
-  const handleSubmitWork = () => {
-    const deliverableHash = `QmSubmit${Date.now().toString(36)}`;
+  useEffect(() => {
+    if (resolveError) {
+      const msg = resolveError.message?.includes("User rejected") ? "Transaction rejected" : resolveError.message?.slice(0, 120);
+      addToast({ type: "error", title: "Resolve Failed", message: msg });
+    }
+  }, [resolveError]);
+
+  const handleSubmitWork = async () => {
+    const deliverablePayload = {
+      task: `Task #${taskId.toString()}`,
+      report: "Work submitted from dashboard action.",
+      completedAt: new Date().toISOString(),
+      source: "task-actions.submit-work",
+    };
+
+    let deliverableHash: string;
+    try {
+      const response = await fetch("/api/ipfs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload: deliverablePayload }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to store deliverable");
+      }
+
+      const data = (await response.json()) as { hash: string };
+      deliverableHash = data.hash;
+    } catch (error) {
+      addToast({
+        type: "error",
+        title: "Submit Failed",
+        message: error instanceof Error ? error.message : "Unable to persist deliverable",
+      });
+      return;
+    }
+
     submitWork(taskId, deliverableHash);
   };
 
@@ -98,13 +158,24 @@ export function TaskActions({ taskId, status, isClient, isWorker, onSuccess }: T
     disputeTask(taskId);
   };
 
+  const handleResolveDispute = (workerWins: boolean) => {
+    resolveDispute(taskId, workerWins);
+  };
+
+  const isEscrowOwner =
+    !!address &&
+    !!escrowOwner &&
+    address.toLowerCase() === escrowOwner.toLowerCase();
+
   const isLoading =
     isSubmitPending ||
     isSubmitConfirming ||
     isVerifyPending ||
     isVerifyConfirming ||
     isDisputePending ||
-    isDisputeConfirming;
+    isDisputeConfirming ||
+    isResolvePending ||
+    isResolveConfirming;
 
   return (
     <div className="space-y-4">
@@ -197,11 +268,34 @@ export function TaskActions({ taskId, status, isClient, isWorker, onSuccess }: T
         </div>
       )}
       {status === TaskStatus.Disputed && (
-        <div className="text-center py-4 px-4 bg-orange-500/10 text-orange-400 rounded-xl border border-orange-500/20 flex items-center justify-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          Task under dispute - awaiting resolution
+        <div className="space-y-3">
+          <div className="text-center py-4 px-4 bg-orange-500/10 text-orange-400 rounded-xl border border-orange-500/20 flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            {isEscrowOwner
+              ? "Task under dispute - arbitration action required"
+              : "Task under dispute - awaiting protocol owner resolution"}
+          </div>
+
+          {isEscrowOwner && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button
+                onClick={() => handleResolveDispute(true)}
+                disabled={isLoading}
+                className="py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isResolvePending || isResolveConfirming ? "Resolving..." : "Resolve: Worker Wins"}
+              </button>
+              <button
+                onClick={() => handleResolveDispute(false)}
+                disabled={isLoading}
+                className="py-3 bg-rose-600 text-white rounded-xl font-medium hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isResolvePending || isResolveConfirming ? "Resolving..." : "Resolve: Client Wins"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -7,19 +7,25 @@ import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
 describe("OpenTaskMarket", function () {
   let registry, market, owner, client, bidder1, bidder2, bidder3;
   const MIN_STAKE = ethers.parseEther("0.001");
-  const DESCRIPTION_HASH = ethers.encodeBytes32String("QmOpenTaskDescription123");
-  const PROPOSAL_HASH = ethers.encodeBytes32String("QmProposalHash456");
+  const DESCRIPTION_HASH = "QmOpenTaskDescription123";
+  const PROPOSAL_HASH = "QmProposalHash456";
 
   async function deployFixture() {
+    console.log("=== STARTING deployFixture ===");
     const [owner, client, bidder1, bidder2, bidder3] = await ethers.getSigners();
 
     const Registry = await ethers.getContractFactory("AgentRegistry");
-    registry = await Registry.deploy();
+    const registry = await Registry.deploy();
 
     // Give all bidders enough ETH to stake
     await owner.sendTransaction({ to: bidder1.address, value: ethers.parseEther("1") });
     await owner.sendTransaction({ to: bidder2.address, value: ethers.parseEther("1") });
     await owner.sendTransaction({ to: bidder3.address, value: ethers.parseEther("1") });
+    // Give client ETH for registration stake
+    await owner.sendTransaction({ to: client.address, value: ethers.parseEther("0.01") });
+
+    // Wait for funding transactions to be confirmed
+    await ethers.provider.send("evm_mine", []);
 
     // Register all agents
     await registry.connect(client).register("ClientAgent", ["hiring"], { value: MIN_STAKE });
@@ -27,22 +33,92 @@ describe("OpenTaskMarket", function () {
     await registry.connect(bidder2).register("Bidder2", ["design"], { value: MIN_STAKE });
     await registry.connect(bidder3).register("Bidder3", ["analysis"], { value: MIN_STAKE });
 
+    // Wait for registration transactions to be confirmed
+    await ethers.provider.send("evm_mine", []);
+
+    // Debug: Check if client is actually registered and active
+    const clientAgent = await registry.getAgent(client.address);
+    console.log("Client agent info:", {
+      address: client.address,
+      isActive: clientAgent.isActive,
+      name: clientAgent.name,
+      capabilities: clientAgent.capabilities,
+      reputation: clientAgent.reputation.toString()
+    });
+
     const Market = await ethers.getContractFactory("OpenTaskMarket");
-    market = await Market.deploy(await registry.getAddress());
+    const market = await Market.deploy(await registry.getAddress());
     // Authorize market to call registry for reputation updates
-    await registry.addAuthorizedContract(await market.getAddress());
+    await registry.connect(owner).addAuthorizedContract(await market.getAddress());
+    // Wait for authorization transaction to be confirmed
+    await ethers.provider.send("evm_mine", []);
+
+    // Debug: Check market's registry address and client agent status via market's registry
+    const marketRegistryAddress = await market.agentRegistry();
+    console.log("Market's registry address:", marketRegistryAddress);
+    const marketRegistry = await ethers.getContractAt("AgentRegistry", marketRegistryAddress);
+    const marketClientAgent = await marketRegistry.getAgent(client.address);
+    console.log("Client agent as seen by market's registry:", {
+      address: client.address,
+      isActive: marketClientAgent.isActive,
+      name: marketClientAgent.name
+    });
 
     return { registry, market, owner, client, bidder1, bidder2, bidder3 };
   }
 
   describe("Posting Tasks", function () {
     it("should post an open task successfully", async function () {
-      const { market, client } = await loadFixture(deployFixture);
+      const { market, client, registry } = await loadFixture(deployFixture);
       const maxPayment = ethers.parseEther("0.5");
       const deadline = (await time.latest()) + 86400;
 
+      // Debug: Check addresses
+      console.log("Client address:", client.address);
+      console.log("Registry address from fixture:", await registry.getAddress());
+      console.log("Registry address in market:", await market.agentRegistry());
+      console.log("Are they equal?", (await registry.getAddress()) === (await market.agentRegistry()));
+
+      // Debug: Check client agent status again right before posting
+      const clientAgentBeforePost = await registry.getAgent(client.address);
+      console.log("Client agent info before post:", {
+        address: client.address,
+        isActive: clientAgentBeforePost.isActive,
+        name: clientAgentBeforePost.name
+      });
+
+      // Debug: Check what the market contract sees
+      const marketRegistryAddress = await market.agentRegistry();
+      console.log("Market's registry address:", marketRegistryAddress);
+      const marketRegistry = await ethers.getContractAt("AgentRegistry", marketRegistryAddress);
+      const marketClientAgent = await marketRegistry.getAgent(client.address);
+      console.log("Client agent as seen by market contract:", {
+        address: client.address,
+        isActive: marketClientAgent.isActive,
+        name: marketClientAgent.name,
+        reputation: marketClientAgent.reputation.toString()
+      });
+
+      // Debug: Check agent status through market contract (as client)
+      const agentStatusViaMarket = await market.connect(client).debugCheckAgentStatus();
+      console.log("Client agent status via market contract:", agentStatusViaMarket);
+
+      // Let's also debug what happens inside the postTask call by adding a test that calls registry directly
+      console.log("Testing direct registry call from test:");
+      const directAgent = await registry.getAgent(client.address);
+      console.log("Direct registry call result:", {
+        address: client.address,
+        isActive: directAgent.isActive,
+        name: directAgent.name
+      });
+
+      // Debug: Check the actual sender
+      console.log("About to call postTask with client.address:", client.address);
+      console.log("Market contract address:", await market.getAddress());
+      console.log("Caller address in test:", client.address);
+
       await expect(
-        market.connect(client).postOpenTask(maxPayment, deadline, DESCRIPTION_HASH)
+        market.connect(client).postTask(maxPayment, deadline, DESCRIPTION_HASH)
       )
         .to.emit(market, "TaskPosted")
         .withArgs(1, client.address, maxPayment, deadline, DESCRIPTION_HASH);
@@ -71,7 +147,7 @@ describe("OpenTaskMarket", function () {
     it("should reject empty description hash", async function () {
       const { market, client } = await loadFixture(deployFixture);
       const deadline = (await time.latest()) + 86400;
-      await expect(market.connect(client).postOpenTask(ethers.parseEther("0.1"), deadline, ethers.ZeroHash))
+      await expect(market.connect(client).postOpenTask(ethers.parseEther("0.1"), deadline, ""))
         .to.be.revertedWithCustomError(market, "EmptyDescriptionHash");
     });
 
@@ -89,10 +165,65 @@ describe("OpenTaskMarket", function () {
     let fixture;
 
     beforeEach(async function () {
+      console.log("=== SUBMITTING BIDS BEFORE EACH ===");
       fixture = await loadFixture(deployFixture);
+      console.log("Client address:", fixture.client.address);
+
+      // Check client agent status
+      const clientAgent = await fixture.registry.getAgent(fixture.client.address);
+      console.log("Client agent status:", {
+        address: fixture.client.address,
+        isActive: clientAgent.isActive,
+        name: clientAgent.name
+      });
+
+      // Debug: Check market's registry address
+      const marketRegistryAddress = await fixture.market.agentRegistry();
+      console.log("Market's registry address:", marketRegistryAddress);
+      console.log("Registry address from fixture:", await fixture.registry.getAddress());
+      console.log("Are they equal?", marketRegistryAddress === await fixture.registry.getAddress());
+
+      // Debug: Check agent status through market contract (as client)
+      const agentStatusViaMarket = await fixture.market.connect(fixture.client).debugCheckAgentStatus();
+      console.log("Client agent status via market contract:", agentStatusViaMarket);
+
+      // Debug: Check what the market contract sees for the client agent
+      const marketRegistry = await ethers.getContractAt("AgentRegistry", marketRegistryAddress);
+      const marketClientAgent = await marketRegistry.getAgent(fixture.client.address);
+      console.log("Client agent as seen by market's registry:", {
+        address: fixture.client.address,
+        isActive: marketClientAgent.isActive,
+        name: marketClientAgent.name
+      });
+
+      // Debug: Check agent status via registry when called as client
+      const clientAgentViaRegistryAsClient = await fixture.registry.connect(fixture.client).getAgent(fixture.client.address);
+      console.log("Client agent as seen by registry when called as client:", {
+        address: fixture.client.address,
+        isActive: clientAgentViaRegistryAsClient.isActive,
+        name: clientAgentViaRegistryAsClient.name
+      });
+
+      // Additional debug: Check the actual addresses being used
+      console.log("Fixture client address:", fixture.client.address);
+      const marketAddress = await fixture.market.getAddress();
+      console.log("Fixture market address:", marketAddress);
+
       const deadline = (await time.latest()) + 86400;
-      const tx = await fixture.market.connect(fixture.client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
+      console.log("About to post task with params:");
+      console.log("  maxPayment:", ethers.parseEther("1").toString());
+      console.log("  deadline:", deadline);
+      console.log("  descriptionHash:", DESCRIPTION_HASH);
+      console.log("  client address (will be msg.sender):", fixture.client.address);
+
+      // Ensure all transactions are mined
+      await ethers.provider.send("evm_mine", []);
+
+      console.log("Calling postTask...");
+      const tx = await fixture.market.connect(fixture.client).postTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
+      console.log("Transaction sent, waiting for receipt...");
       const receipt = await tx.wait();
+      console.log("Task posted successfully! Task ID:", 1);
       taskId = 1;
     });
 
@@ -105,11 +236,12 @@ describe("OpenTaskMarket", function () {
         market.connect(bidder1).submitBid(taskId, bidPrice, timeEstimate, PROPOSAL_HASH)
       )
         .to.emit(market, "BidSubmitted")
-        .withArgs(taskId, bidder1.address, bidPrice, timeEstimate);
+        .withArgs(taskId, bidder1.address, bidPrice, timeEstimate, PROPOSAL_HASH);
 
       const task = await market.getTask(taskId);
-      expect(task.bidders.length).to.equal(1);
-      expect(task.bidders[0]).to.equal(bidder1.address);
+      const [price, timeEstimate, proposal, bidAt, bidder, hasCounter, counterPrice, counterTimeEstimate, counterProposal] = await market.getBid(taskId, bidder1.address);
+      expect(price).to.be.gt(0);
+      expect(bidder).to.equal(bidder1.address);
     });
 
     it("should reject duplicate bids from same bidder", async function () {
@@ -139,8 +271,10 @@ describe("OpenTaskMarket", function () {
       await market.connect(bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
       await market.connect(bidder2).submitBid(taskId, ethers.parseEther("0.25"), 7200, PROPOSAL_HASH);
 
-      const task = await market.getTask(taskId);
-      expect(task.bidders.length).to.equal(2);
+      const bid1 = await market.getBid(taskId, bidder1.address);
+      const bid2 = await market.getBid(taskId, bidder2.address);
+      expect(bid1.price).to.be.gt(0);
+      expect(bid2.price).to.be.gt(0);
     });
 
     it("should return all bids for a task", async function () {
@@ -148,26 +282,40 @@ describe("OpenTaskMarket", function () {
       await market.connect(bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
       await market.connect(bidder2).submitBid(taskId, ethers.parseEther("0.25"), 7200, PROPOSAL_HASH);
 
-      const [bidders, prices, timeEstimates, proposals, bidAts] = await market.getAllBids(taskId);
-      expect(bidders.length).to.equal(2);
-      expect(prices[0]).to.equal(ethers.parseEther("0.3"));
-      expect(prices[1]).to.equal(ethers.parseEther("0.25"));
-      expect(timeEstimates[0]).to.equal(3600);
-      expect(timeEstimates[1]).to.equal(7200);
+      const bid1 = await market.getBid(taskId, bidder1.address);
+      const bid2 = await market.getBid(taskId, bidder2.address);
+      expect(bid1.price).to.equal(ethers.parseEther("0.3"));
+      expect(bid2.price).to.equal(ethers.parseEther("0.25"));
+      expect(bid1.timeEstimate).to.equal(3600);
+      expect(bid2.timeEstimate).to.equal(7200);
     });
   });
 
   describe("Selecting Workers", function () {
     let taskId;
-    let fixture;
 
     beforeEach(async function () {
-      fixture = await loadFixture(deployFixture);
+      console.log("=== SELECTING WORKERS BEFORE EACH ===");
+      const { market, client, registry } = await loadFixture(deployFixture);
+      console.log("Client address:", client.address);
+
+      // Check client agent status
+      const clientAgent = await registry.getAgent(client.address);
+      console.log("Client agent status:", {
+        address: client.address,
+        isActive: clientAgent.isActive,
+        name: clientAgent.name
+      });
+
+      // Debug: Check agent status through market contract (as client)
+      const agentStatusViaMarket = await market.connect(client).debugCheckAgentStatus();
+      console.log("Client agent status via market contract:", agentStatusViaMarket);
+
       const deadline = (await time.latest()) + 86400;
-      await fixture.market.connect(fixture.client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
+      await market.connect(client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
       taskId = 1;
-      await fixture.market.connect(fixture.bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
-      await fixture.market.connect(fixture.bidder2).submitBid(taskId, ethers.parseEther("0.25"), 7200, PROPOSAL_HASH);
+      await market.connect(bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
+      await market.connect(bidder2).submitBid(taskId, ethers.parseEther("0.25"), 7200, PROPOSAL_HASH);
     });
 
     it("should allow client to select a worker", async function () {
@@ -203,14 +351,28 @@ describe("OpenTaskMarket", function () {
 
   describe("Withdrawing Bids", function () {
     let taskId;
-    let fixture;
 
     beforeEach(async function () {
-      fixture = await loadFixture(deployFixture);
+      console.log("=== WITHDRAWING BIDS BEFORE EACH ===");
+      const { market, client, registry } = await loadFixture(deployFixture);
+      console.log("Client address:", client.address);
+
+      // Check client agent status
+      const clientAgent = await registry.getAgent(client.address);
+      console.log("Client agent status:", {
+        address: client.address,
+        isActive: clientAgent.isActive,
+        name: clientAgent.name
+      });
+
+      // Debug: Check agent status through market contract (as client)
+      const agentStatusViaMarket = await market.connect(client).debugCheckAgentStatus();
+      console.log("Client agent status via market contract:", agentStatusViaMarket);
+
       const deadline = (await time.latest()) + 86400;
-      await fixture.market.connect(fixture.client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
+      await market.connect(client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
       taskId = 1;
-      await fixture.market.connect(fixture.bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
+      await market.connect(bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
     });
 
     it("should allow bidder to withdraw bid", async function () {
@@ -239,15 +401,29 @@ describe("OpenTaskMarket", function () {
 
   describe("Confirm and Pay", function () {
     let taskId;
-    let fixture;
 
     beforeEach(async function () {
-      fixture = await loadFixture(deployFixture);
+      console.log("=== CONFIRM AND PAY BEFORE EACH ===");
+      const { market, client, registry } = await loadFixture(deployFixture);
+      console.log("Client address:", client.address);
+
+      // Check client agent status
+      const clientAgent = await registry.getAgent(client.address);
+      console.log("Client agent status:", {
+        address: client.address,
+        isActive: clientAgent.isActive,
+        name: clientAgent.name
+      });
+
+      // Debug: Check agent status through market contract (as client)
+      const agentStatusViaMarket = await market.connect(client).debugCheckAgentStatus();
+      console.log("Client agent status via market contract:", agentStatusViaMarket);
+
       const deadline = (await time.latest()) + 86400;
-      await fixture.market.connect(fixture.client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
+      await market.connect(client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
       taskId = 1;
-      await fixture.market.connect(fixture.bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
-      await fixture.market.connect(fixture.client).selectWorker(taskId, fixture.bidder1.address);
+      await market.connect(bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
+      await market.connect(client).selectWorker(taskId, bidder1.address);
     });
 
     it("should pay worker on success", async function () {
@@ -307,14 +483,28 @@ describe("OpenTaskMarket", function () {
 
   describe("Cancel Task", function () {
     let taskId;
-    let fixture;
 
     beforeEach(async function () {
-      fixture = await loadFixture(deployFixture);
+      console.log("=== CANCEL TASK BEFORE EACH ===");
+      const { market, client, registry } = await loadFixture(deployFixture);
+      console.log("Client address:", client.address);
+
+      // Check client agent status
+      const clientAgent = await registry.getAgent(client.address);
+      console.log("Client agent status:", {
+        address: client.address,
+        isActive: clientAgent.isActive,
+        name: clientAgent.name
+      });
+
+      // Debug: Check agent status through market contract (as client)
+      const agentStatusViaMarket = await market.connect(client).debugCheckAgentStatus();
+      console.log("Client agent status via market contract:", agentStatusViaMarket);
+
       const deadline = (await time.latest()) + 86400;
-      await fixture.market.connect(fixture.client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
+      await market.connect(client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
       taskId = 1;
-      await fixture.market.connect(fixture.bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
+      await market.connect(bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
     });
 
     it("should allow client to cancel task", async function () {
@@ -340,14 +530,28 @@ describe("OpenTaskMarket", function () {
 
   describe("Get Bid", function () {
     let taskId;
-    let fixture;
 
     beforeEach(async function () {
-      fixture = await loadFixture(deployFixture);
+      console.log("=== GET BID BEFORE EACH ===");
+      const { market, client, registry } = await loadFixture(deployFixture);
+      console.log("Client address:", client.address);
+
+      // Check client agent status
+      const clientAgent = await registry.getAgent(client.address);
+      console.log("Client agent status:", {
+        address: client.address,
+        isActive: clientAgent.isActive,
+        name: clientAgent.name
+      });
+
+      // Debug: Check agent status through market contract (as client)
+      const agentStatusViaMarket = await market.connect(client).debugCheckAgentStatus();
+      console.log("Client agent status via market contract:", agentStatusViaMarket);
+
       const deadline = (await time.latest()) + 86400;
-      await fixture.market.connect(fixture.client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
+      await market.connect(client).postOpenTask(ethers.parseEther("1"), deadline, DESCRIPTION_HASH);
       taskId = 1;
-      await fixture.market.connect(fixture.bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
+      await market.connect(bidder1).submitBid(taskId, ethers.parseEther("0.3"), 3600, PROPOSAL_HASH);
     });
 
     it("should return specific bid details", async function () {

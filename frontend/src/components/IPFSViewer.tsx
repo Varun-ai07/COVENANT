@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  isLikelyLegacyPlaceholderHash,
+  loadLocalIpfsContent,
+  normalizeIpfsHash,
+} from "@/lib/local-ipfs";
 
 interface IPFSViewerProps {
   hash: string;
@@ -15,34 +20,79 @@ interface IPFSData {
   report?: string;
   completedAt?: string;
   workerAddress?: string;
+  raw?: string;
   [key: string]: unknown;
 }
 
+function asStructuredPayload(payload: unknown): IPFSData {
+  if (payload && typeof payload === "object") {
+    return payload as IPFSData;
+  }
+
+  if (typeof payload === "string") {
+    return { raw: payload };
+  }
+
+  return { raw: String(payload ?? "") };
+}
+
 export function IPFSViewer({ hash, label = "IPFS Content" }: IPFSViewerProps) {
+  const normalizedHash = normalizeIpfsHash(hash);
   const [data, setData] = useState<IPFSData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    if (!hash || !expanded) return;
+    if (!normalizedHash || !expanded) return;
 
     const fetchIPFS = async () => {
+      const localCached = loadLocalIpfsContent(normalizedHash);
+      if (localCached) {
+        setData(asStructuredPayload(localCached));
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
+      if (isLikelyLegacyPlaceholderHash(normalizedHash)) {
+        setError("Legacy placeholder hash detected (no content was uploaded for this task).");
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
-        const localResponse = await fetch(`/api/ipfs/${hash}`);
+        const localResponse = await fetch(`/api/ipfs/${encodeURIComponent(normalizedHash)}`);
         if (localResponse.ok) {
-          const json = await localResponse.json();
-          setData(json);
+          const payload = await localResponse.json();
+          setData(asStructuredPayload(payload));
           return;
         }
 
-        const gatewayResponse = await fetch(`https://gateway.pinata.cloud/ipfs/${hash}`);
-        if (gatewayResponse.ok) {
-          const json = await gatewayResponse.json();
-          setData(json);
+        const gateways = [
+          "https://gateway.pinata.cloud/ipfs",
+          "https://ipfs.io/ipfs",
+          "https://cloudflare-ipfs.com/ipfs",
+        ];
+
+        for (const gateway of gateways) {
+          const gatewayResponse = await fetch(`${gateway}/${normalizedHash}`, {
+            headers: { Accept: "application/json,text/plain,*/*" },
+          });
+
+          if (!gatewayResponse.ok) {
+            continue;
+          }
+
+          const bodyText = await gatewayResponse.text();
+          try {
+            setData(asStructuredPayload(JSON.parse(bodyText)));
+          } catch {
+            setData(asStructuredPayload(bodyText));
+          }
           return;
         }
 
@@ -55,9 +105,9 @@ export function IPFSViewer({ hash, label = "IPFS Content" }: IPFSViewerProps) {
     };
 
     fetchIPFS();
-  }, [hash, expanded]);
+  }, [normalizedHash, expanded]);
 
-  if (!hash) {
+  if (!normalizedHash) {
     return (
       <div className="bg-black/20 rounded-xl p-6 text-center text-slate-500 border border-white/5">
         <svg className="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +132,7 @@ export function IPFSViewer({ hash, label = "IPFS Content" }: IPFSViewerProps) {
           </div>
           <div className="text-left">
             <span className="text-white font-medium block">{label}</span>
-            <span className="text-slate-500 text-xs font-mono">{hash.slice(0, 24)}...</span>
+            <span className="text-slate-500 text-xs font-mono">{normalizedHash.slice(0, 24)}...</span>
           </div>
         </div>
         <svg
@@ -142,6 +192,14 @@ export function IPFSViewer({ hash, label = "IPFS Content" }: IPFSViewerProps) {
                 <div>
                   <p className="text-slate-500 text-xs mb-1">Completed At</p>
                   <p className="text-slate-300">{new Date(data.completedAt).toLocaleString()}</p>
+                </div>
+              )}
+              {data.raw && (
+                <div>
+                  <p className="text-slate-500 text-xs mb-1">Raw Content</p>
+                  <div className="bg-black/30 rounded-lg p-4 max-h-64 overflow-y-auto border border-white/5">
+                    <pre className="text-slate-300 text-sm whitespace-pre-wrap">{data.raw}</pre>
+                  </div>
                 </div>
               )}
               <div className="pt-4 border-t border-white/5">

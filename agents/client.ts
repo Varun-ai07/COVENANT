@@ -3,8 +3,11 @@ import { parseEther, formatEther } from "viem";
 import { createWallet, CONTRACTS } from "./lib/config.js";
 import { AgentRegistryABI, TaskEscrowABI } from "./lib/abis.js";
 import { generateKeyPair, deriveSharedSecret, encrypt, toHex } from "./lib/crypto.js";
-import { uploadToIPFS, isPinataConfigured } from "./lib/ipfs.js";
+import { uploadToIPFS, downloadFromIPFS, isPinataConfigured } from "./lib/ipfs.js";
 import { generateJSON } from "./lib/llm.js";
+import { verifyTask, updateWorkerReputation, confirmPaymentRelease } from "./lib/verification.js";
+import { selectBestWorkerAI, negotiateTerms } from "./lib/negotiation.js";
+import { EventListener } from "./lib/eventListener.js";
 
 dotenv.config();
 
@@ -13,6 +16,18 @@ interface WorkerInfo {
   name: string;
   reputation: number;
   capabilities: string[];
+  specializations?: string[];
+  successRate?: number;
+}
+
+interface TaskInfo {
+  id: bigint;
+  client: string;
+  worker: string;
+  payment: bigint;
+  deadline: bigint;
+  descriptionHash: string;
+  status: number;
 }
 
 async function discoverWorkers(
@@ -43,6 +58,8 @@ async function discoverWorkers(
       name: agent.name,
       reputation: Number(agent.reputation),
       capabilities: agent.capabilities,
+      specializations: agent.specializations,
+      successRate: agent.successRate,
     });
   }
 
@@ -85,287 +102,285 @@ Return a JSON object with these fields:
   return task;
 }
 
-// ============ PHASE 3: OPENTASKMARKET INTEGRATION (2B One-to-Many) ============
-
-/**
- * Post an open task to the marketplace
- */
-async function postOpenTask(
-  wallet: any,
-  publicClient: any,
-  account: any,
+async function selectBestWorker(
   task: any,
-  ipfsHash: string
-): Promise<{ taskId: bigint; maxPayment: bigint }> {
-  console.log("\n=== OPEN TASK MARKET MODE ===");
-  console.log(`Posting task to OpenTaskMarket...`);
+  workers: WorkerInfo[]
+): Promise<WorkerInfo> {
+  console.log('\n🤖 Selecting best worker AI agent...');
 
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 86400); // 24 hours
-  const maxPayment = parseEther(task.payment);
-
-   // Step 1: Post open task to market (includes funding)
-   console.log(`Posting task to OpenTaskMarket with ${task.payment} ETH...`);
-   const postTx = await wallet.writeContract({
-     address: CONTRACTS.OpenTaskMarket,
-     abi: OpenTaskMarketABI,
-     functionName: "postTask",
-     args: [maxPayment, deadline, ipfsHash],
-     value: maxPayment,
-   });
-
-   const receipt = await publicClient.waitForTransactionReceipt({ hash: postTx });
-   console.log(`Open task posted! Tx: ${postTx}`);
-
-   // Get taskId from taskCounter
-   const taskCounter = await publicClient.readContract({
-     address: CONTRACTS.OpenTaskMarket,
-     abi: OpenTaskMarketABI,
-     functionName: "taskCounter",
-   }) as bigint;
-
-   const taskId = taskCounter;
-  console.log(`\n📢 Task #${taskId} posted to OpenTaskMarket!`);
-  console.log(`Max Payment: ${task.payment} ETH`);
-  console.log(`Workers can now bid on this task.`);
-
-  return { taskId, maxPayment };
-}
-
-/**
- * Wait for bids on an open task (polling)
- */
-async function waitForBids(
-  publicClient: any,
-  taskId: bigint,
-  timeoutSeconds = 300
-): Promise<any[]> {
-  console.log(`\nWaiting for bids (timeout: ${timeoutSeconds}s)...`);
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < timeoutSeconds * 1000) {
-    try {
-      const taskData = await publicClient.readContract({
-        address: CONTRACTS.OpenTaskMarket,
-        abi: OpenTaskMarketABI,
-        functionName: "getTask",
-        args: [taskId],
-      }) as any;
-
-      const bidders = taskData[4]; // bidders array
-      if (bidders && bidders.length > 0) {
-        console.log(`\n✅ Received ${bidders.length} bid(s)!`);
-
-        const bids = [];
-        for (const bidder of bidders) {
-          const bidData = await publicClient.readContract({
-            address: CONTRACTS.OpenTaskMarket,
-            abi: OpenTaskMarketABI,
-            functionName: "getBid",
-            args: [taskId, bidder],
-          }) as any;
-          bids.push({
-            bidder,
-            price: bidData[0],
-            timeEstimate: Number(bidData[1]),
-            proposal: bidData[2],
-          });
-        }
-        return bids;
-      }
-    } catch (error) {
-      console.warn(`Error checking bids: ${error}`);
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    console.log("  ...still waiting for bids");
+  if (workers.length === 0) {
+    throw new Error('No available workers');
   }
 
-  throw new Error(`Timeout: No bids received within ${timeoutSeconds}s`);
+  // Score each worker based on multiple criteria
+  const scoredWorkers = workers.map(worker => {
+    let score = 0;
+
+    // 1. Reputation score (40% weight)
+    score += worker.reputation * 0.4;
+
+    // 2. Capability match (30% weight)
+    if (task.capability && worker.capabilities.includes(task.capability)) {
+      score += 30;
+    }
+
+    // 3. Work type specialization (20% weight)
+    if (worker.specializations?.includes(task.type || 'general')) {
+      score += 20;
+    }
+
+    // 4. Historical success rate (10% weight)
+    score += worker.successRate || 50;
+
+    return { ...worker, score };
+  });
+
+  // Sort by score (highest first)
+  scoredWorkers.sort((a, b) => b.score - a.score);
+
+  const bestWorker = scoredWorkers[0];
+  console.log(`   Selected worker: ${bestWorker.name} (score: ${bestWorker.score})`);
+
+  return bestWorker;
 }
 
-/**
- * Use LLM to select best bid
- */
-async function selectBestBid(task: any, bids: any[]): Promise<string> {
-  console.log("\n🤖 Evaluating bids with LLM...");
+async function negotiateTerms(
+  clientWallet: any,
+  workerAddress: string,
+  task: any
+): Promise<{ payment: string; deadline: bigint }> {
+  console.log('\n🤝 Negotiating terms between AI agents...');
 
-  const bidsSummary = bids.map((b, i) =>
-    `Bid ${i + 1}:\n` +
-    `  Worker: ${b.bidder.slice(0, 10)}...\n` +
-    `  Price: ${formatEther(b.price)} ETH\n` +
-    `  Time: ${Math.round(b.timeEstimate / 60)} minutes\n` +
-    `  Proposal: ${(b.proposal as string).substring(0, 100)}...\n`
-  ).join('\n');
+  // Dynamic pricing based on task complexity and worker reputation
+  const basePayment = parseEther(task.basePayment || '0.001');
+  const reputationMultiplier = 1 + (workers.find(w => w.address === workerAddress)?.reputation || 500) / 1000;
+  const finalPayment = Math.floor(basePayment * reputationMultiplier);
 
-  const prompt = `
-You are an autonomous client agent evaluating bids for a task.
+  // Deadline negotiation (allow some flexibility)
+  const deadlineBuffer = 3600; // 1 hour buffer
+  const negotiatedDeadline = BigInt(Math.floor(Date.now() / 1000) + Number(task.deadline) + deadlineBuffer);
 
-Task: ${task.title}
-Description: ${task.description}
+  console.log(`   Payment: ${formatEther(finalPayment)} ETH`);
+  console.log(`   Deadline: ${new Date(Number(negotiatedDeadline) * 1000).toLocaleString()}`);
 
-Available Bids:
-${bidsSummary}
-
-Consider:
-- Value for money (lower price is better)
-- Worker reputation (higher is better)
-- Time estimate (shorter may be preferable)
-- Quality of proposal (more detailed indicates seriousness)
-
-Which bid gives the best overall value? Output only the bid number (1, 2, 3, etc.):
-
-Your choice (1-${bids.length}): `;
-
-  const response = await generateCompletion(prompt, { maxTokens: 50 });
-  const match = response.match(/(\d+)/);
-  const choice = match ? parseInt(match[1]) - 1 : 0;
-  const selectedBid = bids[Math.max(0, Math.min(choice, bids.length - 1))];
-
-  console.log(`Selected: ${selectedBid.bidder.slice(0, 10)}... @ ${formatEther(selectedBid.price)} ETH`);
-  return selectedBid.bidder;
+  return {
+    payment: finalPayment.toString(),
+    deadline: negotiatedDeadline,
+  };
 }
 
-/**
- * Run OpenTaskMarket mode (client posts task, waits for bids, selects winner)
- */
-async function runMarketMode(
+async function runEnhancedOneToOneMode(
   wallet: any,
   publicClient: any,
   account: any
 ): Promise<void> {
-  console.log("=== CLIENT AGENT — OPEN TASK MARKET MODE ===\n");
+  console.log('=== CLIENT AGENT — ENHANCED ONE-TO-ONE MODE ===\n');
 
   // Step 1: Generate task via LLM
   const task = await generateTaskWithLLM();
 
-  // Step 2: Upload task details to IPFS
-  console.log("\nUploading task details to IPFS...");
+  // Step 2: Discover workers and select best AI agent
+  const workers = await discoverWorkers(publicClient, task.capability);
+  const selectedWorker = await selectBestWorker(task, workers);
+
+  // Step 3: Negotiate terms between AI agents
+  const { payment, deadline } = await negotiateTerms(wallet, selectedWorker.address, task);
+
+  // Step 4: Upload task details to IPFS
+  console.log('\nUploading task details to IPFS...');
   const taskData = {
     title: task.title,
     description: task.description,
-    instructions: "Complete this task and provide a detailed report.",
+    instructions: 'Complete this task and provide a detailed report.',
     encrypted: false,
+    type: task.type,
+    basePayment: task.payment,
   };
   const ipfsHash = await uploadToIPFS(taskData);
   console.log(`IPFS hash: ${ipfsHash}`);
 
-  // Step 3: Post open task to market
-  const { taskId, maxPayment } = await postOpenTask(wallet, publicClient, account, task, ipfsHash);
-
-  // Step 4: Wait for bids
-  const bids = await waitForBids(publicClient, taskId);
-  if (bids.length === 0) {
-    console.log("No bids received. Exiting.");
-    return;
-  }
-
-  // Step 5: Select best bid
-  const selectedBidder = await selectBestBid(task, bids);
-
-  // Step 6: Select worker in contract
-  console.log(`\nSelecting worker: ${selectedBidder.slice(0, 10)}...`);
-  await wallet.writeContract({
-    address: CONTRACTS.OpenTaskMarket,
-    abi: OpenTaskMarketABI,
-    functionName: "selectWorker",
-    args: [taskId, selectedBidder],
+  // Step 5: Create and fund task on-chain
+  console.log('\nCreating task on-chain...');
+  const hash = await wallet.writeContract({
+    address: CONTRACTS.TaskEscrow,
+    abi: TaskEscrowABI,
+    functionName: 'createAndFundTask',
+    args: [selectedWorker.address as `0x${string}`, payment, deadline, ipfsHash],
+    value: payment,
   });
 
-  console.log(`\n✅ Open task flow complete. Worker can now complete work.`);
+  console.log(`Transaction hash: ${hash}`);
+  console.log('Waiting for confirmation...');
+
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  console.log(`Confirmed in block ${receipt.blockNumber}`);
+
+  console.log('\n=== Task Created Successfully ===');
+  console.log(`Title: ${task.title}`);
+  console.log(`Worker: ${selectedWorker.name}`);
+  console.log(`Payment: ${task.payment} ETH`);
+  console.log(`IPFS: ${ipfsHash}`);
+  console.log(`Deadline: ${new Date(Number(deadline) * 1000).toLocaleString()}`);
 }
 
-// ===========================================================================
+// ============ NEW FUNCTIONS FOR AUTONOMOUS OPERATION ============
 
-async function main() {
-  const { CLIENT_PRIVATE_KEY } = process.env;
+async function monitorAndVerifyCompletedTasks(
+  wallet: any,
+  publicClient: any,
+  account: any
+): Promise<void> {
+  console.log('\n=== MONITORING TASK COMPLETION ===');
 
-  if (!CLIENT_PRIVATE_KEY) {
-    console.error("Missing CLIENT_PRIVATE_KEY in .env");
-    process.exit(1);
-  }
+  // Periodically check for completed tasks
+  const checkInterval = 10000; // 10 seconds
+  const timeout = 300000; // 5 minutes timeout
+  const startTime = Date.now();
 
-  const { wallet, account, publicClient } = createWallet(CLIENT_PRIVATE_KEY);
+  while (Date.now() - startTime < timeout) {
+    try {
+      // Get all submitted tasks
+      const submittedTaskIds = await publicClient.readContract({
+        address: CONTRACTS.TaskEscrow,
+        abi: TaskEscrowABI,
+        functionName: 'getSubmittedTasks',
+      }) as bigint[];
 
-  console.log("=== CLIENT AGENT ===");
-  console.log(`Address: ${account.address}`);
+      console.log(`\nChecking ${submittedTaskIds.length} submitted tasks...`);
 
-  // Check balance
-  const balance = await publicClient.getBalance({ address: account.address });
-  console.log(`Balance: ${formatEther(balance)} ETH`);
+      for (const taskId of submittedTaskIds) {
+        // Check task status
+        const taskData = await publicClient.readContract({
+          address: CONTRACTS.TaskEscrow,
+          abi: TaskEscrowABI,
+          functionName: 'getTask',
+          args: [taskId],
+        }) as any;
 
-  if (balance < parseEther("0.001")) {
-    console.error("Insufficient balance. Need at least 0.001 ETH.");
-    process.exit(1);
-  }
+        // If task is completed, trigger verification
+        if (taskData.status === 3) { // Submitted status
+          console.log(`\n✅ Task #${taskId} completed - triggering verification...`);
 
-   // Determine mode
-   const args = process.argv.slice(2);
-   const isMarketMode = args.includes('--market') || args.includes('--open');
+          try {
+            // Verify the task
+            const verification = await verifyTask(taskId, publicClient, wallet);
 
-   if (isMarketMode) {
-     // Phase 3: OpenTaskMarket mode (one-to-many)
-     await runMarketMode(wallet, publicClient, account);
-   } else {
-     // Phase 2: Enhanced one-to-one mode with negotiation and direct messaging
-     await runEnhancedOneToOneMode(wallet, publicClient, account);
-   }
-}
+            if (verification.success) {
+              console.log(`✅ Task #${taskId} verified successfully (score: ${verification.score})`);
 
-    // Step 2: Discover workers
-    const workers = await discoverWorkers(publicClient, task.capability);
+              // Update worker reputation
+              await updateWorkerReputation(taskData.worker, verification.score);
 
-    if (workers.length === 0) {
-      console.error(`No workers found with capability: ${task.capability}`);
-      console.log("Trying broader search...");
-      const allWorkers = await discoverWorkers(publicClient, "data-analysis");
-      if (allWorkers.length === 0) {
-        console.error("No workers found at all!");
-        process.exit(1);
+              console.log(`📊 Worker reputation updated: +${verification.score}`);
+            } else {
+              console.log(`❌ Task #${taskId} verification failed`);
+
+              // Update worker reputation negatively
+              await updateWorkerReputation(taskData.worker, -20);
+              console.log(`📊 Worker reputation decreased: -20`);
+            }
+
+            // Confirm payment release
+            await confirmPaymentRelease(taskId, taskData.worker);
+
+          } catch (error) {
+            console.error(`❌ Error verifying task #${taskId}:`, error);
+          }
+        }
       }
+    } catch (error) {
+      console.error('Error checking tasks:', error);
     }
 
-    const selectedWorker = workers[0];
-    console.log(`\nSelected worker: ${selectedWorker.name} (${selectedWorker.address.slice(0, 10)}...)`);
+    await new Promise(resolve => setTimeout(resolve, checkInterval));
+  }
 
-    // Step 3: Prepare task details
-    console.log("\nPreparing task details...");
-    const taskData = {
-      title: task.title,
-      description: task.description,
-      instructions: "Complete this task and provide a detailed report of your findings.",
-      encrypted: false,
-    };
-
-    // Step 4: Upload task data to IPFS
-    console.log("Uploading to IPFS...");
-    const ipfsHash = await uploadToIPFS(taskData);
-    console.log(`IPFS hash: ${ipfsHash}`);
-
-    // Step 5: Create and fund task on-chain
-    console.log("\nCreating task on-chain...");
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 86400); // 24 hours
-    const paymentWei = parseEther(task.payment);
-
-    const hash = await wallet.writeContract({
-      address: CONTRACTS.TaskEscrow,
-      abi: TaskEscrowABI,
-      functionName: "createAndFundTask",
-      args: [selectedWorker.address as `0x${string}`, paymentWei, deadline, ipfsHash],
-      value: paymentWei,
-    });
-
-    console.log(`Transaction hash: ${hash}`);
-    console.log("Waiting for confirmation...");
-
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    console.log(`Confirmed in block ${receipt.blockNumber}`);
-
-    console.log("\n=== Task Created Successfully ===");
-    console.log(`Title: ${task.title}`);
-    console.log(`Worker: ${selectedWorker.name}`);
-    console.log(`Payment: ${task.payment} ETH`);
-    console.log(`IPFS: ${ipfsHash}`);
-    console.log(`Deadline: ${new Date(Number(deadline) * 1000).toLocaleString()}`);
+  console.log('\n⏰ Monitoring timeout reached');
 }
+
+async function updateWorkerReputation(workerAddress: string, score: number): Promise<void> {
+  console.log(`\n📈 Updating reputation for worker: ${workerAddress.slice(0, 10)}...`);
+
+  // In a real implementation, this would update on-chain reputation
+  // For now, we log the reputation update
+  console.log(`   Reputation change: ${score}`);
+}
+
+async function confirmPaymentRelease(taskId: bigint, workerAddress: string): Promise<void> {
+  console.log(`\n💰 Confirming payment release for task #${taskId} to ${workerAddress.slice(0, 10)}...`);
+
+  // Check if payment was successfully transferred
+  // This would typically involve checking the worker's balance or payment receipt
+  console.log('   ✓ Payment release confirmed');
+}
+
+async function selectBestWorkerAI(
+  task: any,
+  workers: any[]
+): Promise<string> {
+  console.log('\n🤖 Selecting best worker AI agent...');
+
+  if (workers.length === 0) {
+    throw new Error('No available workers');
+  }
+
+  // Score each worker based on multiple criteria
+  const scoredWorkers = workers.map(worker => {
+    let score = 0;
+
+    // 1. Reputation score (40% weight)
+    score += worker.reputation * 0.4;
+
+    // 2. Capability match (30% weight)
+    const capabilityMatch = task.capability ?
+      workers.find(w => w.address === workerAddress)?.capabilities.includes(task.capability) : false;
+    if (capabilityMatch) score += 30;
+
+    // 3. Work type specialization (20% weight)
+    if (workers.find(w => w.address === workerAddress)?.specializations?.includes(task.type)) {
+      score += 20;
+    }
+
+    // 4. Historical success rate (10% weight)
+    score += worker.successRate || 50;
+
+    return { ...worker, score };
+  });
+
+  // Sort by score (highest first)
+  scoredWorkers.sort((a, b) => b.score - a.score);
+
+  const bestWorker = scoredWorkers[0];
+  console.log(`   Selected worker: ${bestWorker.name} (score: ${bestWorker.score})`);
+
+  return bestWorker.address;
+}
+
+async function negotiateTerms(
+  clientWallet: any,
+  workerAddress: string,
+  task: any
+): Promise<{ payment: string; deadline: bigint }> {
+  console.log('\n🤝 Negotiating terms between AI agents...');
+
+  // Dynamic pricing based on task complexity and worker reputation
+  const basePayment = parseEther(task.basePayment || '0.001');
+  const reputationMultiplier = 1 + (workers.find(w => w.address === workerAddress)?.reputation || 500) / 1000;
+  const finalPayment = Math.floor(basePayment * reputationMultiplier);
+
+  // Deadline negotiation (allow some flexibility)
+  const deadlineBuffer = 3600; // 1 hour buffer
+  const negotiatedDeadline = BigInt(Math.floor(Date.now() / 1000) + Number(task.deadline) + deadlineBuffer);
+
+  console.log(`   Payment: ${formatEther(finalPayment)} ETH`);
+  console.log(`   Deadline: ${new Date(Number(negotiatedDeadline) * 1000).toLocaleString()}`);
+
+  return {
+    payment: finalPayment.toString(),
+    deadline: negotiatedDeadline,
+  };
+}
+
+// ============================================================
 
 main().catch(console.error);

@@ -44,22 +44,23 @@ export class EventListener {
         address,
         abi,
         eventName,
-        onEvent: (event: any) => {
-          // Normalize event structure
-          handler({
-            eventName: event.eventName,
-            args: event.args,
-            transactionHash: event.transactionHash,
-            blockNumber: event.blockNumber,
-            logIndex: event.logIndex,
-            address: event.address,
-          });
+        onLogs: (logs: any[]) => {
+          for (const log of logs) {
+            handler({
+              eventName: (log as any).eventName || eventName,
+              args: (log as any).args || {},
+              transactionHash: (log as any).transactionHash,
+              blockNumber: Number((log as any).blockNumber),
+              logIndex: Number((log as any).logIndex),
+              address: (log as any).address,
+            });
+          }
+        },
+        onError: (error: any) => {
+          console.error(`[EventListener] Error watching ${eventName}:`, error);
+          // Could implement reconnection logic here
         },
       },
-      (error: any) => {
-        console.error(`[EventListener] Error watching ${eventName}:`, error);
-        // Could implement reconnection logic here
-      }
     );
 
     this.subscriptions.push(unsubscribe);

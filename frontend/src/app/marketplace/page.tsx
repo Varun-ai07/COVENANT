@@ -50,10 +50,59 @@ export default function MarketplacePage() {
     }
   }, [error]);
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
     if (!workerAddress || !payment || !deadline || !description) return;
-    const deadlineTimestamp = BigInt(Math.floor(new Date(deadline).getTime() / 1000));
-    createTask(workerAddress as `0x${string}`, payment, deadlineTimestamp, `Qm${Date.now().toString(36)}`);
+    const deadlineMs = new Date(deadline).getTime();
+    const nowMs = Date.now();
+
+    if (!Number.isFinite(deadlineMs)) {
+      addToast({ type: "error", title: "Invalid deadline", message: "Please choose a valid deadline." });
+      return;
+    }
+
+    if (deadlineMs <= nowMs) {
+      addToast({ type: "error", title: "Invalid deadline", message: "Deadline must be in the future." });
+      return;
+    }
+
+    const paymentNum = Number(payment);
+    if (!Number.isFinite(paymentNum) || paymentNum <= 0) {
+      addToast({ type: "error", title: "Invalid payment", message: "Payment must be a positive ETH amount." });
+      return;
+    }
+
+    const deadlineTimestamp = BigInt(Math.floor(deadlineMs / 1000));
+    const descriptionPayload = {
+      title: description.slice(0, 80),
+      description,
+      createdAt: new Date().toISOString(),
+      source: "marketplace.create-task",
+    };
+
+    let descriptionHash: string;
+    try {
+      const response = await fetch("/api/ipfs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payload: descriptionPayload }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to store task description");
+      }
+
+      const data = (await response.json()) as { hash: string };
+      descriptionHash = data.hash;
+    } catch (error) {
+      addToast({
+        type: "error",
+        title: "IPFS Storage Failed",
+        message: error instanceof Error ? error.message : "Failed to persist task description",
+      });
+      return;
+    }
+
+    createTask(workerAddress as `0x${string}`, payment, deadlineTimestamp, descriptionHash);
   };
 
   const statusFilters: { value: StatusFilter; label: string }[] = [
