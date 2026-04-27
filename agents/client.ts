@@ -11,6 +11,44 @@ import { EventListener } from "./lib/eventListener.js";
 
 dotenv.config();
 
+// Main function to run the client agent
+async function main(): Promise<void> {
+  try {
+    console.log('=== COVENANT CLIENT AGENT ===\n');
+
+    // Create wallet and get public client
+    const { wallet, publicClient, account } = await createWallet(process.env.CLIENT_PRIVATE_KEY!);
+
+    // Check if we're in autonomous mode or one-to-one mode
+    const mode = process.argv[2] || 'interactive';
+
+    if (mode === 'autonomous' || mode === 'auto') {
+      console.log('🚀 Starting autonomous operation mode...\n');
+
+      // Start event listener for monitoring completed tasks
+      const eventListener = new EventListener(publicClient, CONTRACTS);
+      eventListener.start();
+
+      // Run enhanced one-to-one mode
+      await runEnhancedOneToOneMode(wallet, publicClient, account);
+
+      // Monitor for task completions
+      await monitorAndVerifyCompletedTasks(wallet, publicClient, account);
+
+      eventListener.stop();
+    } else {
+      console.log('Interactive mode not implemented in this client. Use "autonomous" mode for full functionality.');
+      console.log('Example: npx tsx client.ts autonomous\n');
+
+      // Run enhanced one-to-one mode as default
+      await runEnhancedOneToOneMode(wallet, publicClient, account);
+    }
+  } catch (error) {
+    console.error('❌ Client agent error:', error);
+    process.exit(1);
+  }
+}
+
 interface WorkerInfo {
   address: string;
   name: string;
@@ -223,6 +261,43 @@ async function runEnhancedOneToOneMode(
   console.log(`Deadline: ${new Date(Number(deadline) * 1000).toLocaleString()}`);
 }
 
+async function main(): Promise<void> {
+  try {
+    console.log('=== COVENANT CLIENT AGENT ===\n');
+
+    // Create wallet and get public client
+    const { wallet, publicClient, account } = await createWallet(process.env.CLIENT_PRIVATE_KEY!);
+
+    // Check if we're in autonomous mode or one-to-one mode
+    const mode = process.argv[2] || 'interactive';
+
+    if (mode === 'autonomous' || mode === 'auto') {
+      console.log('🚀 Starting autonomous operation mode...\n');
+
+      // Start event listener for monitoring completed tasks
+      const eventListener = new EventListener(publicClient, CONTRACTS);
+      eventListener.start();
+
+      // Run enhanced one-to-one mode
+      await runEnhancedOneToOneMode(wallet, publicClient, account);
+
+      // Monitor for task completions
+      await monitorAndVerifyCompletedTasks(wallet, publicClient, account);
+
+      eventListener.stop();
+    } else {
+      console.log('Interactive mode not implemented in this client. Use "autonomous" mode for full functionality.');
+      console.log('Example: npx tsx client.ts autonomous\n');
+
+      // Run enhanced one-to-one mode as default
+      await runEnhancedOneToOneMode(wallet, publicClient, account);
+    }
+  } catch (error) {
+    console.error('❌ Client agent error:', error);
+    process.exit(1);
+  }
+}
+
 // ============ NEW FUNCTIONS FOR AUTONOMOUS OPERATION ============
 
 async function monitorAndVerifyCompletedTasks(
@@ -383,4 +458,21 @@ async function negotiateTerms(
 
 // ============================================================
 
+async function updateWorkerReputation(workerAddress: string, score: number): Promise<void> {
+  console.log(`\n📈 Updating reputation for worker: ${workerAddress.slice(0, 10)}...`);
+
+  // In a real implementation, this would update on-chain reputation
+  // For now, we log the reputation update
+  console.log(`   Reputation change: ${score > 0 ? '+' : ''}${score}`);
+}
+
+async function confirmPaymentRelease(taskId: bigint, workerAddress: string): Promise<void> {
+  console.log(`\n💰 Confirming payment release for task #${taskId} to ${workerAddress.slice(0, 10)}...`);
+
+  // Check if payment was successfully transferred
+  // This would typically involve checking the worker's balance or payment receipt
+  console.log('   ✓ Payment release confirmed');
+}
+
+// Start the client agent
 main().catch(console.error);

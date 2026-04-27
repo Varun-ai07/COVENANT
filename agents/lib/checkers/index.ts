@@ -16,6 +16,8 @@ import * as PerformanceCheckerModule from "./PerformanceChecker.js";
 import * as SecurityCheckerModule from "./SecurityChecker.js";
 import * as CodeQualityCheckerModule from "./CodeQualityChecker.js";
 import * as StripeIntegrationCheckerModule from "./StripeIntegrationChecker.js";
+import * as ThreeJSCheckerModule from "./ThreeJSChecker.js";
+import * as StripePaymentCheckerModule from "./StripePaymentChecker.js";
 
 export type CheckerFunction = (
   deliverable: any,
@@ -41,9 +43,19 @@ export interface Checker {
  */
 export const CHECKERS: Checker[] = [
   {
-    name: 'URLAccessibleChecker',
-    canHandle: URLAccessibleCheckerModule.canHandle,
-    check: URLAccessibleCheckerModule.check,
+    name: 'ThreeJSChecker',
+    canHandle: ThreeJSCheckerModule.canHandle,
+    check: ThreeJSCheckerModule.check,
+  },
+  {
+    name: 'StripePaymentChecker',
+    canHandle: StripePaymentCheckerModule.canHandle,
+    check: StripePaymentCheckerModule.check,
+  },
+  {
+    name: 'StripeIntegrationChecker',
+    canHandle: StripeIntegrationCheckerModule.canHandle,
+    check: StripeIntegrationCheckerModule.check,
   },
   {
     name: 'APIDEndpointChecker',

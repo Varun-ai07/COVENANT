@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { parseEther } from "viem";
 
 interface CreateBatchFormProps {
@@ -11,7 +11,7 @@ interface CreateBatchFormProps {
     taskSpecs: string[];
     aggregationSpec: string;
   };
-  onChange: (value: typeof batch) => void;
+  onChange: (value: any) => void;
   onCreate: () => Promise<void>;
   isCreating: boolean;
   workerAddress: string; // Current user's address for pre-filling

@@ -4,10 +4,16 @@ import { createWallet, CONTRACTS } from "./lib/config.js";
 import { AgentRegistryABI, TaskEscrowABI } from "./lib/abis.js";
 import { generateKeyPair, deriveSharedSecret, decrypt, fromHex, toHex } from "./lib/crypto.js";
 import { uploadToIPFS, downloadFromIPFS, isPinataConfigured } from "./lib/ipfs.js";
-import { generateCompletion } from "./lib/llm.js";
+import { executeWork, printUsage, getExecutionMode } from "./lib/executor.js";
 import { EventListener } from "./lib/eventListener.js";
 
 dotenv.config();
+
+// Show help if requested
+if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  printUsage();
+  process.exit(0);
+}
 
 interface TaskInfo {
   id: bigint;
@@ -39,50 +45,11 @@ function canAttemptTaskNow(task: TaskInfo): { ok: boolean; reason?: string } {
   return { ok: true };
 }
 
-async function executeWork(taskDescription: string): Promise<string> {
-  console.log("\nExecuting work with LLM (OpenRouter)...");
-
-  const maxRetries = 3;
-  let lastError: any;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const report = await generateCompletion(
-        `You are an autonomous worker agent. Complete the following task and provide a detailed report:
-
-${taskDescription}
-
-Provide your response as a work report with:
-1. Summary of what you did
-2. Key findings/results
-3. Any relevant data or outputs
-
-Be specific and thorough.`,
-        { maxTokens: 1000 }
-      );
-
-      if (report && report.length > 100) {
-        console.log(`Generated ${report.length} chars of work output`);
-        return report;
-      }
-      console.log(`Attempt ${attempt}: Got short response (${report?.length || 0} chars), retrying...`);
-    } catch (error) {
-      lastError = error;
-      console.log(`Attempt ${attempt} failed: ${error}`);
-    }
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }
-
-  // If all retries failed, return a fallback report
-  console.log("LLM failed, generating fallback report...");
-  return `Work Report: ${taskDescription.slice(0, 100)}...
-
-1. Summary: Task was processed using automated analysis pipeline
-2. Key findings: Data patterns identified and documented
-3. Outputs: Analysis complete with recommendations for optimization
-
-Note: Generated via fallback due to API limitations.`;
-}
+// executeWork is now imported from lib/executor.ts
+// See lib/executor.ts for execution modes:
+// - claude-cli (default): Claude Code sub-agent for big projects
+// - mcp: MCP server for remote execution
+// - openrouter: Use --use-openrouter flag for simple tasks
 
 async function getTaskDetails(
   taskData: any,
@@ -131,7 +98,9 @@ async function processTask(
     console.log(`Description: ${taskData.description}`);
 
     // Step 3: Execute the work
-    const workReport = await executeWork(taskData.description);
+    const executionResult = await executeWork(taskData.description);
+  const workReport = executionResult.report;
+  console.log(`[EXECUTOR] Completed using ${executionResult.mode} mode`);
 
     // Step 4: Upload deliverable to IPFS
     console.log("\nUploading deliverable to IPFS...");
@@ -226,6 +195,8 @@ async function main() {
   const workerKeyPair = await generateKeyPair();
 
   console.log("=== WORKER AGENT (EVENT-DRIVEN) ===");
+  const execMode = getExecutionMode();
+  console.log(`Execution Mode: ${execMode.toUpperCase()}`);
   console.log(`Address: ${account.address}`);
   console.log(`Encryption public key: ${toHex(workerKeyPair.publicKey)}`);
 

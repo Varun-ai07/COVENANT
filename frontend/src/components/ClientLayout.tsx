@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { Providers } from "./Providers";
 import { Navbar } from "./Navbar";
 import { ToastProvider } from "./Toast";
 
@@ -47,22 +46,20 @@ function Particles() {
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Providers>
-      <ToastProvider>
-        {/* Global parallax background - shows on ALL pages */}
-        <ParallaxBackground />
+    <ToastProvider>
+      {/* Global parallax background - shows on ALL pages */}
+      <ParallaxBackground />
 
-        {/* Floating particles overlay */}
-        <Particles />
+      {/* Floating particles overlay */}
+      <Particles />
 
-        {/* Navigation */}
-        <Navbar />
+      {/* Navigation */}
+      <Navbar />
 
-        {/* Main content - z-index above background, pt-14 clears fixed navbar */}
-        <main className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
-          {children}
-        </main>
-      </ToastProvider>
-    </Providers>
+      {/* Main content - z-index above background, pt-14 clears fixed navbar */}
+      <main className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
+        {children}
+      </main>
+    </ToastProvider>
   );
 }

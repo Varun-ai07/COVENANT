@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ResourcePreloader, LazyLoader, MemoryManager } from "@/lib/performance-optimizations";
+import { useBackgroundManager } from "@/components/BackgroundManager";
 
 // Lazy load heavy components
 const ActivityFeed = dynamic(
@@ -22,12 +23,29 @@ const CovenantOverlay = dynamic(
   }
 );
 
+const BackgroundSettingsPanel = dynamic(
+  () => import("@/components/BackgroundSettingsPanel"),
+  {
+    ssr: false,
+    loading: () => null
+  }
+);
+
+const LavenderWorld = dynamic(
+  () => import("@/components/LavenderWorld"),
+  {
+    ssr: false,
+    loading: () => <div className="animate-pulse bg-[#0a0118] h-40 rounded-lg" />
+  }
+);
+
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
+  const { config, fps, monitorFps } = useBackgroundManager();
 
   // Preloader instance
   const preloader = ResourcePreloader.getInstance();
-  const memoryManager = new MemoryManager();
+  const memoryManager = MemoryManager.getInstance();
 
   useEffect(() => {
     // Preload critical resources on initial load
@@ -69,7 +87,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#020617]">
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
-        <div className="mesh-gradient fixed inset-0 z-[-1]" />
+        {config.show3D && <LavenderWorld onFpsChange={monitorFps} />}
         <div className="relative z-20 text-center max-w-5xl mx-auto px-4">
           <div className="mb-10 animate-fade-in-up">
             <div className="relative inline-block">
@@ -150,6 +168,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <BackgroundSettingsPanel />
     </div>
   );
 }

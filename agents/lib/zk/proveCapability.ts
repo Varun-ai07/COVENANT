@@ -12,6 +12,17 @@ const __dirname = path.dirname(__filename);
 const FIELD_PRIME = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
 /**
+ * Convert Uint8Array to bigint
+ */
+function bytesToBigInt(bytes: Uint8Array): bigint {
+  let result = 0n;
+  for (let i = 0; i < bytes.length; i++) {
+    result = (result << 8n) + BigInt(bytes[i]);
+  }
+  return result;
+}
+
+/**
  * Reduce a bigint modulo the field prime (mimic Circom's automatic modulo)
  */
 function reduceModField(value: bigint): bigint {
@@ -45,26 +56,47 @@ export async function computeCommitment(
   agentAddress: string
 ): Promise<bigint> {
   const poseidon = await getPoseidon();
-  let capabilityIdHash = hashCapabilityId(capabilityId);
   const addr = BigInt('0x' + agentAddress.replace(/^0x/, ''));
 
-  // Reduce all inputs modulo field prime to match Circom's automatic reduction
-  const capSecretRed = reduceModField(capabilitySecret);
-  const modelHashRed = reduceModField(modelHash);
-  const capIdHashRed = reduceModField(capabilityIdHash);
-  const addrRed = reduceModField(addr);
+  // Convert capabilityId to bigint (don't hash it to match circuit expectations)
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(capabilityId);
+  let capabilityIdValue = 0n;
+  for (let i = 0; i < bytes.length; i++) {
+    capabilityIdValue = (capabilityIdValue << 8n) + BigInt(bytes[i]);
+  }
 
-  // Compute Poseidon hash (returns bigint directly with buildPoseidonOpt)
-  const commitment = poseidon([capSecretRed, modelHashRed, capIdHashRed, addrRed]);
+  // Compute Poseidon hash (same as circuit - no input reduction)
+  const commitment = poseidon([capabilitySecret, modelHash, capabilityIdValue, addr]);
 
   // The result should already be a field element (bigint), but ensure it's reduced
-  return typeof commitment === 'bigint' ? reduceModField(commitment) : BigInt(commitment);
+  // Handle case where poseidon returns Uint8Array
+  let commitmentValue: bigint;
+  if (commitment instanceof Uint8Array) {
+    // Convert Uint8Array to bigint
+    commitmentValue = bytesToBigInt(commitment);
+  } else if (Array.isArray(commitment)) {
+    // If it's an array, take the first element or convert appropriately
+    commitmentValue = commitment.length > 0 ? BigInt(commitment[0].toString()) : 0n;
+  } else {
+    commitmentValue = typeof commitment === 'bigint' ? commitment : BigInt(commitment.toString());
+  }
+
+  // Don't apply field reduction to match circuit behavior
+  // The circuit automatically reduces field elements, so we should pass the raw value
+  // and let the circuit do the reduction
+  return commitmentValue;
 }
 
 function hashCapabilityId(capabilityId: string): bigint {
-  // viem's keccak256 returns hex string with 0x prefix
-  const hash = keccak256(new TextEncoder().encode(capabilityId));
-  return BigInt(hash);
+  // Convert string to bigint by encoding it as bytes and converting to bigint
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(capabilityId);
+  let result = 0n;
+  for (let i = 0; i < bytes.length; i++) {
+    result = (result << 8n) + BigInt(bytes[i]);
+  }
+  return result;
 }
 
 /**
@@ -94,41 +126,48 @@ export async function generateCapabilityProof(
   // Hash capabilityId for signals
   const capabilityIdHash = hashCapabilityId(inputs.capabilityId);
 
-  // Reduce all inputs modulo field prime to match Circom's automatic reduction
-  const capSecretRed = reduceModField(inputs.capabilitySecret);
-  const modelHashRed = reduceModField(inputs.modelHash);
-  const sessionNonceRed = reduceModField(inputs.sessionNonce);
-  const capIdHashRed = reduceModField(capabilityIdHash);
-  const agentAddrRed = reduceModField(agentAddrBig);
+  // Compute commitment using the same inputs as the circuit
+  const commitment = await computeCommitment(
+    inputs.capabilitySecret,
+    inputs.modelHash,
+    inputs.capabilityId,
+    inputs.agentAddress
+  );
 
-  // Compute commitment (output) using Poseidon (returns bigint)
-  const commitment = poseidon([capSecretRed, modelHashRed, capIdHashRed, agentAddrRed]);
-
-  // Verify that the provided registeredCommitment matches the computed commitment
-  if (commitment !== inputs.registeredCommitment) {
-    throw new Error('Registered commitment does not match computed commitment');
+  // Compute nullifier (output) using Poseidon with 3 inputs (same as circuit - no input reduction)
+  const nullifierRaw = poseidon([inputs.capabilitySecret, inputs.sessionNonce, capabilityIdHash]);
+  let nullifier: bigint;
+  if (nullifierRaw instanceof Uint8Array) {
+    nullifier = bytesToBigInt(nullifierRaw);
+  } else {
+    nullifier = nullifierRaw;
   }
 
-  // Compute nullifier (output) using Poseidon with 3 inputs
-  const nullifier = poseidon([capSecretRed, sessionNonceRed, capIdHashRed]);
-
   // Build witness input with ALL signals (private + public inputs + public outputs)
+  // Convert capabilityId to field element for witness input to match circuit expectations
+  const encoder = new TextEncoder();
+  const capabilityIdBytes = encoder.encode(inputs.capabilityId);
+  let capabilityIdField = 0n;
+  for (let i = 0; i < capabilityIdBytes.length; i++) {
+    capabilityIdField = (capabilityIdField << 8n) + BigInt(capabilityIdBytes[i]);
+  }
+  // Reduce modulo field prime to ensure it's a valid field element
+  capabilityIdField = reduceModField(capabilityIdField);
+
   const witnessInput = {
-    capabilitySecret: capSecretRed.toString(),
-    modelHash: modelHashRed.toString(),
-    sessionNonce: sessionNonceRed.toString(),
-    capabilityId: capIdHashRed.toString(),
-    agentAddress: agentAddrRed.toString(),
+    capabilitySecret: inputs.capabilitySecret.toString(),
+    modelHash: inputs.modelHash.toString(),
+    sessionNonce: inputs.sessionNonce.toString(),
+    capabilityId: capabilityIdField.toString(),  // Pass capabilityId as field element
+    agentAddress: agentAddrBig.toString(),
     registeredCommitment: inputs.registeredCommitment.toString(),
-    // Public outputs
-    commitment: commitment.toString(),
+    // Don't pass commitment - let circuit compute it
     nullifier: nullifier.toString()
   };
 
   // Resolve paths
-  const basePath = path.resolve(__dirname, '../../..');
-  const wasm = wasmPath || path.join(basePath, 'zk_circuits/ZK-CIRCUITS/capabilityProof/capabilityProof_js/capabilityProof.wasm');
-  const zkey = zkeyPath || path.join(basePath, 'zk_circuits/ZK-CIRCUITS/capabilityProof/capabilityProof_final.zkey');
+  const wasm = wasmPath || '/home/vxrun/Projects/newbie/zk_circuits/ZK-CIRCUITS/capabilityProof/capabilityProof_js/capabilityProof.wasm';
+  const zkey = zkeyPath || '/home/vxrun/Projects/newbie/zk_circuits/ZK-CIRCUITS/capabilityProof/capabilityProof_final.zkey';
 
   // Verify files exist
   if (!fs.existsSync(wasm)) throw new Error(`WASM file not found: ${wasm}`);

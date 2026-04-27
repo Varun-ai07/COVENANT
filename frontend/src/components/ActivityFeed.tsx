@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useActivityFeed, getEventColor, formatEventDescription } from "@/hooks/useActivityFeed";
 import { useVirtualizer } from "@tanstack/react-virtual";
 

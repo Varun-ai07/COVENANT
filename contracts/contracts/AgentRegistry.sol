@@ -13,16 +13,36 @@ contract AgentRegistry is Ownable {
     event AuthorizedContractRemoved(address indexed contractAddr);
 
     struct Agent {
-        bytes32 did;                    // Decentralized Identifier
-        string name;                    // Human-readable name
+        // Slot 0: did (32 bytes — must be alone)
+        bytes32 did;
+
+        // Slot 1: packed flags and small numbers
+        // wallet:    160 bits (20 bytes)
+        // reputation: 16 bits (0-65535, fits in uint16)
+        // isActive:    8 bits (bool as uint8)
+        // tasksDone:  32 bits (0-4 billion)
+        // tasksFailed:16 bits (0-65535)
+        // TOTAL:     232 bits — fits in one 256-bit slot
+        address wallet;         // 160 bits
+        uint16 reputation;     //  16 bits (CHANGED from uint256)
+        uint8 isActive;         //   8 bits (CHANGED from bool)
+        uint32 tasksCompleted;  //  32 bits (CHANGED from uint256)
+        uint16 tasksFailed;     //  16 bits (CHANGED from uint256)
+        // 232/256 bits used. 24 bits spare for future fields.
+
+        // Slot 2: stakedAmount (full uint96 — max 79 billion ETH)
+        uint96 stakedAmount;    //  96 bits
+        uint48 registeredAt;    //  48 bits (works until year 281474)
+        uint48 lastTaskAt;      //  48 bits
+        // 192/256 bits used.
+
+        // Slot 3+: dynamic string (cannot pack)
+        string name;
+
+        // Slot N: total value transacted
+        uint96 totalValueTransacted;  // 96 bits = max 79B ETH, enough
+
         string[] capabilities;          // What the agent can do
-        uint256 reputation;             // Score 0-1000, starts at 500
-        uint256 stakedAmount;           // ETH locked as collateral
-        uint256 tasksCompleted;         // Lifetime successful tasks
-        uint256 tasksFailed;            // Lifetime failed tasks
-        uint256 totalValueTransferred;  // Total ETH transacted
-        bool isActive;                  // Can this agent accept tasks?
-        uint256 registeredAt;           // Registration timestamp
     }
 
     // Minimum stake required for registration (0.001 ETH)
@@ -99,13 +119,15 @@ contract AgentRegistry is Ownable {
             did: did,
             name: name,
             capabilities: capabilities,
-            reputation: INITIAL_REPUTATION,
-            stakedAmount: msg.value,
-            tasksCompleted: 0,
-            tasksFailed: 0,
-            totalValueTransferred: 0,
-            isActive: true,
-            registeredAt: block.timestamp
+            reputation: uint16(INITIAL_REPUTATION),
+            stakedAmount: uint96(msg.value),
+            tasksCompleted: uint32(0),
+            tasksFailed: uint16(0),
+            totalValueTransacted: uint96(0),
+            isActive: uint8(1),
+            registeredAt: uint48(block.timestamp),
+            lastTaskAt: uint48(0),
+            wallet: msg.sender
         });
 
         // Index by capability for discovery

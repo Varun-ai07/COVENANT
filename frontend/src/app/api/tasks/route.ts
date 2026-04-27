@@ -44,9 +44,21 @@ export async function GET(request: NextRequest) {
     }
 
     const tasksData = await Promise.all(tasksPromises);
-    const tasks = [];
+    const tasks: Array<{
+      id: number;
+      client: string;
+      worker: string;
+      paymentWei: string;
+      paymentEth: string;
+      deadline: number;
+      descriptionHash: string;
+      deliverableHash: string;
+      status: number;
+      createdAt: number;
+      completedAt: number;
+    }> = [];
 
-    tasksData.forEach((taskData, index) => {
+    tasksData.forEach((taskData: any, index: number) => {
       try {
         const taskIndex = startIndex + index;
         const [
@@ -88,16 +100,16 @@ export async function GET(request: NextRequest) {
     // Sort tasks
     tasks.sort((a, b) => {
       if (sortBy === "payment") {
-        return order === "asc" 
-          ? Number(a.payment) - Number(b.payment) 
-          : Number(b.payment) - Number(a.payment);
+        return order === "asc"
+          ? Number(a.paymentWei) - Number(b.paymentWei)
+          : Number(b.paymentWei) - Number(a.paymentWei);
       } else if (sortBy === "deadline") {
-        return order === "asc" 
-          ? Number(a.deadline) - Number(b.deadline) 
+        return order === "asc"
+          ? Number(a.deadline) - Number(b.deadline)
           : Number(b.deadline) - Number(a.deadline);
       } else { // Default to createdAt
-        return order === "asc" 
-          ? Number(a.createdAt) - Number(b.createdAt) 
+        return order === "asc"
+          ? Number(a.createdAt) - Number(b.createdAt)
           : Number(b.createdAt) - Number(a.createdAt);
       }
     });

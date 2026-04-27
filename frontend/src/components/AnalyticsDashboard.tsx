@@ -46,7 +46,7 @@ function ReputationDistribution({ agents }: { agents: Agent[] }) {
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+          label={({ name, percent }: any) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
           dataKey="value"
         >
           {data.map((entry, index) => (
@@ -73,7 +73,7 @@ function TaskStatusDistribution({ tasks }: { tasks: any[] }) {
 
   const statusCounts: Record<string, number> = {};
   tasks.forEach((task) => {
-    const label = statusLabels[task.status] || "Unknown";
+    const label = statusLabels[task.status as keyof typeof statusLabels] || "Unknown";
     statusCounts[label] = (statusCounts[label] || 0) + 1;
   });
 
@@ -100,7 +100,7 @@ function TaskStatusDistribution({ tasks }: { tasks: any[] }) {
 function AgentActivity({ agents }: { agents: Agent[] }) {
   const data = agents
     .map((agent) => ({
-      name: agent.name || agent.address.slice(0, 6),
+      name: agent.name || agent.did?.slice(0, 6) || "Unknown",
       completed: Number(agent.tasksCompleted),
       failed: Number(agent.tasksFailed),
     }))
@@ -117,12 +117,10 @@ function AgentActivity({ agents }: { agents: Agent[] }) {
         <Legend />
         <Bar
           dataKey="completed"
-          label="Completed"
           fill="#82ca9d"
         />
         <Bar
           dataKey="failed"
-          label="Failed"
           fill="#ffc658"
         />
       </BarChart>
@@ -134,7 +132,7 @@ function AgentActivity({ agents }: { agents: Agent[] }) {
 function PaymentVolume({ agents }: { agents: Agent[] }) {
   const data = agents
     .map((agent) => ({
-      name: agent.name || agent.address.slice(0, 6),
+      name: agent.name || agent.did?.slice(0, 6) || "Unknown",
       value: Number(agent.totalValueTransferred) / 1e18, // Convert wei to ETH
     }))
     .sort((a, b) => b.value - a.value)

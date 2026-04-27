@@ -9,48 +9,70 @@ const publicClient = createPublicClient({
   transport: http(process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.base.org"),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = (page - 1) * limit;
+
     const contracts = getContractAddresses(baseSepolia.id);
-    const agentCount = await publicClient.readContract({
+
+    // Get all registered agent addresses
+    const agentAddresses = await publicClient.readContract({
       address: contracts.AgentRegistry as `0x${string}`,
       abi: AgentRegistryABI,
-      functionName: "getAgentCount",
-    }) as bigint;
+      functionName: "getAllAgents",
+    }) as string[];
 
-    const count = Number(agentCount);
-    const agents = [];
+    // Filter to only active agents and apply pagination
+    const activeAgents = [];
+    const startIndex = offset;
+    const endIndex = startIndex + limit;
 
-    for (let i = 0; i < count; i++) {
+    // Process agents in the requested range
+    for (let i = startIndex; i < Math.min(endIndex, agentAddresses.length); i++) {
+      if (i >= agentAddresses.length) break;
+
+      const address = agentAddresses[i];
+
       try {
-        const [address, name, reputation, capabilities, stakedAmount, tasksCompleted, tasksFailed, totalValueTransferred, isActive, registeredAt] =
-          (await publicClient.readContract({
-            address: contracts.AgentRegistry as `0x${string}`,
-            abi: AgentRegistryABI,
-            functionName: "getAgentAtIndex",
-            args: [i],
-          })) as [string, string, bigint, string[], bigint, bigint, bigint, bigint, boolean, bigint];
+        // Get agent details
+        const agent = await publicClient.readContract({
+          address: contracts.AgentRegistry as `0x${string}`,
+          abi: AgentRegistryABI,
+          functionName: "getAgent",
+          args: [address],
+        }) as any;
 
-        if (isActive) {
-          agents.push({
+        // Only include active agents
+        if (agent.isActive) {
+          activeAgents.push({
             address,
-            name,
-            reputation: Number(reputation),
-            capabilities,
-            stakedAmount: Number(stakedAmount) / 1e18,
-            tasksCompleted: Number(tasksCompleted),
-            tasksFailed: Number(tasksFailed),
-            totalValueTransferred: Number(totalValueTransferred) / 1e18,
-            registeredAt: Number(registeredAt),
+            name: agent.name,
+            reputation: Number(agent.reputation),
+            capabilities: agent.capabilities,
+            stakedAmount: Number(agent.stakedAmount) / 1e18,
+            tasksCompleted: Number(agent.tasksCompleted),
+            tasksFailed: Number(agent.tasksFailed),
+            totalValueTransferred: Number(agent.totalValueTransferred) / 1e18,
+            registeredAt: Number(agent.registeredAt),
           });
         }
       } catch (error) {
-        console.error(`Error fetching agent at index ${i}:`, error);
+        console.error(`Error fetching agent details for ${address}:`, error);
         continue;
       }
     }
 
-    return NextResponse.json({ agents, count: agents.length });
+    return NextResponse.json({
+      agents: activeAgents,
+      count: activeAgents.length,
+      page,
+      limit,
+      total: agentAddresses.length
+    });
   } catch (error) {
     console.error("Error fetching agents:", error);
     return NextResponse.json({ error: "Failed to fetch agents" }, { status: 500 });

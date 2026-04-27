@@ -23,14 +23,14 @@ export default function AgentAnalyticsCard({ agent, timeRange }: AgentAnalyticsC
     // In a real implementation, this would fetch from backend APIs or subgraphs
     // For now, we'll simulate with agent data
     setStats({
-      tasksCompleted: agent.tasksCompleted,
-      tasksFailed: agent.tasksFailed,
-      successRate: agent.tasksCompleted > 0 
-        ? Math.round((agent.tasksCompleted / (agent.tasksCompleted + agent.tasksFailed)) * 100)
+      tasksCompleted: Number(agent.tasksCompleted),
+      tasksFailed: Number(agent.tasksFailed),
+      successRate: Number(agent.tasksCompleted) > 0
+        ? Math.round((Number(agent.tasksCompleted) / (Number(agent.tasksCompleted) + Number(agent.tasksFailed))) * 100)
         : 0,
       avgRating: 4.5, // Would come from reputation/verification data
-      totalEarned: Number(formatEther(BigInt(agent.totalValueTransferred))),
-      reputationChange: agent.reputation - 500, // Change from initial reputation
+      totalEarned: Number(formatEther(agent.totalValueTransferred)),
+      reputationChange: Number(agent.reputation) - 500, // Change from initial reputation
     });
   }, [agent, timeRange]);
 
@@ -108,7 +108,7 @@ export default function AgentAnalyticsCard({ agent, timeRange }: AgentAnalyticsC
                     ? "bg-amber-500"
                     : "bg-red-500"
                 }`}
-                style={{ width: `${(agent.reputation / 1000) * 100}%` }}
+                style={{ width: `${(Number(agent.reputation) / 1000) * 100}%` }}
               />
             </div>
           </div>

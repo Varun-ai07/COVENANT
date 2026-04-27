@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { ResourcePreloader, LazyLoader, MemoryManager } from "@/lib/performance-optimizations";
 
 // Initialize performance managers
 const preloader = ResourcePreloader.getInstance();
-const memoryManager = new MemoryManager();
+const memoryManager = MemoryManager.getInstance();
 
 export default function API() {
   const [response, setResponse] = useState<string | null>(null);

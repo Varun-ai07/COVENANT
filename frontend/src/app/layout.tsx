@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import dynamic from "next/dynamic";
 import { Providers } from '@/app/providers';
+import { validateStripeConfig } from '@/config/stripe';
 
 const ClientLayout = dynamic(() => import("@/components/ClientLayout"), {
   ssr: false,
@@ -45,20 +46,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const stripeConfigured = validateStripeConfig();
+
   return (
     <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#020617] text-white min-h-screen`}
       >
-        {/* Animated mesh gradient background */}
-        <div className="mesh-gradient" />
-
-        {/* Grid pattern overlay */}
-        <div className="grid-pattern fixed inset-0 z-[-1] pointer-events-none" />
-
-        {/* Noise texture */}
-        <div className="noise-overlay" />
-
+        {!stripeConfigured && (
+          <div className="bg-amber-600/90 text-white text-center text-sm py-2 px-4 z-50 relative">
+            Stripe is not configured. Payment features will be unavailable.
+          </div>
+        )}
         <Providers>
           <ClientLayout>{children}</ClientLayout>
         </Providers>

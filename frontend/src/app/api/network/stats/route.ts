@@ -14,7 +14,7 @@ const publicClient = createPublicClient({
 export async function GET() {
   try {
     const contracts = getContractAddresses(baseSepolia.id);
-    const safeRead = async (reader: () => Promise<bigint>, fallback = 0n) => {
+    const safeRead = async (reader: () => Promise<bigint>, fallback: bigint = BigInt(0)) => {
       try {
         return await reader();
       } catch {

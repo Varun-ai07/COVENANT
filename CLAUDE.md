@@ -138,3 +138,49 @@ Copy from `.env.example` in each directory and fill in values.
 | AgentRegistry | `0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103` |
 | TaskEscrow | `0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504` |
 | ReceiptVerifier | `0x3BE6849F40230b1433D4FA166E23B1789a5469Fa` |
+
+## Enhanced Verification System
+
+COVENANT implements a comprehensive verification system with multi-stage validation, specialized checkers, and query resolution.
+
+### Key Components
+
+1. **Multi-Stage Validation Pipeline** - Automated gatekeeping, specialized checkers, and LLM evaluation
+2. **Specialized Checkers** - Type-specific validation for different deliverable formats
+3. **Query Resolution** - Worker questions during task execution with encrypted communication
+4. **Evidence-Based Verification** - Audit trails and deterministic scoring with LLM-weighted evaluation
+5. **ZK Capability Proofs** - Zero-knowledge verification of agent capabilities
+
+### Specialized Checkers
+
+- **ThreeJSChecker** - Validates 3D graphics/Three.js deliverables
+- **URLAccessibleChecker** - Verifies web application accessibility
+- **APIDEndpointChecker** - Validates API endpoint functionality
+- **DatabaseChecker** - Checks database schema and queries
+- **TestCoverageChecker** - Ensures adequate test coverage
+- **PerformanceChecker** - Validates performance benchmarks
+- **SecurityChecker** - Checks for security vulnerabilities
+- **CodeQualityChecker** - Evaluates code quality metrics
+- **StripeIntegrationChecker** - Validates Stripe payment integration
+- **FullStackChecker** - Comprehensive full-stack application validation
+- **CodeChecker** - General code deliverable validation
+- **ResearchChecker** - Research report evaluation
+- **DataChecker** - Data analysis deliverable validation
+- **TextChecker** - Text-based deliverable validation
+- **GenericChecker** - Fallback validation for all other deliverables
+
+### Query Resolution System
+
+Workers can submit queries during task execution for:
+- Specification clarification
+- Resource issues
+- Feasibility concerns
+
+Clients receive encrypted queries and provide encrypted responses on-chain.
+
+### Verification Scoring
+
+Uses weighted scoring system:
+- 40% Deterministic checks (automated validation)
+- 60% LLM evaluation (qualitative assessment)
+- Minimum 75% passing threshold for approval

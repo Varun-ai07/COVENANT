@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatEther } from "viem";
-import { RechartsWrapper } from "@/components/RechartsWrapper";
+import RechartsWrapper from "@/components/RechartsWrapper";
 
 interface AnalyticsChartsProps {
   agent: any; // Would be Agent type from types

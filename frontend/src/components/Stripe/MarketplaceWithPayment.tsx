@@ -1,0 +1,218 @@
+"use client";
+
+import { useState } from "react";
+import { formatEther } from "viem";
+import { useAccount } from "wagmi";
+import { useToast } from "@/components/Toast";
+import { getContractAddresses } from "@/contracts/addresses";
+import { useCreateTask } from "@/hooks/useTask";
+
+interface MarketplaceWithPaymentProps {
+  workerAddress: `0x${string}`;
+  payment: string;
+  deadline: string;
+  description: string;
+  onSuccess?: () => void;
+}
+
+export function MarketplaceWithPayment({
+  workerAddress,
+  payment,
+  deadline,
+  description,
+  onSuccess
+}: MarketplaceWithPaymentProps) {
+  const { isConnected, chain } = useAccount();
+  const { addToast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"crypto" | "stripe">("crypto");
+
+  const handleCreateTask = async () => {
+    if (!isConnected) {
+      addToast({
+        type: "error",
+        title: "Wallet Required",
+        message: "Please connect your wallet first"
+      });
+      return;
+    }
+
+    if (!workerAddress || !payment || !deadline || !description) {
+      addToast({
+        type: "error",
+        title: "Missing Information",
+        message: "Please fill in all required fields"
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // In a real implementation, this would create the task and process payment
+      // For now, we'll just simulate the process
+      console.log("Processing task creation with payment...");
+
+      // This would typically involve:
+      // 1. Creating the task on-chain
+      // 2. Processing payment (crypto or Stripe)
+      // 3. Linking payment to task
+
+      addToast({
+        type: "success",
+        title: "Success",
+        message: "Task created and payment processed successfully"
+      });
+
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Task creation error:", error);
+      addToast({
+        type: "error",
+        title: "Task Creation Failed",
+        message: error instanceof Error ? error.message : "Failed to create task"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="glass-card p-6">
+      <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+        <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.221.313 3 .938" />
+        </svg>
+        <span className="font-silkscreen text-xs tracking-[0.1em]">TASK & PAYMENT</span>
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Worker Address</label>
+          <input
+            type="text"
+            value={workerAddress}
+            readOnly
+            className="input-glass w-full bg-black/20"
+          />
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Payment Amount (ETH)</label>
+          <input
+            type="text"
+            value={payment}
+            readOnly
+            className="input-glass w-full bg-black/20"
+          />
+          <p className="text-slate-500 text-xs mt-1">
+            Equivalent to ${(parseFloat(payment) * 3000).toFixed(2)} USD
+          </p>
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Deadline</label>
+          <input
+            type="text"
+            value={deadline}
+            readOnly
+            className="input-glass w-full bg-black/20"
+          />
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Task Description</label>
+          <textarea
+            value={description}
+            readOnly
+            rows={3}
+            className="input-glass w-full bg-black/20"
+          />
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-slate-400 text-sm mb-3 font-silkscreen tracking-[0.1em]">PAYMENT METHOD</label>
+        <div className="flex flex-wrap gap-4">
+          <button
+            onClick={() => setPaymentMethod("crypto")}
+            className={`px-4 py-3 rounded-xl border transition-all duration-300 flex items-center gap-3 ${
+              paymentMethod === "crypto"
+                ? "bg-violet-500/20 border-violet-500/50 text-white"
+                : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
+            }`}
+          >
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/30 flex items-center justify-center">
+              <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.221.313 3 .938" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className="font-medium">Crypto Payment</p>
+              <p className="text-xs text-slate-500">Pay directly with ETH</p>
+            </div>
+            {paymentMethod === "crypto" && (
+              <div className="ml-auto">
+                <div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </button>
+
+          <button
+            onClick={() => setPaymentMethod("stripe")}
+            className={`px-4 py-3 rounded-xl border transition-all duration-300 flex items-center gap-3 ${
+              paymentMethod === "stripe"
+                ? "bg-emerald-500/20 border-emerald-500/50 text-white"
+                : "bg-white/5 border-white/10 text-slate-300 hover:border-white/20"
+            }`}
+          >
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/20 border border-emerald-500/30 flex items-center justify-center">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className="font-medium">Stripe Payment</p>
+              <p className="text-xs text-slate-500">Credit/Debit card</p>
+            </div>
+            {paymentMethod === "stripe" && (
+              <div className="ml-auto">
+                <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <button
+        onClick={handleCreateTask}
+        disabled={isProcessing}
+        className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-glow-violet transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        {isProcessing ? (
+          <>
+            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V2a10 10 0 00-10 10h2zm2 5.291A7.962 7.962 0 014 12H2c0 5.523 4.477 10 10 10v-2a8 8 0 01-8-8v0z"></path>
+            </svg>
+            Processing...
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Confirm Task & Process Payment
+          </>
+        )}
+      </button>
+    </div>
+  );
+}

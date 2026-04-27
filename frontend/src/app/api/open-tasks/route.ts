@@ -9,6 +9,21 @@ const publicClient = createPublicClient({
   transport: http(process.env.NEXT_PUBLIC_RPC_URL || "https://sepolia.base.org"),
 });
 
+interface OpenTask {
+  id: bigint;
+  client: string;
+  worker: string;
+  maxPayment: bigint;
+  deadline: bigint;
+  descriptionHash: string;
+  status: number;
+  postedAt: bigint;
+  selectedWorker: string;
+  selectedPrice: bigint;
+  selectedTimeEstimate: bigint;
+  selectedProposalHash: string;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -22,17 +37,13 @@ export async function GET(request: NextRequest) {
       functionName: "taskCounter",
     }) as bigint;
 
-    // For open tasks API, we need to fetch tasks and filter by status = Open (0)
-    // Since we don't have an efficient way to do this on-chain without a subgraph,
-    // we'll fetch a reasonable range and filter client-side
     const totalTasks = Number(taskCount);
-    const startIndex = Math.max(1, totalTasks - offset - limit); // Start from the end for newest first
+    const startIndex = Math.max(1, totalTasks - offset - limit);
     const endIndex = Math.max(1, totalTasks - offset);
-    
-    // Limit the range to prevent excessive requests
-    const rangeSize = Math.min(endIndex - startIndex + 1, limit * 3); // Fetch 3x limit to account for filtering
+
+    const rangeSize = Math.min(endIndex - startIndex + 1, limit * 3);
     const actualStartIndex = Math.max(1, endIndex - rangeSize + 1);
-    
+
     const tasksPromises = [];
     for (let i = actualStartIndex; i <= endIndex; i++) {
       tasksPromises.push(
@@ -46,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     const tasksData = await Promise.all(tasksPromises);
-    const openTasks = [];
+    const openTasks: OpenTask[] = [];
 
     tasksData.forEach((taskData, index) => {
       try {
@@ -63,9 +74,8 @@ export async function GET(request: NextRequest) {
           selectedPrice,
           selectedTimeEstimate,
           selectedProposalHash
-        ] = taskData as [string, string, bigint, bigint, string, string, number, bigint, bigint, string, string, bigint, bigint, bigint];
+        ] = taskData as [string, string, bigint, bigint, string, number, bigint, string, bigint, bigint, string];
 
-        // Only include open tasks (status = 0)
         if (Number(statusNum) === 0) {
           openTasks.push({
             id: BigInt(taskIndex),
@@ -87,19 +97,17 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Sort by postedAt descending (newest first)
     openTasks.sort((a, b) => Number(b.postedAt) - Number(a.postedAt));
-    
-    // Apply limit
+
     const limitedTasks = openTasks.slice(0, limit);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       tasks: limitedTasks,
-      total: openTasks.length, // Total open tasks found in our scan
+      total: openTasks.length,
       pageInfo: {
         limit,
         offset,
-        hasMore: offset + limit < totalTasks // Simplified - in reality would need to know total open tasks
+        hasMore: offset + limit < totalTasks
       }
     });
   } catch (error) {

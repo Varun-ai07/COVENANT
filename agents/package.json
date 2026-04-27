@@ -8,7 +8,8 @@
     "worker": "tsx worker.ts",
     "verifier": "tsx verifier.ts",
     "dispute": "tsx disputeResolver.ts",
-    "demo": "tsx demo.ts"
+    "demo": "tsx demo.ts",
+    "test-executor": "cd __tests__ && npm test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -16,8 +17,11 @@
     "@noble/ciphers": "^1.2.0",
     "@noble/curves": "^1.8.0",
     "@pinata/sdk": "^2.1.0",
+    "circomlib": "^2.0.5",
+    "circomlibjs": "^0.1.7",
     "dotenv": "^17.3.1",
     "openai": "^6.29.0",
+    "snarkjs": "^0.7.6",
     "viem": "^2.23.0"
   },
   "devDependencies": {

@@ -96,7 +96,7 @@ export function BatchMonitor() {
           {/* Batches List */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="font-silkscreen text-2xl text-fuchsia-300">Active Batches ({batchCounter || 0})</h2>
+              <h2 className="font-silkscreen text-2xl text-fuchsia-300">Active Batches ({Number(batchCounter) || 0})</h2>
               <button className="px-6 py-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl shadow-lg hover:from-violet-500 hover:to-fuchsia-500 transition-all">
                 Create Batch
               </button>
@@ -227,7 +227,7 @@ export function BatchMonitor() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-white/60">Total Batches</span>
-                  <span className="text-violet-300">{batchCounter || 0}</span>
+                  <span className="text-violet-300">{Number(batchCounter) || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white/60">Your Batches</span>

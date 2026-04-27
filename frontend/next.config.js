@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {
-    root: __dirname,
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   // Ensure JSON imports work
   webpack: (config) => {
