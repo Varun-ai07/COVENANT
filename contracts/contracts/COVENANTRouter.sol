@@ -126,7 +126,7 @@ contract COVENANTRouter {
         // So we call:
         // agentRegistry.register{value: stake}(name, capabilities);
         // However, register is external on AgentRegistry. We can call it.
-        if (!agentRegistry.getAgent(msg.sender).isActive) {
+        if (agentRegistry.getAgent(msg.sender).isActive != 1) {
             // Not registered, do registration
             // Encode calldata for register
             bytes memory registerData = abi.encodeWithSignature(

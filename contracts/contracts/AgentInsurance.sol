@@ -150,7 +150,7 @@ contract AgentInsurance is Ownable {
     function payPremium(uint256 taskId) external payable onlyMember {
         // Get agent's reputation to determine premium rate
         AgentRegistry.Agent memory agent = agentRegistry.getAgent(msg.sender);
-        require(agent.isActive, "Agent not active");
+        require(agent.isActive == 1, "Agent not active");
 
         // Get the actual task value from TaskEscrow
         TaskEscrow.Task memory task = taskEscrow.getTask(taskId);

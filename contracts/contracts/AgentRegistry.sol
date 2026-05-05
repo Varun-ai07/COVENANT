@@ -105,7 +105,7 @@ contract AgentRegistry is Ownable {
         string[] calldata capabilities
     ) external payable {
         require(bytes(name).length > 0, "Name required");
-        require(!agents[msg.sender].isActive, "Already registered");
+        require(agents[msg.sender].isActive == 0, "Already registered");
         require(msg.value >= MIN_STAKE, "Insufficient stake");
         require(capabilities.length > 0, "At least one capability required");
 
@@ -144,10 +144,10 @@ contract AgentRegistry is Ownable {
      * @notice Add additional stake to existing registration
      */
     function addStake() external payable {
-        require(agents[msg.sender].isActive, "Not registered");
+        require(agents[msg.sender].isActive == 1, "Not registered");
         require(msg.value > 0, "Must send ETH");
 
-        agents[msg.sender].stakedAmount += msg.value;
+        agents[msg.sender].stakedAmount += uint96(msg.value);
     }
 
     /**
@@ -163,7 +163,7 @@ contract AgentRegistry is Ownable {
         // Filter to only active agents
         uint256 activeCount = 0;
         for (uint256 i = 0; i < allAgents.length; i++) {
-            if (agents[allAgents[i]].isActive) {
+            if (agents[allAgents[i]].isActive == 1) {
                 activeCount++;
             }
         }
@@ -171,7 +171,7 @@ contract AgentRegistry is Ownable {
         address[] memory activeAgents = new address[](activeCount);
         uint256 idx = 0;
         for (uint256 i = 0; i < allAgents.length; i++) {
-            if (agents[allAgents[i]].isActive) {
+            if (agents[allAgents[i]].isActive == 1) {
                 activeAgents[idx] = allAgents[i];
                 idx++;
             }
@@ -189,19 +189,19 @@ contract AgentRegistry is Ownable {
         address agent,
         int256 delta
     ) external onlyAuthorized {
-        require(agents[agent].isActive, "Agent not active");
+        require(agents[agent].isActive == 1, "Agent not active");
 
         Agent storage agentData = agents[agent];
 
         if (delta > 0) {
-            uint256 increase = uint256(delta);
-            if (agentData.reputation + increase > MAX_REPUTATION) {
-                agentData.reputation = MAX_REPUTATION;
+            uint16 increase = uint16(uint256(delta));
+            if (uint256(agentData.reputation) + uint256(increase) > MAX_REPUTATION) {
+                agentData.reputation = uint16(MAX_REPUTATION);
             } else {
                 agentData.reputation += increase;
             }
         } else if (delta < 0) {
-            uint256 decrease = uint256(-delta);
+            uint16 decrease = uint16(uint256(-delta));
             if (agentData.reputation < decrease) {
                 agentData.reputation = 0;
             } else {
@@ -220,7 +220,7 @@ contract AgentRegistry is Ownable {
         bool success,
         uint256 valueTransferred
     ) external onlyAuthorized {
-        require(agents[agent].isActive, "Agent not active");
+        require(agents[agent].isActive == 1, "Agent not active");
 
         if (success) {
             agents[agent].tasksCompleted++;
@@ -228,16 +228,16 @@ contract AgentRegistry is Ownable {
             agents[agent].tasksFailed++;
         }
 
-        agents[agent].totalValueTransferred += valueTransferred;
+        agents[agent].totalValueTransacted += uint96(valueTransferred);
     }
 
     /**
      * @notice Deactivate an agent (returns stake minus any pending obligations)
      */
     function deactivate() external {
-        require(agents[msg.sender].isActive, "Not active");
+        require(agents[msg.sender].isActive == 1, "Not active");
 
-        agents[msg.sender].isActive = false;
+        agents[msg.sender].isActive = 0;
 
         uint256 stakeToReturn = agents[msg.sender].stakedAmount;
         agents[msg.sender].stakedAmount = 0;
@@ -296,10 +296,10 @@ contract AgentRegistry is Ownable {
         address agent,
         uint256 slashAmount
     ) external onlyAuthorized {
-        require(agents[agent].isActive, "Agent not active");
+        require(agents[agent].isActive == 1, "Agent not active");
         require(slashAmount <= agents[agent].stakedAmount, "Slash exceeds stake");
 
-        agents[agent].stakedAmount -= slashAmount;
+        agents[agent].stakedAmount -= uint96(slashAmount);
 
         // Slashed funds go to the contract owner (protocol treasury)
         if (slashAmount > 0) {
@@ -326,7 +326,7 @@ contract AgentRegistry is Ownable {
         require(address(reputationVerifier) != address(0), "Reputation verifier not set");
         
         // Call the reputation verifier contract
-        Groth16Verifier(reputationVerifier).verifyProof(
+        return Groth16Verifier(reputationVerifier).verifyProof(
             proofA, proofB, proofC, proofPublicSignals
         );
     }
@@ -354,7 +354,7 @@ contract AgentRegistry is Ownable {
      * @notice Consume a nullifier to prevent replay attacks
      * @param nullifier The nullifier to mark as used
      */
-    function useNullifier(bytes32 nullifier) external {
+    function useNullifier(bytes32 nullifier) external onlyAuthorized {
         usedNullifiers[nullifier] = true;
     }
 }

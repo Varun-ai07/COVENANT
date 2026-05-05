@@ -107,7 +107,7 @@ contract DisputeArbitrationMock {
         for (uint256 i = 0; i < allAgents.length; i++) {
             AgentRegistry.Agent memory agent = agentRegistry.getAgent(allAgents[i]);
             if (
-                agent.isActive &&
+                agent.isActive == 1 &&
                 agent.reputation > 400 &&
                 allAgents[i] != dispute.client &&
                 allAgents[i] != dispute.worker

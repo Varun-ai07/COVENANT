@@ -181,7 +181,7 @@ contract DisputeArbitration is Ownable, VRFConsumerBaseV2 {
         for (uint256 i = 0; i < allAgents.length; i++) {
             AgentRegistry.Agent memory agent = agentRegistry.getAgent(allAgents[i]);
             if (
-                agent.isActive &&
+                agent.isActive == 1 &&
                 agent.reputation > 600 &&
                 allAgents[i] != dispute.client &&
                 allAgents[i] != dispute.worker

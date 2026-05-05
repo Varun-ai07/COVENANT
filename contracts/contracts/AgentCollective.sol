@@ -145,7 +145,7 @@ contract AgentCollective is Ownable {
 
         // Verify creator is a registered and active agent
         AgentRegistry.Agent memory creatorAgent = agentRegistry.getAgent(msg.sender);
-        if (!creatorAgent.isActive) revert AgentNotActive(msg.sender);
+        if (creatorAgent.isActive != 1) revert AgentNotActive(msg.sender);
 
         collectiveCounter++;
 
@@ -178,7 +178,7 @@ contract AgentCollective is Ownable {
 
         // Verify member is a registered and active agent
         AgentRegistry.Agent memory memberAgent = agentRegistry.getAgent(msg.sender);
-        if (!memberAgent.isActive) revert AgentNotActive(msg.sender);
+        if (memberAgent.isActive != 1) revert AgentNotActive(msg.sender);
 
         // Check if already a member
         for (uint256 i = 0; i < collective.members.length; i++) {
@@ -233,7 +233,7 @@ contract AgentCollective is Ownable {
 
         // Verify worker is a registered and active agent with reputation
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(workerAddress);
-        if (!workerAgent.isActive) revert AgentNotActive(workerAddress);
+        if (workerAgent.isActive != 1) revert AgentNotActive(workerAddress);
         if (workerAgent.reputation == 0) revert WorkerHasNoReputation();
 
         // Include Medium priority fee (100 bps) in the value sent to TaskEscrow

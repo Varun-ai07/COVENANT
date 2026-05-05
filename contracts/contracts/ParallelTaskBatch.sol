@@ -138,12 +138,12 @@ contract ParallelTaskBatch is Ownable {
 
         // Verify client is a registered and active agent
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        if (!clientAgent.isActive) revert AgentNotActive(msg.sender);
+        if (clientAgent.isActive != 1) revert AgentNotActive(msg.sender);
 
         // Verify each worker
         for (uint256 i = 0; i < len; i++) {
             AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(workers[i]);
-            if (!workerAgent.isActive) revert AgentNotActive(workers[i]);
+            if (workerAgent.isActive != 1) revert AgentNotActive(workers[i]);
             if (workerAgent.reputation == 0) revert WorkerHasNoReputation();
         }
 

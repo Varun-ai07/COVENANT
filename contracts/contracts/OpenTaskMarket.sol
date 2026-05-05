@@ -169,11 +169,11 @@ contract OpenTaskMarket is Ownable {
         // Verify client is a registered agent
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
         // Debug: Log agent info (would need events or revert with data for debugging)
-        emit DebugAgentInfo(msg.sender, address(agentRegistry), clientAgent.isActive, clientAgent.name);
-        if (!clientAgent.isActive) {
+        emit DebugAgentInfo(msg.sender, address(agentRegistry), clientAgent.isActive == 1, clientAgent.name);
+        if (clientAgent.isActive != 1) {
             // Temporary debug: let's see what we're working with
             // Let's add more info to help debug
-            emit DebugAgentNotActive(msg.sender, address(agentRegistry), clientAgent.isActive, clientAgent.name);
+            emit DebugAgentNotActive(msg.sender, address(agentRegistry), clientAgent.isActive == 1, clientAgent.name);
             revert AgentNotActive();
         }
 
@@ -258,7 +258,7 @@ contract OpenTaskMarket is Ownable {
 
         // Verify bidder is a registered agent
         AgentRegistry.Agent memory bidderAgent = agentRegistry.getAgent(msg.sender);
-        require(bidderAgent.isActive, "Bidder not registered");
+        require(bidderAgent.isActive == 1, "Bidder not registered");
 
         // Store or update bid
         Bid storage bid = bids[taskId][msg.sender];
@@ -302,7 +302,7 @@ contract OpenTaskMarket is Ownable {
 
         // Verify worker is a registered agent
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive, "Worker not registered");
+        require(workerAgent.isActive == 1, "Worker not registered");
 
         // Find the bid from this worker
         Bid storage bid = bids[taskId][worker];
@@ -466,7 +466,7 @@ contract OpenTaskMarket is Ownable {
      */
     function debugCheckAgentStatus() external view returns (bool) {
         AgentRegistry.Agent memory agent = agentRegistry.getAgent(msg.sender);
-        return agent.isActive;
+        return agent.isActive == 1;
     }
 
     /**

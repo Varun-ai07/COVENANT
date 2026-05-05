@@ -187,10 +187,10 @@ contract TaskEscrow is Ownable {
 
         // Verify both client and worker are registered agents
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        require(clientAgent.isActive, "Client not registered");
+        require(clientAgent.isActive == 1, "Client not registered");
 
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive, "Worker not registered");
+        require(workerAgent.isActive == 1, "Worker not registered");
         require(workerAgent.reputation > 0, "Worker has no reputation");
 
         taskCounter++;
@@ -253,7 +253,7 @@ contract TaskEscrow is Ownable {
 
         // Only verify the worker is a registered agent (skip client check for collectives)
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive, "Worker not registered");
+        require(workerAgent.isActive == 1, "Worker not registered");
         require(workerAgent.reputation > 0, "Worker has no reputation");
 
         taskCounter++;
@@ -296,10 +296,10 @@ contract TaskEscrow is Ownable {
 
         // Verify both client and worker are registered agents
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        require(clientAgent.isActive, "Client not registered");
+        require(clientAgent.isActive == 1, "Client not registered");
 
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive, "Worker not registered");
+        require(workerAgent.isActive == 1, "Worker not registered");
         require(workerAgent.reputation > 0, "Worker has no reputation");
 
         taskCounter++;
@@ -376,10 +376,10 @@ contract TaskEscrow is Ownable {
 
         // Verify both client and worker are registered agents
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        require(clientAgent.isActive, "Client not registered");
+        require(clientAgent.isActive == 1, "Client not registered");
 
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive, "Worker not registered");
+        require(workerAgent.isActive == 1, "Worker not registered");
         require(workerAgent.reputation > 0, "Worker has no reputation");
 
         require(msg.value >= totalPayment, "Insufficient funding");
@@ -575,7 +575,7 @@ contract TaskEscrow is Ownable {
 
         // Verify worker is a registered agent
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive, "Worker not registered");
+        require(workerAgent.isActive == 1, "Worker not registered");
         require(workerAgent.reputation > 0, "Worker has no reputation");
 
         // Medium priority fee for subtask
