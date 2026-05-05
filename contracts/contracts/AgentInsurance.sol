@@ -284,6 +284,7 @@ contract AgentInsurance is Ownable {
      */
     function payClaim(uint256 claimId) external claimExists(claimId) claimNotPaid(claimId) {
         Claim storage claim = claims[claimId];
+        require(msg.sender == claim.agent, "Only claimant can trigger payout");
         require(claim.isGovernanceVoteComplete, "Governance vote not completed");
         require(claim.votesFor > claim.votesAgainst, "Claim not approved by governance");
 
@@ -302,12 +303,6 @@ contract AgentInsurance is Ownable {
         // As per Section 5D: "the insurance pool tops up their reputation"
         uint256 reputationTopUp = 25; // Fixed amount for reputation top-up
         agentRegistry.updateReputation(claim.agent, int256(reputationTopUp));
-
-        // Compensate the client for part of their loss
-        // As per Section 5D: "covers part of the client's loss"
-        // We'll compensate the client with 25% of the task value
-        uint256 clientCompensation = (taskEscrow.getTask(claim.taskId).payment * 25) / 100; // 25%
-        payable(taskEscrow.getTask(claim.taskId).client).transfer(clientCompensation);
 
         emit ClaimPaid(claim.agent, claim.taskId, claim.amountRequested);
     }
@@ -331,7 +326,8 @@ contract AgentInsurance is Ownable {
         poolBalance -= withdrawAmount;
 
         emit Withdrawal(msg.sender, withdrawAmount);
-        payable(msg.sender).transfer(withdrawAmount);
+        (bool success, ) = payable(msg.sender).call{value: withdrawAmount}("");
+        require(success, "ETH transfer failed");
     }
 
     /**
