@@ -609,6 +609,8 @@ contract TaskEscrow is Ownable {
         emit TaskFunded(taskCounter, msg.value);
         emit TaskInProgress(taskCounter);
         emit SubtaskCreated(parentTaskId, taskCounter, msg.sender, worker);
+
+        return taskCounter;
     }
 
     /**

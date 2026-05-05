@@ -71,6 +71,7 @@ contract AgentCollective is Ownable {
         mapping(address => bool) decryptedFlags; // Member => whether they've accessed their copy
         bool distributed;             // Whether deliverable has been claimed by members
         uint256 maxMembers;           // Maximum number of members allowed
+        uint256 minContribution;      // Minimum contribution required per member (wei)
     }
 
     // Storage
@@ -159,6 +160,7 @@ contract AgentCollective is Ownable {
         collective.deliverableHash = bytes32(0);
         collective.distributed = false;
         collective.maxMembers = maxMembers;
+        collective.minContribution = minContribution;
 
         // Add creator as first member
         collective.members.push(msg.sender);
@@ -194,6 +196,9 @@ contract AgentCollective is Ownable {
         if (collective.members.length >= collective.maxMembers) {
             revert NotEnoughFunds(); // Reusing error for capacity
         }
+
+        // Check minimum contribution
+        require(msg.value >= collective.minContribution, "Contribution below minimum");
 
         // Add new member
         collective.members.push(msg.sender);

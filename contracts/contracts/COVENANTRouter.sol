@@ -63,7 +63,7 @@ contract COVENANTRouter {
         }
         if (msg.value != totalValue) revert WrongTotalValue();
 
-        // Execute each call via delegatecall
+        // Execute each call via call
         for (uint256 i = 0; i < len; ++i) {
             (bool success, bytes memory result) = calls[i].target.call{value: calls[i].value}(
                 calls[i].data
@@ -80,9 +80,9 @@ contract COVENANTRouter {
      * @param name Agent name (will be keccak256 hashed for storage efficiency)
      * @param capabilities Array of capabilities
      * @param worker Worker address
-     * @param payment Payment amount (uint96)
-     * @param deadline Deadline timestamp (uint48)
-     * @param descriptionHash Task description IPFS CID (bytes32)
+     * @param payment Payment amount (uint256)
+     * @param deadline Deadline timestamp (uint256)
+     * @param descriptionHash Task description IPFS CID (string)
      *
      * This saves 1-2 round trips and ~21000 gas.
      */
@@ -90,9 +90,9 @@ contract COVENANTRouter {
         string calldata name,
         string[] calldata capabilities,
         address worker,
-        uint96 payment,
-        uint48 deadline,
-        bytes32 descriptionHash
+        uint256 payment,
+        uint256 deadline,
+        string calldata descriptionHash
     ) external payable returns (uint256 taskId) {
         // Minimum stake is 0.001 ETH
         uint256 stake = 0.001 ether;
@@ -141,7 +141,7 @@ contract COVENANTRouter {
         // Now create task via escrow
         // Encode createAndFundTask data
         bytes memory taskData = abi.encodeWithSignature(
-            "createAndFundTask(address,uint96,uint48,bytes32)",
+            "createAndFundTask(address,uint256,uint256,string)",
             worker,
             payment,
             deadline,

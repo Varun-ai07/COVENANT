@@ -263,13 +263,15 @@ contract DisputeArbitration is Ownable, VRFConsumerBaseV2 {
         if (workerWins) {
             uint256 jurorReward = dispute.disputeBond / dispute.jurors.length;
             for (uint256 i = 0; i < dispute.jurors.length; i++) {
-                payable(dispute.jurors[i]).transfer(jurorReward);
+                (bool success, ) = payable(dispute.jurors[i]).call{value: jurorReward}("");
+                require(success, "ETH transfer to juror failed");
             }
             agentRegistry.updateReputation(dispute.worker, 10);
         } else {
             uint256 jurorReward = dispute.disputeBond / dispute.jurors.length;
             for (uint256 i = 0; i < dispute.jurors.length; i++) {
-                payable(dispute.jurors[i]).transfer(jurorReward);
+                (bool success, ) = payable(dispute.jurors[i]).call{value: jurorReward}("");
+                require(success, "ETH transfer to juror failed");
             }
             agentRegistry.updateReputation(dispute.worker, -50);
             AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(dispute.worker);
