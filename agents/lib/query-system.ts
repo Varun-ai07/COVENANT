@@ -3,9 +3,9 @@
  * Implements the query resolution mechanism from the verification optimization guide
  */
 
-import { TaskEscrowABI } from "../abis.js";
-import { CONTRACTS } from "../config.js";
-import { generateJSON } from "../llm.js";
+import { TaskEscrowABI } from "./abis.js";
+import { CONTRACTS } from "./config.js";
+import { generateJSON } from "./llm.js";
 
 /**
  * Submit a query to the client about a task
@@ -89,7 +89,6 @@ Response:
   try {
     const response = await generateJSON<{ response: string }>(prompt, {
       maxTokens: 300,
-      temperature: 0.3
     });
 
     return response.response;

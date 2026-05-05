@@ -15,7 +15,6 @@ import * as TestCoverageCheckerModule from "./TestCoverageChecker.js";
 import * as PerformanceCheckerModule from "./PerformanceChecker.js";
 import * as SecurityCheckerModule from "./SecurityChecker.js";
 import * as CodeQualityCheckerModule from "./CodeQualityChecker.js";
-import * as StripeIntegrationCheckerModule from "./StripeIntegrationChecker.js";
 import * as ThreeJSCheckerModule from "./ThreeJSChecker.js";
 import * as StripePaymentCheckerModule from "./StripePaymentChecker.js";
 
@@ -53,11 +52,6 @@ export const CHECKERS: Checker[] = [
     check: StripePaymentCheckerModule.check,
   },
   {
-    name: 'StripeIntegrationChecker',
-    canHandle: StripeIntegrationCheckerModule.canHandle,
-    check: StripeIntegrationCheckerModule.check,
-  },
-  {
     name: 'APIDEndpointChecker',
     canHandle: APIDEndpointCheckerModule.canHandle,
     check: APIDEndpointCheckerModule.check,
@@ -86,11 +80,6 @@ export const CHECKERS: Checker[] = [
     name: 'CodeQualityChecker',
     canHandle: CodeQualityCheckerModule.canHandle,
     check: CodeQualityCheckerModule.check,
-  },
-  {
-    name: 'StripeIntegrationChecker',
-    canHandle: StripeIntegrationCheckerModule.canHandle,
-    check: StripeIntegrationCheckerModule.check,
   },
   {
     name: 'FullStackChecker',
@@ -143,7 +132,7 @@ export function getCheckerForDeliverable(deliverable: any): Checker {
 export async function runAllCheckers(
   deliverable: any,
   taskDescription?: string
-): Promise<ReturnType<typeof CHECKERS[0]['check']>> {
+): Promise<Array<Awaited<ReturnType<typeof CHECKERS[0]['check']>>>> {
   const applicableCheckers = CHECKERS.filter(c => c.canHandle(deliverable));
 
   console.log(`[Checkers] Running ${applicableCheckers.length} checker(s): ${applicableCheckers.map(c => c.name).join(', ')}`);
@@ -167,9 +156,7 @@ export async function runAllCheckers(
     })
   );
 
-  // Return first result (single checker model) - scoring will aggregate
-  // In a more complex version we could aggregate all results
-  return results[0];
+  return results;
 }
 
 /**

@@ -1,20 +1,12 @@
 import * as dotenv from "dotenv";
-import { formatEther, type WalletClient, type PublicClient, type Address } from "viem";
+import { formatEther, type Address } from "viem";
 import { createWallet, CONTRACTS } from "./lib/config.js";
 import { AgentRegistryABI, TaskEscrowABI } from "./lib/abis.js";
 import { downloadFromIPFS } from "./lib/ipfs.js";
-import { generateJSON } from "./lib/llm.js";
-import { initLitClient, decrypt, fromHex, toHex } from "./lib/crypto.js";
-import { verifyReputationProof, verifyCapabilityProof } from "./lib/zk-proofs.js";
+import { initLitClient } from "./lib/crypto.js";
 import { getCheckerForDeliverable, runAllCheckers } from "./lib/checkers/index.js";
-import { calculateScore, evaluateWithLLM, aggregateDeterministicScore, passesVerification, finalizeVerification } from "./lib/scoring.js";
-import { saveEvidence, loadEvidence } from "./lib/evidence.js";
-import { CheckResult } from "./lib/evidence.js";
-import { EventListener } from "./lib/eventListener.js";
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from 'url';
-import { submitQuery, respondToQuery, monitorQueries, generateQueryResponse } from "./lib/query-system.js";
+import { calculateScore, evaluateWithLLM, passesVerification } from "./lib/scoring.js";
+import { type CheckResult } from "./lib/evidence.js";
 
 // Load environment variables
 dotenv.config();
@@ -40,15 +32,6 @@ interface TaskSpec {
   };
 }
 
-// Query system interfaces
-interface Query {
-  queryHash: string; // IPFS hash of encrypted query
-  responseHash: string; // IPFS hash of encrypted response
-  submittedAt: number;
-  respondedAt: number;
-  status: 'submitted' | 'resolved';
-}
-
 interface VerificationResult {
   taskId: string;
   passed: boolean;
@@ -59,36 +42,6 @@ interface VerificationResult {
     llmEvaluation: any;
   };
   timestamp: number;
-}
-
-// Event listener for query events
-class QueryEventListener {
-  private eventListener: EventListener | null = null;
-
-  constructor() {
-    // Set up event listener for query events
-    if (process.env.BASE_SEPOLIA_WS_URL) {
-      try {
-        this.eventListener = new EventListener(process.env.BASE_SEPOLIA_WS_URL);
-      } catch (error) {
-        console.warn("WebSocket listener initialization failed:", error);
-        console.log("Falling back to polling mode...");
-      }
-    }
-  }
-
-  async startListening() {
-    if (this.eventListener) {
-      console.log("Query event listener started");
-      // In a full implementation, we would set up event subscriptions here
-    }
-  }
-
-  stop() {
-    if (this.eventListener) {
-      this.eventListener.stop();
-    }
-  }
 }
 
 interface VerificationBatch {
@@ -174,7 +127,7 @@ async function runGatekeepingChecks(deliverable: any, taskSpec?: TaskSpec): Prom
 async function runSpecializedCheckers(deliverable: any, taskSpec?: TaskSpec): Promise<any[]> {
   // Run all applicable checkers
   const results = await runAllCheckers(deliverable);
-  return [results];
+  return results;
 }
 
 // Weighted scoring calculation
@@ -204,7 +157,7 @@ function calculateWeightedScore(
 /**
  * Verify a single task with enhanced evaluation
  */
-async function verifyTask(
+export async function verifyTask(
   taskId: bigint,
   publicClient: any,
   wallet: any,
@@ -233,12 +186,15 @@ async function verifyTask(
 
   // Stage 1: Automated Gatekeeping (Fast Fail)
   console.log("Stage 1: Automated Gatekeeping Checks");
-  // In a full implementation, this would run actual checks
 
   // Stage 2: Specialized Checker Execution
   console.log("Stage 2: Specialized Checker Execution");
   const checker = getCheckerForDeliverable(deliverable);
-  const checkResult = await checker.check(deliverable);
+  const rawCheckResult = await checker.check(deliverable);
+  const checkResult: CheckResult = {
+    ...rawCheckResult,
+    checkerName: checker.name,
+  };
 
   // Stage 3: LLM-Based Evaluation
   console.log("Stage 3: LLM-Based Evaluation");
@@ -342,7 +298,7 @@ async function verifyBatchOptimistically(
     });
 
     console.log(`Batch verification transaction: ${batchHash}`);
-    const receipt = await publicClient.waitForTransactionReceipt({ batchHash });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash: batchHash });
     console.log(`Confirmed in block ${receipt.blockNumber}`);
 
     // Log results
@@ -484,7 +440,11 @@ async function enhancedVerifyTask(
   // Stage 2: Specialized Checker Execution
   console.log("Stage 2: Specialized Checker Execution");
   const checker = getCheckerForDeliverable(deliverable);
-  const checkResult = await checker.check(deliverable);
+  const rawCheckResult = await checker.check(deliverable);
+  const checkResult: CheckResult = {
+    ...rawCheckResult,
+    checkerName: checker.name,
+  };
 
   // Stage 3: LLM-Based Evaluation
   console.log("Stage 3: LLM-Based Evaluation");
@@ -520,14 +480,14 @@ async function enhancedVerifyTask(
 }
 
 async function main() {
-  const { CLIENT_PRIVATE_KEY } = process.env;
+  const verifierKey = process.env.VERIFIER_PRIVATE_KEY || process.env.CLIENT_PRIVATE_KEY;
 
-  if (!CLIENT_PRIVATE_KEY) {
-    console.error("Missing CLIENT_PRIVATE_KEY in .env");
+  if (!verifierKey) {
+    console.error("Missing VERIFIER_PRIVATE_KEY (or CLIENT_PRIVATE_KEY) in .env");
     process.exit(1);
   }
 
-  const { wallet, account, publicClient } = createWallet(CLIENT_PRIVATE_KEY);
+  const { wallet, account, publicClient } = createWallet(verifierKey);
 
   console.log("=== ENHANCED VERIFIER AGENT ===");
   console.log(`Address: ${account.address}`);
@@ -552,7 +512,7 @@ async function main() {
 }
 
 // Export for testing
-export { verifyTask, verifyBatchOptimistically, main };
+export { verifyBatchOptimistically, main };
 export default main;
 
 // Run if called directly

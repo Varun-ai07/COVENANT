@@ -1,13 +1,11 @@
 import * as dotenv from "dotenv";
-import { formatEther, parseEther } from "viem";
-import { createWallet, CONTRACTS, CHAIN, RPC_URL } from "./lib/config.js";
-import { AgentRegistryABI, TaskEscrowABI, OpenTaskMarketABI } from "./lib/abis.js";
-import { generateKeyPair, deriveSharedSecret, decrypt, fromHex, toHex } from "./lib/crypto.js";
-import { uploadToIPFS, downloadFromIPFS, isPinataConfigured } from "./lib/ipfs.js";
+import { formatEther, parseEther, encodeFunctionData } from "viem";
+import { createWallet, CONTRACTS } from "./lib/config.js";
+import { OpenTaskMarketABI } from "./lib/abis.js";
+import { downloadFromIPFS } from "./lib/ipfs.js";
 import { generateCompletion } from "./lib/llm.js";
 import { safeSubmit } from "./lib/safe.js";
-import { encodeFunctionData } from "viem";
-import { EventListener } from "./lib/eventListener";
+import { EventListener } from "./lib/eventListener.js";
 
 dotenv.config();
 
@@ -34,10 +32,9 @@ interface BidInfo {
  * Implements 2B enhancement: One-to-many (client broadcasts to multiple workers)
  */
 export class BidderAgent {
-  private walletClient: ReturnType<typeof createWallet>["wallet"];
-  private account: ReturnType<typeof createWallet>["account"];
-  private publicClient: ReturnType<typeof createWallet>["publicClient"];
-  private openTaskMarket: any;
+  walletClient: ReturnType<typeof createWallet>["wallet"];
+  account: ReturnType<typeof createWallet>["account"];
+  publicClient: ReturnType<typeof createWallet>["publicClient"];
   private eventListener?: EventListener;
   private seenTasks: Set<bigint> = new Set();
 
@@ -46,12 +43,6 @@ export class BidderAgent {
     this.walletClient = wallet;
     this.account = account;
     this.publicClient = publicClient;
-
-    // Initialize OpenTaskMarket contract instance
-    this.openTaskMarket = this.publicClient.getContract({
-      address: CONTRACTS.OpenTaskMarket,
-      abi: OpenTaskMarketABI,
-    });
   }
 
   /**
@@ -103,14 +94,14 @@ export class BidderAgent {
           }
 
           // Check if we've already bid on this task
-          const alreadyBid = await this.hasAlreadyBidOnTask(i);
+          const alreadyBid = await this.hasAlreadyBidOnTask(BigInt(i));
           if (alreadyBid) {
             console.log(`Task #${i}: Already bid, skipping`);
             continue;
           }
 
           // Check if task matches our capabilities
-          const hasCapability = await this.taskMatchesCapabilities(task.descriptionHash);
+          const hasCapability = await this.taskMatchesCapabilities(task.descriptionHash as `0x${string}`);
           if (!hasCapability) {
             console.log(`Task #${i}: Doesn't match capabilities, skipping`);
             continue;
@@ -147,7 +138,7 @@ export class BidderAgent {
             {
               to: CONTRACTS.OpenTaskMarket,
               data: bidData,
-              value: 0
+              value: 0n
             }
           );
 
@@ -202,8 +193,8 @@ export class BidderAgent {
   private async taskMatchesCapabilities(descriptionHash: `0x${string}`): Promise<boolean> {
     try {
       // Download and parse task details
-      const taskDetails = await downloadFromIPFS(descriptionHash);
-      const taskJson = JSON.parse(taskDetails);
+      const taskDetails = await downloadFromIPFS<any>(descriptionHash);
+      const taskJson = taskDetails;
       const taskTitle = (taskJson.title || "").toLowerCase();
       const taskDescription = (taskJson.description || "").toLowerCase();
 
@@ -240,8 +231,8 @@ export class BidderAgent {
   }> {
     try {
       // Download task details
-      const taskDetails = await downloadFromIPFS(task.descriptionHash);
-      const taskJson = JSON.parse(taskDetails);
+      const taskDetails = await downloadFromIPFS<any>(task.descriptionHash);
+      const taskJson = taskDetails;
 
       // Create prompt for LLM to generate bid
       const prompt = `

@@ -1,29 +1,10 @@
-import { ethers } from "ethers";
 import * as dotenv from "dotenv";
-import { AgentInsurance__factory } from "../frontend/src/contracts/AgentInsurance";
-import { AgentRegistry__factory } from "../frontend/src/contracts/AgentRegistry";
-import { TaskEscrow__factory } from "../frontend/src/contracts/TaskEscrow";
-import { config } from "./lib/config";
-import { llmGenerate } from "./lib/llm";
-import { encryptTask, decryptTask } from "./lib/crypto";
-import { tracker } from "./lib/tracker";
+import { formatEther, parseEther } from "viem";
+import { createWallet, CONTRACTS } from "./lib/config.js";
+import { AgentRegistryABI, TaskEscrowABI } from "./lib/abis.js";
+import { generateJSON } from "./lib/llm.js";
 
 dotenv.config();
-
-const provider = new ethers.JsonRpcProvider(config.rpcUrl);
-const wallet = new ethers.Wallet(process.env.INSURANCE_AGENT_PRIVATE_KEY!, provider);
-const insuranceContract = AgentInsurance__factory.connect(
-  config.contracts.AgentInsurance,
-  wallet
-);
-const agentRegistry = AgentRegistry__factory.connect(
-  config.contracts.AgentRegistry,
-  wallet
-);
-const taskEscrow = TaskEscrow__factory.connect(
-  config.contracts.TaskEscrow,
-  wallet
-);
 
 interface InsuranceClaim {
   taskId: bigint;
@@ -36,10 +17,18 @@ interface InsuranceClaim {
 
 /**
  * Insurance Agent - Manages claims and payouts from the insurance pool
+ *
+ * Note: The AgentInsurance contract is not yet in the deployed ABIs.
+ * This agent uses AgentRegistry and TaskEscrow for agent/task lookups
+ * and provides the insurance logic framework for when the insurance
+ * contract is deployed and added to lib/abis.ts.
  */
 class InsuranceAgent {
   private name: string;
   private capabilities: string[];
+  private walletClient: any;
+  private publicClient: any;
+  private account: any;
 
   constructor() {
     this.name = "InsuranceAgent";
@@ -47,20 +36,36 @@ class InsuranceAgent {
   }
 
   /**
+   * Initialize wallet connections
+   */
+  private async init() {
+    const privateKey = process.env.INSURANCE_AGENT_PRIVATE_KEY || process.env.CLIENT_PRIVATE_KEY;
+    if (!privateKey) {
+      throw new Error("Missing INSURANCE_AGENT_PRIVATE_KEY (or CLIENT_PRIVATE_KEY) in .env");
+    }
+    const { wallet, account, publicClient } = createWallet(privateKey);
+    this.walletClient = wallet;
+    this.account = account;
+    this.publicClient = publicClient;
+  }
+
+  /**
    * Main execution loop
    */
   async run() {
     console.log(`🛡️  ${this.name} started`);
-    
+
+    await this.init();
+
     // Register on-chain if not already
     await this.registerIfNeeded();
-    
-    // Monitor for insurance events
-    this.listenForClaims();
-    
+
+    // Monitor for insurance events (placeholder — polling until AgentInsurance ABI is available)
+    this.startMonitoring();
+
     // Periodically assess risk and adjust premiums
     setInterval(() => this.assessRisk(), 3600000); // Every hour
-    
+
     // Process pending claims every 5 minutes
     setInterval(() => this.processClaims(), 300000);
   }
@@ -70,17 +75,24 @@ class InsuranceAgent {
    */
   private async registerIfNeeded() {
     try {
-      const isRegistered = await agentRegistry.isRegistered(wallet.address);
+      const isRegistered = await this.publicClient.readContract({
+        address: CONTRACTS.AgentRegistry,
+        abi: AgentRegistryABI,
+        functionName: "isRegistered",
+        args: [this.account.address],
+      }) as boolean;
+
       if (!isRegistered) {
         console.log("📝 Registering Insurance Agent on-chain...");
-        const tx = await agentRegistry.register(
-          this.name,
-          this.capabilities,
-          { value: ethers.parseEther("0.001") }
-        );
-        await tx.wait();
+        const hash = await this.walletClient.writeContract({
+          address: CONTRACTS.AgentRegistry,
+          abi: AgentRegistryABI,
+          functionName: "register",
+          args: [this.name, this.capabilities],
+          value: parseEther("0.001"),
+        });
+        const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
         console.log("✅ Insurance Agent registered!");
-        tracker.recordRegistration();
       }
     } catch (error) {
       console.error("❌ Failed to register insurance agent:", error);
@@ -88,24 +100,12 @@ class InsuranceAgent {
   }
 
   /**
-   * Listen for insurance-related events
+   * Monitor for insurance-related events (polling-based placeholder)
    */
-  private listenForClaims() {
-    // Listen for NewClaim events
-    insuranceContract.on("NewClaim", async (claimId, agentAddress, descriptionHash, claimAmount) => {
-      console.log(`📋 New insurance claim received: ${claimId}`);
-      await this.processClaim(claimId);
-    });
-
-    // Listen for ClaimApproved events
-    insuranceContract.on("ClaimApproved", async (claimId, payoutAmount) => {
-      console.log(`💰 Claim approved: ${claimId}, Payout: ${ethers.formatEther(payoutAmount)} ETH`);
-    });
-
-    // Listen for ClaimRejected events
-    insuranceContract.on("ClaimRejected", async (claimId, reason) => {
-      console.log(`❌ Claim rejected: ${claimId}, Reason: ${reason}`);
-    });
+  private startMonitoring() {
+    console.log("📋 Insurance event monitoring started (polling mode)");
+    // When AgentInsurance ABI is added to lib/abis.ts, switch to
+    // this.publicClient.watchContractEvent for real event listening
   }
 
   /**
@@ -114,38 +114,31 @@ class InsuranceAgent {
   private async processClaim(claimId: bigint) {
     try {
       console.log(`🔍 Processing claim ${claimId}...`);
-      
-      // Get claim details from contract
-      const claim = await insuranceContract.claims(claimId);
-      
-      // Decrypt the task description to understand context
-      let taskDescription = "";
-      try {
-        // In a real implementation, we would fetch the encrypted task from IPFS
-        // and decrypt it using the agent's private key
-        // For now, we'll simulate this
-        taskDescription = "Task description would be decrypted here";
-      } catch (error) {
-        console.warn("Could not decrypt task description:", error);
-      }
+
+      // When AgentInsurance contract is deployed and ABI available,
+      // fetch claim details: await this.publicClient.readContract({ ... })
+      const claim = {
+        agentAddress: "0x0",
+        claimAmount: 0n,
+        timestamp: BigInt(Math.floor(Date.now() / 1000)),
+      };
 
       // Use LLM to assess the validity of the claim
       const assessmentPrompt = `
         You are an insurance claims assessor for the COVENANT agent economy.
-        
+
         Claim Details:
         - Claim ID: ${claimId}
         - Agent Address: ${claim.agentAddress}
-        - Claim Amount: ${ethers.formatEther(claim.claimAmount)} ETH
-        - Timestamp: ${new Date(claim.timestamp * 1000).toISOString()}
-        - Task Context: ${taskDescription}
-        
+        - Claim Amount: ${formatEther(claim.claimAmount)} ETH
+        - Timestamp: ${new Date(Number(claim.timestamp) * 1000).toISOString()}
+
         Assess whether this claim is valid based on:
         1. Is the claimed amount reasonable for the type of failure?
         2. Does the agent have a history of similar claims?
         3. Is the timing consistent with known task durations?
         4. Are there any red flags suggesting fraud?
-        
+
         Provide your assessment as JSON with:
         {
           "valid": boolean,
@@ -155,11 +148,11 @@ class InsuranceAgent {
         }
       `;
 
-      const assessment = await llmGenerate(assessmentPrompt);
+      const assessment = await generateJSON(assessmentPrompt);
       let assessmentObj: { valid: boolean; confidence: number; reason: string; recommendedPayout: string };
-      
+
       try {
-        assessmentObj = JSON.parse(assessment);
+        assessmentObj = typeof assessment === 'string' ? JSON.parse(assessment) : assessment;
       } catch (error) {
         console.warn("Could not parse LLM assessment, using default");
         assessmentObj = { valid: false, confidence: 0.5, reason: "Assessment parsing failed", recommendedPayout: "0" };
@@ -168,18 +161,12 @@ class InsuranceAgent {
       // If claim seems valid, approve it
       if (assessmentObj.valid && assessmentObj.confidence > 0.7) {
         console.log(`✅ Approving claim ${claimId} based on LLM assessment`);
-        const payout = ethers.parseEther(assessmentObj.recommendedPayout);
-        
-        const tx = await insuranceContract.approveClaim(claimId, payout);
-        await tx.wait();
-        console.log(`💰 Claim ${claimId} approved for ${ethers.formatEther(payout)} ETH`);
-        
-        tracker.recordInsurancePayout(payout);
+        console.log(`   Recommended payout: ${assessmentObj.recommendedPayout} ETH`);
+        // TODO: Call insuranceContract.approveClaim when ABI is available
       } else {
         console.log(`❌ Rejecting claim ${claimId} based on LLM assessment`);
-        const tx = await insuranceContract.rejectClaim(claimId, assessmentObj.reason);
-        await tx.wait();
-        tracker.recordInsuranceRejection();
+        console.log(`   Reason: ${assessmentObj.reason}`);
+        // TODO: Call insuranceContract.rejectClaim when ABI is available
       }
     } catch (error) {
       console.error(`❌ Error processing claim ${claimId}:`, error);
@@ -191,15 +178,10 @@ class InsuranceAgent {
    */
   private async processClaims() {
     try {
-      const pendingCount = await insuranceContract.pendingClaimsCount();
-      console.log(`📊 Found ${pendingCount} pending claims to process`);
-      
-      for (let i = 0; i < pendingCount; i++) {
-        const claimId = await insuranceContract.pendingClaims(i);
-        await this.processClaim(claimId);
-        // Add delay between claims to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
+      // When AgentInsurance ABI is available, query pendingClaimsCount
+      // and iterate through pendingClaims
+      console.log("📊 Checking for pending insurance claims...");
+      // Placeholder: no-op until contract ABI is integrated
     } catch (error) {
       console.error("❌ Error processing claims batch:", error);
     }
@@ -211,24 +193,10 @@ class InsuranceAgent {
   private async assessRisk() {
     try {
       console.log("📊 Assessing insurance pool risk...");
-      
-      const totalPool = await insuranceContract.totalPool();
-      const totalClaimsPaid = await insuranceContract.totalClaimsPaid();
-      const claimRate = totalClaimsPaid > 0 && totalPool > 0 
-        ? Number(totalClaimsPaid) / Number(totalPool) 
-        : 0;
-      
-      console.log(`   Pool Size: ${ethers.formatEther(totalPool)} ETH`);
-      console.log(`   Claims Paid: ${ethers.formatEther(totalClaimsPaid)} ETH`);
-      console.log(`   Claim Rate: ${(claimRate * 100).toFixed(2)}%`);
-      
-      // If claim rate is too high, suggest increasing premiums
-      if (claimRate > 0.1) { // More than 10% claim rate
-        console.log("⚠️  High claim rate detected - consider adjusting premiums");
-        // In a real implementation, we might vote to adjust premium parameters
-      }
-      
-      tracker.recordRiskAssessment(claimRate);
+
+      // When AgentInsurance ABI is available, query totalPool and totalClaimsPaid
+      // For now, log placeholder
+      console.log("   Insurance contract not yet integrated — risk assessment skipped");
     } catch (error) {
       console.error("❌ Error assessing risk:", error);
     }
@@ -237,22 +205,13 @@ class InsuranceAgent {
   /**
    * Get agent's insurance coverage status
    */
-  async getCoverageStatus(agentAddress: string): Promise<{
+  async getCoverageStatus(_agentAddress: string): Promise<{
     covered: boolean;
     coverageAmount: bigint;
     premiumPaid: bigint;
   }> {
-    try {
-      const coverage = await insuranceContract.agentCoverage(agentAddress);
-      return {
-        covered: coverage.isCovered,
-        coverageAmount: coverage.coverageAmount,
-        premiumPaid: coverage.premiumPaid
-      };
-    } catch (error) {
-      console.error("❌ Error getting coverage status:", error);
-      return { covered: false, coverageAmount: 0n, premiumPaid: 0n };
-    }
+    // When AgentInsurance ABI is available, query agentCoverage
+    return { covered: false, coverageAmount: 0n, premiumPaid: 0n };
   }
 
   /**
@@ -260,21 +219,13 @@ class InsuranceAgent {
    */
   async purchaseCoverage(agentAddress: string, coverageAmount: bigint) {
     try {
-      // Calculate premium (simplified: 1% of coverage amount per month)
       const premium = (coverageAmount * 1n) / 100n; // 1%
-      
-      console.log(`💳 Purchasing ${ethers.formatEther(coverageAmount)} ETH coverage for ${agentAddress}`);
-      console.log(`   Premium: ${ethers.formatEther(premium)} ETH`);
-      
-      const tx = await insuranceContract.purchaseCoverage(
-        agentAddress,
-        coverageAmount,
-        { value: premium }
-      );
-      await tx.wait();
-      
-      console.log("✅ Coverage purchased successfully!");
-      tracker.recordInsurancePremium(premium);
+
+      console.log(`💳 Purchasing ${formatEther(coverageAmount)} ETH coverage for ${agentAddress}`);
+      console.log(`   Premium: ${formatEther(premium)} ETH`);
+
+      // TODO: Call insuranceContract.purchaseCoverage when ABI is available
+      console.log("   Insurance contract not yet integrated — coverage purchase skipped");
     } catch (error) {
       console.error("❌ Failed to purchase coverage:", error);
     }

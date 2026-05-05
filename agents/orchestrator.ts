@@ -22,9 +22,9 @@ export { createWallet };
  * Splits large tasks into subtasks and assigns to different workers in parallel
  */
 export class OrchestratorAgent {
-  private walletClient: any;
-  private account: any;
-  private publicClient: any;
+  walletClient: any;
+  account: any;
+  publicClient: any;
 
   constructor(privateKey: string) {
     const { wallet, account, publicClient } = createWallet(privateKey);
@@ -103,7 +103,7 @@ Constraints:
              payment: BigInt(subtask.paymentWei),
              deadline: subtask.deadline || currentDeadline,
              descriptionHash: (`0x${index.toString(16).padStart(64, "0")}` as `0x${string}`),
-             aggregationSpec: (`0x${"aggregation".toString(16).padStart(64, "0")}` as `0x${string}`),
+             aggregationSpec: (`0x${Buffer.from("aggregation").toString("hex").padStart(64, "0")}` as `0x${string}`),
            }));
          }
        }
@@ -121,7 +121,7 @@ Constraints:
        payment: paymentPerSubtask,
        deadline,
        descriptionHash: (`0x${index.toString(16).padStart(64, "0")}` as `0x${string}`),
-       aggregationSpec: (`0x${"aggregation".toString(16).padStart(64, "0")}` as `0x${string}`),
+       aggregationSpec: (`0x${Buffer.from("aggregation").toString("hex").padStart(64, "0")}` as `0x${string}`),
      }));
   }
 
@@ -265,14 +265,8 @@ Constraints:
 
      // Step 4: Monitor batch (polling)
      console.log("\nStep 4: Monitoring batch completion...");
-     // In a real implementation, we would parse the BatchCreated event to get the batchId
-     // For now, we'll deploy a batch and use its ID
-     console.log("Deploying a sample parallel task batch...");
-     const batchTxHash = await this.createParallelBatch(subtasks);
-     console.log(`Batch deployment tx: ${batchTxHash}`);
-     
-     // Wait for transaction to be mined
-     const batchReceipt = await this.publicClient.waitForTransactionReceipt({ hash: batchTxHash });
+     // Wait for the batch creation transaction to be mined
+     const batchReceipt = await this.publicClient.waitForTransactionReceipt({ hash: txHash });
      
      // Get the batch ID from the BatchCreated event
      // In a real implementation, we would parse events properly
