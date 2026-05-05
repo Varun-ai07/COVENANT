@@ -1,0 +1,35 @@
+# Dependencies & build artifacts
+node_modules/
+artifacts/
+cache/
+typechain-types/
+.next/
+out/
+dist/
+build/
+__pycache__/
+*.pyc
+
+# Graphify output (don't re-graph itself)
+graphify-out/
+
+# Environment files (contain secrets)
+.env
+.env.*
+!.env.example
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs
+*.log
+.cache/
+
+# Git internals
+.git/
+
+# IDE
+.vscode/
+.idea/

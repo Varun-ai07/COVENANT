@@ -31,6 +31,8 @@ export const CONTRACTS = {
   OpenTaskMarket: (process.env.MARKET_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
   ParallelTaskBatch: (process.env.BATCH_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
   AgentCollective: (process.env.COLLECTIVE_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
+  AgentInsurance: (process.env.INSURANCE_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
+  DisputeArbitration: (process.env.DISPUTE_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
 };
 
 // Testnet configuration for gas optimization

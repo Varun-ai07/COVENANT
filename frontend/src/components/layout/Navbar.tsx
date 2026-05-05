@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   Play,
+  Home,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -27,6 +28,7 @@ const AsymmetricBox = dynamic(() => import("@/components/ui/AsymmetricBox"), {
 });
 
 const navItems = [
+  { href: "/", label: "Home", icon: Home },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/marketplace", label: "Market", icon: ShoppingCart },
   { href: "/network", label: "Network", icon: GitBranch },
