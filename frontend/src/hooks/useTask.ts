@@ -1,247 +1,226 @@
 "use client";
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from "wagmi";
-import { parseEther } from "viem";
-import { getContractAddresses } from "@/contracts/addresses";
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useChainId } from "wagmi";
 import TaskEscrowABI from "@/contracts/TaskEscrow.json";
-import { Task } from "@/types";
+import { getContractAddresses } from "@/config/contracts";
+import type { Address } from "viem";
 
-export function useTask(taskId: bigint | undefined) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+export interface TaskData {
+  client: Address;
+  worker: Address;
+  payment: bigint;
+  deadline: bigint;
+  descriptionHash: string;
+  deliverableHash: string;
+  status: number;
+  createdAt: bigint;
+  completedAt: bigint;
+}
 
-  const { data: taskData, isLoading, refetch } = useReadContract({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+export function useTask(taskId?: bigint | number) {
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
+
+  return useReadContract({
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     functionName: "getTask",
-    args: taskId !== undefined ? [taskId] : undefined,
-    query: { enabled: taskId !== undefined },
+    args: [BigInt(taskId || 0)],
+    query: {
+      enabled: taskId !== undefined,
+    },
   });
-
-  return {
-    task: taskData as Task | undefined,
-    isLoading,
-    refetch,
-  };
 }
 
 export function useTaskCounter() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: counter } = useReadContract({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+  return useReadContract({
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     functionName: "taskCounter",
   });
-
-  return counter ? Number(counter) : 0;
 }
 
-export function useClientTasks(clientAddress: `0x${string}` | undefined) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+export function useClientTasks(address?: Address) {
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: taskIds, isLoading, refetch } = useReadContract({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+  return useReadContract({
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     functionName: "getClientTasks",
-    args: clientAddress ? [clientAddress] : undefined,
-    query: { enabled: !!clientAddress },
+    args: [address as Address],
+    query: {
+      enabled: !!address,
+    },
   });
-
-  return {
-    taskIds: (taskIds as bigint[]) || [],
-    isLoading,
-    refetch,
-  };
 }
 
-export function useWorkerTasks(workerAddress: `0x${string}` | undefined) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+export function useWorkerTasks(address?: Address) {
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: taskIds, isLoading, refetch } = useReadContract({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+  return useReadContract({
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     functionName: "getWorkerTasks",
-    args: workerAddress ? [workerAddress] : undefined,
-    query: { enabled: !!workerAddress },
+    args: [address as Address],
+    query: {
+      enabled: !!address,
+    },
   });
-
-  return {
-    taskIds: (taskIds as bigint[]) || [],
-    isLoading,
-    refetch,
-  };
 }
 
 export function useCreateTask() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const createTask = (
-    worker: `0x${string}`,
-    payment: string,
+    worker: Address,
+    payment: bigint,
     deadline: bigint,
     descriptionHash: string
   ) => {
-    const paymentWei = parseEther(payment);
-    // TaskEscrow defaults to Priority.Medium in createAndFundTask, which adds a 1% fee.
-    const priorityFeeWei = paymentWei / 100n;
-    const totalFundingWei = paymentWei + priorityFeeWei;
-
     writeContract({
-      address: contracts.TaskEscrow as `0x${string}`,
-      abi: TaskEscrowABI,
+      address: contracts.TaskEscrow as Address,
+      abi: TaskEscrowABI as any,
       functionName: "createAndFundTask",
-      args: [worker, paymentWei, deadline, descriptionHash],
-      value: totalFundingWei,
+      args: [worker, payment, deadline, descriptionHash],
+      value: payment,
     });
   };
 
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   return {
     createTask,
+    hash,
     isPending,
     isConfirming,
-    isSuccess,
+    isConfirmed,
     error,
-    hash,
   };
 }
 
 export function useSubmitWork() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const submitWork = (taskId: bigint, deliverableHash: string) => {
+  const submitWork = (taskId: bigint | number, deliverableHash: string) => {
     writeContract({
-      address: contracts.TaskEscrow as `0x${string}`,
-      abi: TaskEscrowABI,
+      address: contracts.TaskEscrow as Address,
+      abi: TaskEscrowABI as any,
       functionName: "submitWork",
-      args: [taskId, deliverableHash],
+      args: [BigInt(taskId), deliverableHash],
     });
   };
 
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   return {
     submitWork,
+    hash,
     isPending,
     isConfirming,
-    isSuccess,
+    isConfirmed,
     error,
-    hash,
   };
 }
 
 export function useVerifyTask() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const verifyTask = (taskId: bigint, success: boolean) => {
+  const verifyTask = (taskId: bigint | number, success: boolean) => {
     writeContract({
-      address: contracts.TaskEscrow as `0x${string}`,
-      abi: TaskEscrowABI,
+      address: contracts.TaskEscrow as Address,
+      abi: TaskEscrowABI as any,
       functionName: "verifyTask",
-      args: [taskId, success],
+      args: [BigInt(taskId), success],
     });
   };
 
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   return {
     verifyTask,
+    hash,
     isPending,
     isConfirming,
-    isSuccess,
+    isConfirmed,
     error,
-    hash,
   };
 }
 
 export function useDisputeTask() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const disputeTask = (taskId: bigint) => {
+  const disputeTask = (taskId: bigint | number) => {
     writeContract({
-      address: contracts.TaskEscrow as `0x${string}`,
-      abi: TaskEscrowABI,
+      address: contracts.TaskEscrow as Address,
+      abi: TaskEscrowABI as any,
       functionName: "disputeTask",
-      args: [taskId],
+      args: [BigInt(taskId)],
     });
   };
 
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   return {
     disputeTask,
+    hash,
     isPending,
     isConfirming,
-    isSuccess,
+    isConfirmed,
     error,
-    hash,
-  };
-}
-
-export function useTaskEscrowOwner() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
-
-  const { data: owner, isLoading, refetch } = useReadContract({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
-    functionName: "owner",
-  });
-
-  return {
-    owner: owner as `0x${string}` | undefined,
-    isLoading,
-    refetch,
   };
 }
 
 export function useResolveDispute() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const resolveDispute = (taskId: bigint, workerWins: boolean) => {
+  const resolveDispute = (taskId: bigint | number, workerWins: boolean) => {
     writeContract({
-      address: contracts.TaskEscrow as `0x${string}`,
-      abi: TaskEscrowABI,
+      address: contracts.TaskEscrow as Address,
+      abi: TaskEscrowABI as any,
       functionName: "resolveDispute",
-      args: [taskId, workerWins],
+      args: [BigInt(taskId), workerWins],
     });
   };
 
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   return {
     resolveDispute,
+    hash,
     isPending,
     isConfirming,
-    isSuccess,
+    isConfirmed,
     error,
-    hash,
   };
-}
-
-export function useWatchTasks(onNewTask?: (taskId: number) => void) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
-
-  useWatchContractEvent({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
-    eventName: "TaskCreated",
-    onLogs(logs) {
-      for (const log of logs) {
-        const taskId = Number((log as unknown as { args: { taskId: bigint } }).args.taskId);
-        onNewTask?.(taskId);
-      }
-    },
-  });
 }

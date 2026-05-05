@@ -1,5 +1,4 @@
-// Contract addresses - Base Sepolia Verified Addresses
-const REGISTRY = process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103";
+const REGISTRY = process.env.NEXT_PUBLIC_REGISTRY_ADDRESS || "0x86E5982aA12f9b0AB48d536BA78B4E2fcC9b1103";
 const ESCROW = process.env.NEXT_PUBLIC_ESCROW_ADDRESS || "0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504";
 const VERIFIER = process.env.NEXT_PUBLIC_VERIFIER_ADDRESS || "0x3BE6849F40230b1433D4FA166E23B1789a5469Fa";
 const MARKET = process.env.NEXT_PUBLIC_MARKET_ADDRESS || "0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504";
@@ -9,7 +8,6 @@ const INSURANCE = process.env.NEXT_PUBLIC_INSURANCE_ADDRESS || "0x00000000000000
 const DISPUTE = process.env.NEXT_PUBLIC_DISPUTE_ADDRESS || "0x0000000000000000000000000000000000000000";
 
 export const CONTRACT_ADDRESSES = {
-  // Localhost (Hardhat) - uses local deployment
   31337: {
     AgentRegistry: "0x7eC229b9319f8a32D0A852fF42CC43563B461593",
     TaskEscrow: "0x44AF51b80E50c502C2d7475f428c6512B83e3071",
@@ -20,7 +18,6 @@ export const CONTRACT_ADDRESSES = {
     AgentInsurance: INSURANCE,
     DisputeArbitration: DISPUTE,
   },
-  // Base Sepolia (testnet) - VERIFIED ON EXPLORER
   84532: {
     AgentRegistry: REGISTRY,
     TaskEscrow: ESCROW,
@@ -31,7 +28,6 @@ export const CONTRACT_ADDRESSES = {
     AgentInsurance: INSURANCE,
     DisputeArbitration: DISPUTE,
   },
-  // Base Mainnet
   8453: {
     AgentRegistry: "0x0000000000000000000000000000000000000000",
     TaskEscrow: "0x0000000000000000000000000000000000000000",

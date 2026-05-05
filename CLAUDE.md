@@ -19,6 +19,8 @@ COVENANT/
 ├── agents/          # Agent Scripts (Node.js/TS + Viem)
 ├── frontend/        # Next.js 14 Dashboard (RainbowKit + Wagmi)
 ├── .claude/         # Local Skills (Superpowers, Excalidraw, UI-UX Pro)
+├── graphify-out/    # Knowledge graph output (report, JSON, visualization)
+├── .graphifyignore  # Graphify exclusion rules
 └── demo.sh          # Orchestrator (./demo.sh local)
 ```
 ---
@@ -43,10 +45,39 @@ COVENANT/
 ---
 
 ## 🔧 Installed Skills & Capabilities
+- **Graphify (`/graphify`)**: Knowledge graph for the codebase. **Always run `/graphify .` first** when exploring, querying, or understanding the COVENANT codebase. Use `graphify query "..."` for architecture questions, `graphify path "A" "B"` to trace connections between modules, and `graphify explain "X"` to understand specific concepts.
 - **Superpowers (`/superpowers`)**: Use `brainstorm` -> `write-plan` -> `execute-plan` for all core protocol features.
 - **Excalidraw (`/excalidraw`)**: Generate architecture diagrams for agent-to-agent negotiation flows.
 - **UI-UX Pro Max**: Audit all frontend components for accessibility and "Agency-grade" aesthetics.
 - **Supabase CLI**: Use `npx supabase` for local DB management, migrations, and Edge Functions.
+
+### Graphify Usage Guide
+Graphify transforms the COVENANT codebase into a queryable knowledge graph with community detection, cross-module relationship mapping, and audit trails.
+
+**Building the graph:**
+```bash
+/graphify .                        # Build full knowledge graph
+/graphify . --update               # Incremental update (changed files only)
+/graphify . --mode deep            # Aggressive relationship extraction
+/graphify . --cluster-only         # Re-run clustering on existing graph
+```
+
+**Querying the graph (use before any deep code exploration):**
+```bash
+graphify query "how does TaskEscrow verify deliverables?"
+graphify query "what connects AgentRegistry to ReceiptVerifier?"
+graphify path "AgentRegistry" "ReceiptVerifier"    # Trace module connections
+graphify explain "VerificationPipeline"            # Understand a concept
+```
+
+**Auto-rebuild:** Git hooks installed — the graph auto-updates after every commit and branch switch.
+
+**When to use Graphify (ALWAYS prefer over raw file reading):**
+- Before implementing new features (understand existing architecture)
+- Before code reviews (trace cross-module dependencies)
+- Before debugging (map the call chain)
+- When answering "how does X work?" questions
+- When planning refactors (identify all dependents)
 
 ---
 
@@ -103,6 +134,17 @@ npm install
 npm run dev                  # Dev server on localhost:3000
 npm run build                # Production build
 npm run lint                 # ESLint
+```
+
+### Knowledge Graph (Graphify)
+```bash
+/graphify .                        # Build full codebase knowledge graph
+/graphify . --update               # Incremental update (changed files only)
+/graphify . --mode deep            # Deep extraction with rich INFERRED edges
+graphify query "how does verification work?"   # Query the graph
+graphify path "AgentRegistry" "TaskEscrow"     # Trace connections
+graphify explain "VerificationPipeline"        # Explain a concept
+graphify hook status               # Check git hooks are installed
 ```
 
 ### Full Demo
@@ -184,3 +226,13 @@ Uses weighted scoring system:
 - 40% Deterministic checks (automated validation)
 - 60% LLM evaluation (qualitative assessment)
 - Minimum 75% passing threshold for approval
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)

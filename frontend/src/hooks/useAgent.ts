@@ -1,142 +1,137 @@
 "use client";
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseEther } from "viem";
-import { getContractAddresses } from "@/contracts/addresses";
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount } from "wagmi";
 import AgentRegistryABI from "@/contracts/AgentRegistry.json";
-import { Agent } from "@/types";
+import { getContractAddresses } from "@/config/contracts";
+import { useChainId } from "wagmi";
+import type { Address } from "viem";
 
-export function useAgent() {
-  const { address, chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
-
-  const { data: agentData, isLoading, refetch } = useReadContract({
-    address: contracts.AgentRegistry as `0x${string}`,
-    abi: AgentRegistryABI,
-    functionName: "getAgent",
-    args: address ? [address] : undefined,
-    query: { enabled: !!address },
-  });
-
-  const agent = agentData as Agent | undefined;
-
-  return {
-    agent,
-    isLoading,
-    refetch,
-    isRegistered: agent?.isActive ?? false,
-    contracts,
-  };
+export interface AgentData {
+  did: `0x${string}`;
+  name: string;
+  capabilities: string[];
+  reputation: bigint;
+  stakedAmount: bigint;
+  tasksCompleted: bigint;
+  tasksFailed: bigint;
+  totalValueTransferred: bigint;
+  isActive: boolean;
+  registeredAt: bigint;
 }
 
-export function useAgentByAddress(address: `0x${string}` | undefined) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+export function useAgent() {
+  const { address } = useAccount();
+  return useAgentByAddress(address);
+}
 
-  const { data: agentData, isLoading } = useReadContract({
-    address: contracts.AgentRegistry as `0x${string}`,
-    abi: AgentRegistryABI,
+export function useAgentByAddress(address?: Address) {
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
+
+  return useReadContract({
+    address: contracts.AgentRegistry as Address,
+    abi: AgentRegistryABI as any,
     functionName: "getAgent",
-    args: address ? [address] : undefined,
-    query: { enabled: !!address },
+    args: [address as Address],
+    query: {
+      enabled: !!address,
+    },
   });
-
-  return {
-    agent: agentData as Agent | undefined,
-    isLoading,
-  };
 }
 
 export function useAgentCount() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: count } = useReadContract({
-    address: contracts.AgentRegistry as `0x${string}`,
-    abi: AgentRegistryABI,
+  return useReadContract({
+    address: contracts.AgentRegistry as Address,
+    abi: AgentRegistryABI as any,
     functionName: "getAgentCount",
   });
-
-  return count ? Number(count) : 0;
 }
 
 export function useAllAgents() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: addresses } = useReadContract({
-    address: contracts.AgentRegistry as `0x${string}`,
-    abi: AgentRegistryABI,
+  return useReadContract({
+    address: contracts.AgentRegistry as Address,
+    abi: AgentRegistryABI as any,
     functionName: "getAllAgents",
   });
-
-  return (addresses as `0x${string}`[]) || [];
 }
 
 export function useAgentsByCapability(capability: string) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: addresses, isLoading } = useReadContract({
-    address: contracts.AgentRegistry as `0x${string}`,
-    abi: AgentRegistryABI,
+  return useReadContract({
+    address: contracts.AgentRegistry as Address,
+    abi: AgentRegistryABI as any,
     functionName: "getAgentsByCapability",
-    args: capability ? [capability] : undefined,
-    query: { enabled: !!capability },
+    args: [capability],
+    query: {
+      enabled: !!capability && capability.length > 0,
+    },
   });
-
-  return {
-    addresses: (addresses as `0x${string}`[]) || [],
-    isLoading,
-  };
 }
 
 export function useRegisterAgent() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const register = (name: string, capabilities: string[], stake: string = "0.001") => {
+  const register = (name: string, capabilities: string[], stakeAmount?: bigint) => {
     writeContract({
-      address: contracts.AgentRegistry as `0x${string}`,
-      abi: AgentRegistryABI,
+      address: contracts.AgentRegistry as Address,
+      abi: AgentRegistryABI as any,
       functionName: "register",
       args: [name, capabilities],
-      value: parseEther(stake),
+      value: stakeAmount || BigInt(0),
     });
   };
 
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   return {
     register,
+    hash,
     isPending,
     isConfirming,
-    isSuccess,
+    isConfirmed,
     error,
-    hash,
   };
 }
 
 export function useAddStake() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
 
-  const addStake = (amount: string = "0.001") => {
+  const addStake = (amount: bigint) => {
     writeContract({
-      address: contracts.AgentRegistry as `0x${string}`,
-      abi: AgentRegistryABI,
+      address: contracts.AgentRegistry as Address,
+      abi: AgentRegistryABI as any,
       functionName: "addStake",
-      value: parseEther(amount),
+      value: amount,
     });
   };
 
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   return {
     addStake,
+    hash,
     isPending,
     isConfirming,
-    isSuccess,
-    hash,
+    isConfirmed,
+    error,
   };
 }

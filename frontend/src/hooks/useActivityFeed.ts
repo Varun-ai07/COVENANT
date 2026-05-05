@@ -1,214 +1,218 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount, useWatchContractEvent } from "wagmi";
-import { getContractAddresses } from "@/contracts/addresses";
-import TaskEscrowABI from "@/contracts/TaskEscrow.json";
+import { useCallback, useState } from "react";
+import { useWatchContractEvent } from "wagmi";
 import AgentRegistryABI from "@/contracts/AgentRegistry.json";
+import TaskEscrowABI from "@/contracts/TaskEscrow.json";
 import ReceiptVerifierABI from "@/contracts/ReceiptVerifier.json";
+import { getContractAddresses } from "@/config/contracts";
+import { useChainId } from "wagmi";
+import type { Address } from "viem";
 
-export interface ActivityEvent {
+export type ActivityEvent = {
   id: string;
-  type: "registration" | "task_created" | "work_submitted" | "task_completed" | "task_failed" | "task_disputed" | "receipt_created";
-  timestamp: Date;
-  data: Record<string, string | number | bigint>;
-  txHash?: string;
-}
+  type:
+    | "AgentRegistered"
+    | "TaskCreated"
+    | "WorkSubmitted"
+    | "TaskCompleted"
+    | "TaskDisputed"
+    | "ReceiptCreated";
+  timestamp: number;
+  transactionHash?: string;
+  logIndex?: number;
+  // Event-specific data
+  agent?: Address;
+  taskId?: bigint;
+  client?: Address;
+  worker?: Address;
+  name?: string;
+  deliverableHash?: string;
+  workerWins?: boolean;
+  receiptId?: `0x${string}`;
+  issuer?: Address;
+  counterparty?: Address;
+  interactionType?: string;
+};
 
 export function useActivityFeed() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(31337);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
   const [events, setEvents] = useState<ActivityEvent[]>([]);
 
-  const addEvent = (event: Omit<ActivityEvent, "id" | "timestamp">) => {
-    setEvents((prev) => [
-      {
-        ...event,
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        timestamp: new Date(),
-      },
-      ...prev,
-    ].slice(0, 50)); // Keep last 50 events
-  };
+  const addEvent = useCallback((event: ActivityEvent) => {
+    setEvents((prev) => {
+      // Avoid duplicates based on transaction hash and log index
+      const exists = prev.some(
+        (e) =>
+          e.transactionHash === event.transactionHash &&
+          e.logIndex === event.logIndex
+      );
+      if (exists) return prev;
+      return [event, ...prev].sort((a, b) => b.timestamp - a.timestamp);
+    });
+  }, []);
 
-  // Watch AgentRegistry events
+  const clearEvents = useCallback(() => {
+    setEvents([]);
+  }, []);
+
+  // Watch AgentRegistered events
   useWatchContractEvent({
-    address: contracts.AgentRegistry as `0x${string}`,
-    abi: AgentRegistryABI,
+    address: contracts.AgentRegistry as Address,
+    abi: AgentRegistryABI as any,
     eventName: "AgentRegistered",
     onLogs(logs) {
       for (const log of logs) {
-        const args = (log as unknown as { args: { agent?: string; name?: string; stake?: bigint } }).args;
+        const { args, transactionHash, logIndex } = log as unknown as {
+          args: { agent: Address; did: `0x${string}`; name: string; stake: bigint };
+          transactionHash?: string;
+          logIndex?: number;
+        };
         addEvent({
-          type: "registration",
-          data: {
-            agent: args?.agent || "",
-            name: args?.name || "",
-            stake: args?.stake?.toString() || "0",
-          },
+          id: `agent-registered-${transactionHash}-${logIndex}`,
+          type: "AgentRegistered",
+          timestamp: Date.now(),
+          transactionHash,
+          logIndex,
+          agent: args.agent,
+          name: args.name,
         });
       }
     },
   });
 
-  // Watch TaskEscrow events
+  // Watch TaskCreated events
   useWatchContractEvent({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     eventName: "TaskCreated",
     onLogs(logs) {
       for (const log of logs) {
-        const args = (log as unknown as { args: { taskId?: bigint; client?: string; worker?: string; payment?: bigint } }).args;
+        const { args, transactionHash, logIndex } = log as unknown as {
+          args: { taskId: bigint; client: Address; worker: Address; payment: bigint; deadline: bigint };
+          transactionHash?: string;
+          logIndex?: number;
+        };
         addEvent({
-          type: "task_created",
-          data: {
-            taskId: Number(args?.taskId || 0),
-            client: args?.client || "",
-            worker: args?.worker || "",
-            payment: args?.payment?.toString() || "0",
-          },
+          id: `task-created-${transactionHash}-${logIndex}`,
+          type: "TaskCreated",
+          timestamp: Date.now(),
+          transactionHash,
+          logIndex,
+          taskId: args.taskId,
+          client: args.client,
+          worker: args.worker,
         });
       }
     },
   });
 
+  // Watch WorkSubmitted events
   useWatchContractEvent({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     eventName: "WorkSubmitted",
     onLogs(logs) {
       for (const log of logs) {
-        const args = (log as unknown as { args: { taskId?: bigint; deliverableHash?: string } }).args;
+        const { args, transactionHash, logIndex } = log as unknown as {
+          args: { taskId: bigint; deliverableHash: string };
+          transactionHash?: string;
+          logIndex?: number;
+        };
         addEvent({
-          type: "work_submitted",
-          data: {
-            taskId: Number(args?.taskId || 0),
-            deliverableHash: args?.deliverableHash || "",
-          },
+          id: `work-submitted-${transactionHash}-${logIndex}`,
+          type: "WorkSubmitted",
+          timestamp: Date.now(),
+          transactionHash,
+          logIndex,
+          taskId: args.taskId,
+          deliverableHash: args.deliverableHash,
         });
       }
     },
   });
 
+  // Watch TaskCompleted events
   useWatchContractEvent({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     eventName: "TaskCompleted",
     onLogs(logs) {
       for (const log of logs) {
-        const args = (log as unknown as { args: { taskId?: bigint; workerPayment?: bigint } }).args;
+        const { args, transactionHash, logIndex } = log as unknown as {
+          args: { taskId: bigint; workerPayment: bigint };
+          transactionHash?: string;
+          logIndex?: number;
+        };
         addEvent({
-          type: "task_completed",
-          data: {
-            taskId: Number(args?.taskId || 0),
-            workerPayment: args?.workerPayment?.toString() || "0",
-          },
+          id: `task-completed-${transactionHash}-${logIndex}`,
+          type: "TaskCompleted",
+          timestamp: Date.now(),
+          transactionHash,
+          logIndex,
+          taskId: args.taskId,
         });
       }
     },
   });
 
+  // Watch TaskDisputed events
   useWatchContractEvent({
-    address: contracts.TaskEscrow as `0x${string}`,
-    abi: TaskEscrowABI,
+    address: contracts.TaskEscrow as Address,
+    abi: TaskEscrowABI as any,
     eventName: "TaskDisputed",
     onLogs(logs) {
       for (const log of logs) {
-        const args = (log as unknown as { args: { taskId?: bigint; disputedBy?: string } }).args;
+        const { args, transactionHash, logIndex } = log as unknown as {
+          args: { taskId: bigint; disputedBy: Address };
+          transactionHash?: string;
+          logIndex?: number;
+        };
         addEvent({
-          type: "task_disputed",
-          data: {
-            taskId: Number(args?.taskId || 0),
-            disputedBy: args?.disputedBy || "",
-          },
+          id: `task-disputed-${transactionHash}-${logIndex}`,
+          type: "TaskDisputed",
+          timestamp: Date.now(),
+          transactionHash,
+          logIndex,
+          taskId: args.taskId,
         });
       }
     },
   });
 
-  // Watch ReceiptVerifier events
+  // Watch ReceiptCreated events
   useWatchContractEvent({
-    address: contracts.ReceiptVerifier as `0x${string}`,
-    abi: ReceiptVerifierABI,
+    address: contracts.ReceiptVerifier as Address,
+    abi: ReceiptVerifierABI as any,
     eventName: "ReceiptCreated",
     onLogs(logs) {
       for (const log of logs) {
-        const args = (log as unknown as { args: { receiptId?: bigint; issuer?: string; counterparty?: string; interactionType?: string } }).args;
+        const { args, transactionHash, logIndex } = log as unknown as {
+          args: {
+            receiptId: bigint;
+            issuer: Address;
+            counterparty: Address;
+            interactionType: string;
+            dataHash: `0x${string}`;
+          };
+          transactionHash?: string;
+          logIndex?: number;
+        };
         addEvent({
-          type: "receipt_created",
-          data: {
-            receiptId: Number(args?.receiptId || 0),
-            issuer: args?.issuer || "",
-            counterparty: args?.counterparty || "",
-            interactionType: args?.interactionType || "",
-          },
+          id: `receipt-created-${transactionHash}-${logIndex}`,
+          type: "ReceiptCreated",
+          timestamp: Date.now(),
+          transactionHash,
+          logIndex,
+          receiptId: `0x${args.receiptId.toString(16)}` as `0x${string}`,
+          issuer: args.issuer,
+          counterparty: args.counterparty,
+          interactionType: args.interactionType,
         });
       }
     },
   });
 
-  return { events, clearEvents: () => setEvents([]) };
-}
-
-export function getEventIcon(type: ActivityEvent["type"]): string {
-  switch (type) {
-    case "registration":
-      return "AGENT";
-    case "task_created":
-      return "TASK";
-    case "work_submitted":
-      return "WORK";
-    case "task_completed":
-      return "DONE";
-    case "task_failed":
-      return "FAIL";
-    case "task_disputed":
-      return "DISP";
-    case "receipt_created":
-      return "RCPT";
-    default:
-      return "EVNT";
-  }
-}
-
-export function getEventColor(type: ActivityEvent["type"]): string {
-  switch (type) {
-    case "registration":
-      return "text-blue-400 bg-blue-500/20";
-    case "task_created":
-      return "text-violet-400 bg-violet-500/20";
-    case "work_submitted":
-      return "text-amber-400 bg-amber-500/20";
-    case "task_completed":
-      return "text-emerald-400 bg-emerald-500/20";
-    case "task_failed":
-      return "text-red-400 bg-red-500/20";
-    case "task_disputed":
-      return "text-orange-400 bg-orange-500/20";
-    case "receipt_created":
-      return "text-purple-400 bg-purple-500/20";
-    default:
-      return "text-gray-400 bg-gray-500/20";
-  }
-}
-
-export function formatEventDescription(event: ActivityEvent): string {
-  switch (event.type) {
-    case "registration":
-      return `New agent "${event.data.name}" registered with ${(Number(event.data.stake) / 1e18).toFixed(2)} ETH stake`;
-    case "task_created":
-      return `Task #${event.data.taskId} created with ${(Number(event.data.payment) / 1e18).toFixed(2)} ETH escrow`;
-    case "work_submitted":
-      return `Work submitted for Task #${event.data.taskId}`;
-    case "task_completed":
-      return `Task #${event.data.taskId} completed - ${(Number(event.data.workerPayment) / 1e18).toFixed(2)} ETH paid`;
-    case "task_failed":
-      return `Task #${event.data.taskId} failed`;
-    case "task_disputed":
-      return `Task #${event.data.taskId} disputed`;
-    case "receipt_created":
-      return `${event.data.interactionType} receipt created (#${event.data.receiptId})`;
-    default:
-      return "Unknown event";
-  }
+  return { events, clearEvents };
 }

@@ -1,174 +1,210 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import { ResourcePreloader, LazyLoader, MemoryManager } from "@/lib/performance-optimizations";
-import { useBackgroundManager } from "@/components/BackgroundManager";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { UserCheck, Wallet, ShieldCheck, Store } from "lucide-react";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { NeonButton } from "@/components/ui/NeonButton";
+import SectionDivider from "@/components/ui/SectionDivider";
+import { useAgentCount, useTaskCounter, useReceiptCount } from "@/hooks/useStats";
 
-// Lazy load heavy components
-const ActivityFeed = dynamic(
-  () => import("@/components/ActivityFeed").then((m) => m.ActivityFeed),
-  {
-    ssr: false,
-    loading: () => <div className="animate-pulse bg-slate-700 h-40 rounded-lg" />
-  }
-);
-
-const CovenantOverlay = dynamic(
-  () => import("@/components/ui/CovenantOverlay"),
-  {
-    ssr: false,
-    loading: () => <div className="animate-pulse bg-slate-700 h-40 rounded-lg" />
-  }
-);
-
-const BackgroundSettingsPanel = dynamic(
-  () => import("@/components/BackgroundSettingsPanel"),
-  {
-    ssr: false,
-    loading: () => null
-  }
-);
-
-const LavenderWorld = dynamic(
-  () => import("@/components/LavenderWorld"),
-  {
-    ssr: false,
-    loading: () => <div className="animate-pulse bg-[#0a0118] h-40 rounded-lg" />
-  }
-);
-
-export default function Home() {
-  const [isClient, setIsClient] = useState(false);
-  const { config, fps, monitorFps } = useBackgroundManager();
-
-  // Preloader instance
-  const preloader = ResourcePreloader.getInstance();
-  const memoryManager = MemoryManager.getInstance();
+// Inline AnimatedCounter component that counts up when visible
+const AnimatedCounter = ({ target, duration = 2000 }: { target: number; duration?: number }) => {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    // Preload critical resources on initial load
-    preloader.preloadCriticalResources();
-    preloader.preloadCriticalCSS();
-
-    // Preload critical fonts
-    const fonts = [
-      "/fonts/Silkscreen-Regular.woff2",
-      "/fonts/GeistVF.woff",
-    ];
-
-    fonts.forEach(font => {
-      preloader.preloadResource(font);
-    });
-    return () => {
-      memoryManager.clear();
-    };
-  }, []);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) {
-    return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4 animate-pulse">
-            <div className="w-8 h-8 rounded-full bg-violet-500 animate-pulse" />
-          </div>
-          <p className="text-slate-400">Loading COVENANT...</p>
-        </div>
-      </div>
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
     );
-  }
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    let startTime: number | undefined;
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCount(Math.floor(progress * target));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [isVisible, target, duration]);
+
+  return <span ref={ref}>{count}</span>;
+};
+
+export default function HomePage() {
+  const { data: agentCountData } = useAgentCount();
+  const { data: taskCountData } = useTaskCounter();
+  const { data: receiptCountData } = useReceiptCount();
+  const tvl = 0; // Static TVL as no hook specified
+
+  const agentCount = Number(agentCountData || 0);
+  const taskCount = Number(taskCountData || 0);
+  const receiptCount = Number(receiptCountData || 0);
+
+  const stats = [
+    { label: "Agents", value: agentCount, suffix: "" },
+    { label: "Tasks", value: taskCount, suffix: "" },
+    { label: "Receipts", value: receiptCount, suffix: "+" },
+    { label: "TVL", value: tvl, suffix: " ETH" },
+  ];
+
+  const features = [
+    {
+      icon: UserCheck,
+      title: "Agent Registry",
+      description: "On-chain identity and reputation system for AI agents with ERC-8004 DIDs.",
+    },
+    {
+      icon: Wallet,
+      title: "Task Escrow",
+      description: "Trustless payment escrow with automatic verification and dispute resolution.",
+    },
+    {
+      icon: ShieldCheck,
+      title: "Verification Engine",
+      description: "Multi-stage validation pipeline with specialized checkers and LLM evaluation.",
+    },
+    {
+      icon: Store,
+      title: "Open Market",
+      description: "Decentralized marketplace for agents to discover, negotiate, and hire each other.",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#020617]">
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
-        {config.show3D && <LavenderWorld onFpsChange={monitorFps} />}
-        <div className="relative z-20 text-center max-w-5xl mx-auto px-4">
-          <div className="mb-10 animate-fade-in-up">
-            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-3xl blur-2xl opacity-40 animate-pulse-glow" />
-              <div className="relative w-28 h-28 mx-auto bg-gradient-to-br from-violet-500/30 to-purple-600/30 border border-violet-400/40 rounded-3xl flex items-center justify-center backdrop-blur-sm">
-                <svg className="w-14 h-14 text-violet-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          <h1 className="font-silkscreen text-5xl sm:text-7xl lg:text-8xl tracking-[0.2em] mb-6 animate-fade-in-up animate-fade-in-up-delay-1" style={{
-            textShadow: "0 0 40px rgba(217,70,239,0.5), 0 0 80px rgba(217,70,239,0.3)",
-            color: "#d946ef"
-          }}>
-            COVENANT
-          </h1>
-          <p className="text-xl sm:text-2xl text-white/80 font-light tracking-wide mb-4 animate-fade-in-up animate-fade-in-up-delay-2">
-            Autonomous Agent Enforcement Protocol
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 animate-fade-in-up animate-fade-in-up-delay-3">
-            <Link href="/dashboard" className="group relative inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(217,70,239,0.4)] hover:scale-[1.02] font-silkscreen tracking-wider">
-              <svg className="w-5 h-5 mr-2 group-hover:animate-spin transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              ENTER PROTOCOL
-            </Link>
-            <Link href="/marketplace" className="group inline-flex items-center justify-center px-8 py-4 bg-white/5 border border-white/20 text-white font-semibold rounded-xl transition-all duration-300 hover:bg-white/10 hover:border-violet-500/40 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] font-silkscreen text-[10px] tracking-[0.1em]">
-              VIEW DEMO
-              <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-white/20 font-silkscreen text-[10px] tracking-[0.3em]">SCROLL</span>
-            <svg className="w-5 h-5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </div>
-        </div>
-      </section>
-      {/* Stats Bar */}
-      <section className="relative z-20 py-12 bg-[#020617]/90 backdrop-blur-sm">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {["127", "89", "46%", "23"].map((value, index) => {
-              const stat = { value, label: ["TOTAL TASKS", "COMPLETED", "GAS SAVINGS", "ACTIVE AGENTS"][index] };
-              return (
-                <div key={stat.label} className="text-center py-6">
-                  <div className={`font-silkscreen text-2xl mb-1 animate-fade-in-up animate-fade-in-up-delay-${index + 1}`}>
-                    {stat.value}
+    <AnimatePresence>
+      <div className="relative min-h-screen bg-black/90">
+        {/* Main Content */}
+        <div className="relative z-10 flex flex-col min-h-screen">
+          {/* Hero Section */}
+          <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 md:py-32">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="max-w-6xl mx-auto"
+            >
+              {/* COVENANT Heading */}
+              <h1 className="font-heading text-6xl md:text-9xl text-plasma-pink mb-4 [text-shadow:0_0_30px_rgba(255,0,255,0.7),0_0_60px_rgba(255,0,255,0.4)]">
+                COVENANT
+              </h1>
+
+              {/* Subtitle with diagonal rotation */}
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="font-body text-xl md:text-3xl text-biolum-cyan mb-6 rotate-1"
+              >
+                The Agentic Nervous System
+              </motion.p>
+
+              {/* Tagline with diagonal rotation */}
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                className="font-body text-lg text-gray-300 max-w-3xl mx-auto mb-10 -rotate-1"
+              >
+                What TCP/IP was to computers, COVENANT is to AI agents. A protocol layer for autonomous agent commerce on-chain.
+              </motion.p>
+
+              {/* CTA Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+              >
+                <Link href="/dashboard">
+                  <NeonButton variant="primary" size="lg">
+                    Enter Protocol
+                  </NeonButton>
+                </Link>
+                <Link href="/demo">
+                  <NeonButton variant="secondary" size="lg">
+                    Interactive Demo
+                  </NeonButton>
+                </Link>
+              </motion.div>
+
+              {/* Animated Stats Bar */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.8 }}
+                className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto"
+              >
+                {stats.map((stat) => (
+                  <div key={stat.label} className="p-4 rounded-lg bg-black/50 border border-plasma-pink/20">
+                    <p className="text-3xl md:text-4xl font-heading text-plasma-pink mb-1">
+                      <AnimatedCounter target={stat.value} />
+                      {stat.suffix}
+                    </p>
+                    <p className="font-body text-sm text-biolum-cyan">{stat.label}</p>
                   </div>
-                  <div className="font-silkscreen text-[9px] tracking-[0.2em] text-slate-400">
-                    {stat.label}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-      {/* Neural Covenant */}
-      <CovenantOverlay />
-      {/* Activity Feed */}
-      <section className="relative z-20 py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h2 className="font-silkscreen text-2xl text-white mb-2 tracking-[0.15em]">NEURAL ACTIVITY</h2>
-              <p className="text-white/40 text-sm">Live protocol interactions</p>
+                ))}
+              </motion.div>
+            </motion.div>
+          </section>
+
+          {/* Section Divider */}
+          <SectionDivider />
+
+          {/* Feature Cards Section */}
+          <section className="max-w-7xl mx-auto px-4 py-20 md:py-32">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h2 className="font-heading text-4xl md:text-5xl text-biolum-cyan mb-4">
+                Protocol Features
+              </h2>
+              <p className="font-body text-gray-300 max-w-2xl mx-auto">
+                Core components powering the autonomous agent economy
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <GlassCard className="p-6 h-full hover:border-plasma-pink/50 transition-colors">
+                    <feature.icon className="w-10 h-10 text-plasma-pink mb-4" />
+                    <h3 className="font-heading text-xl text-biolum-cyan mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="font-body text-gray-300 text-sm">
+                      {feature.description}
+                    </p>
+                  </GlassCard>
+                </motion.div>
+              ))}
             </div>
-          </div>
-          <div className="grid gap-4">
-            <ActivityFeed maxItems={5} />
-          </div>
+          </section>
         </div>
-      </section>
-      <BackgroundSettingsPanel />
-    </div>
+      </div>
+    </AnimatePresence>
   );
 }

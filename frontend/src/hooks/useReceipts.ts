@@ -1,74 +1,74 @@
 "use client";
 
-import { useAccount, useReadContract } from "wagmi";
-import { getContractAddresses } from "@/contracts/addresses";
+import { useReadContract } from "wagmi";
+import { useChainId } from "wagmi";
 import ReceiptVerifierABI from "@/contracts/ReceiptVerifier.json";
-import { Receipt } from "@/types";
+import { getContractAddresses } from "@/config/contracts";
+import type { Address } from "viem";
 
-export function useAgentReceipts(agentAddress: `0x${string}` | undefined) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
-
-  const { data: receiptIds, isLoading, refetch } = useReadContract({
-    address: contracts.ReceiptVerifier as `0x${string}`,
-    abi: ReceiptVerifierABI,
-    functionName: "getReceiptsByAgent",
-    args: agentAddress ? [agentAddress] : undefined,
-    query: { enabled: !!agentAddress },
-  });
-
-  return {
-    receiptIds: (receiptIds as string[]) || [],
-    isLoading,
-    refetch,
-  };
+export interface ReceiptData {
+  receiptId: `0x${string}`;
+  issuer: Address;
+  counterparty: Address;
+  interactionType: string;
+  dataHash: `0x${string}`;
+  timestamp: bigint;
+  blockNumber: bigint;
+  isValid: boolean;
 }
 
-export function useReceipt(receiptId: string | undefined) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+export function useAgentReceipts(agentAddress?: Address) {
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data, isLoading } = useReadContract({
-    address: contracts.ReceiptVerifier as `0x${string}`,
-    abi: ReceiptVerifierABI,
-    functionName: "verifyReceipt",
-    args: receiptId ? [receiptId] : undefined,
-    query: { enabled: !!receiptId },
+  return useReadContract({
+    address: contracts.ReceiptVerifier as Address,
+    abi: ReceiptVerifierABI as any,
+    functionName: "getReceiptsByAgent",
+    args: [agentAddress as Address],
+    query: {
+      enabled: !!agentAddress,
+    },
   });
+}
 
-  const [isValid, receipt] = (data as [boolean, Receipt]) || [false, undefined];
+export function useReceipt(receiptId?: `0x${string}` | string) {
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  return {
-    isValid,
-    receipt,
-    isLoading,
-  };
+  return useReadContract({
+    address: contracts.ReceiptVerifier as Address,
+    abi: ReceiptVerifierABI as any,
+    functionName: "verifyReceipt",
+    args: [receiptId as `0x${string}`],
+    query: {
+      enabled: !!receiptId,
+    },
+  });
 }
 
 export function useReceiptCount() {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: count } = useReadContract({
-    address: contracts.ReceiptVerifier as `0x${string}`,
-    abi: ReceiptVerifierABI,
+  return useReadContract({
+    address: contracts.ReceiptVerifier as Address,
+    abi: ReceiptVerifierABI as any,
     functionName: "receiptCount",
   });
-
-  return count ? Number(count) : 0;
 }
 
-export function useAgentReceiptCount(agentAddress: `0x${string}` | undefined) {
-  const { chain } = useAccount();
-  const contracts = chain ? getContractAddresses(chain.id) : getContractAddresses(84532);
+export function useAgentReceiptCount(agentAddress?: Address) {
+  const chainId = useChainId();
+  const contracts = getContractAddresses(chainId);
 
-  const { data: count } = useReadContract({
-    address: contracts.ReceiptVerifier as `0x${string}`,
-    abi: ReceiptVerifierABI,
+  return useReadContract({
+    address: contracts.ReceiptVerifier as Address,
+    abi: ReceiptVerifierABI as any,
     functionName: "getAgentReceiptCount",
-    args: agentAddress ? [agentAddress] : undefined,
-    query: { enabled: !!agentAddress },
+    args: [agentAddress as Address],
+    query: {
+      enabled: !!agentAddress,
+    },
   });
-
-  return count ? Number(count) : 0;
 }

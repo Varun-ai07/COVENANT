@@ -3,7 +3,7 @@ export interface NetworkStats {
   taskCount: number;
   receiptCount: number;
   agentStats: TaskStats;
-  reputationDistribution: ReputationDistribution;
+  reputationDistribution: ReputationDistributionItem[];
 }
 
 export interface TaskStats {
@@ -19,4 +19,6 @@ export interface ReputationDistributionItem {
   count: number;
 }
 
-export type ReputationDistribution = ReputationDistributionItem[];
+export interface ReputationDistribution {
+  [key: string]: ReputationDistributionItem;
+}
