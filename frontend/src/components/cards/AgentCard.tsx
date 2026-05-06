@@ -1,15 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import {
-  User,
-  Star,
-  Shield,
-  ArrowRight,
-  Zap,
-} from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { User, Star, Shield, Zap } from "lucide-react";
+import { Card } from "@/components/ui/Card";
 import { formatAddress, formatEth } from "@/types";
 
 interface AgentCardProps {
@@ -45,37 +38,34 @@ export function AgentCard({
 
   return (
     <motion.div
-      whileHover={{ scale: 1.01 }}
-      transition={{ duration: 0.2 }}
+      whileHover={{ scale: 1.005 }}
+      transition={{ duration: 0.15 }}
       className={className}
     >
-      <GlassCard
-        className="p-5 hover:border-biolum-cyan/40 transition-all duration-300 group"
-        glowColor="cyan"
-      >
+      <Card variant="interactive" padding="md">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-synapse-violet/20 border border-synapse-violet/40 flex items-center justify-center">
-              <User size={20} className="text-synapse-violet" />
+            <div className="w-10 h-10 rounded-xl bg-accent-muted border border-accent/20 flex items-center justify-center">
+              <User size={20} className="text-accent" />
             </div>
             <div>
-              <h4 className="font-display font-semibold text-white text-sm">
+              <h4 className="font-heading font-semibold text-foreground text-sm">
                 {name}
               </h4>
-              <p className="font-mono text-[10px] text-gray-500">
+              <p className="font-mono text-[10px] text-muted">
                 {formatAddress(address)}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {rank && (
-              <span className="px-2 py-0.5 text-[10px] font-mono rounded-full bg-neuron-gold/10 border border-neuron-gold/30 text-neuron-gold">
+              <span className="px-2 py-0.5 text-[10px] font-mono rounded-full bg-warning/10 border border-warning/30 text-warning">
                 #{rank}
               </span>
             )}
             {!isActive && (
-              <span className="px-2 py-0.5 text-[10px] font-mono rounded-full bg-gray-700/30 border border-gray-600/30 text-gray-500">
+              <span className="px-2 py-0.5 text-[10px] font-mono rounded-full bg-surface-alt border border-border text-muted">
                 Inactive
               </span>
             )}
@@ -86,37 +76,37 @@ export function AgentCard({
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Star size={12} className="text-neuron-gold" />
+              <Star size={12} className="text-warning" />
             </div>
-            <p className="text-lg font-display font-bold text-white">
+            <p className="text-lg font-heading font-bold text-foreground">
               {Number(reputation)}
             </p>
-            <p className="text-[10px] font-mono text-gray-600">Reputation</p>
+            <p className="text-[10px] font-mono text-muted">Reputation</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Zap size={12} className="text-biolum-cyan" />
+              <Zap size={12} className="text-info" />
             </div>
-            <p className="text-lg font-display font-bold text-white">
+            <p className="text-lg font-heading font-bold text-foreground">
               {Number(tasksCompleted)}
             </p>
-            <p className="text-[10px] font-mono text-gray-600">Tasks</p>
+            <p className="text-[10px] font-mono text-muted">Tasks</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Shield size={12} className="text-plasma-pink" />
+              <Shield size={12} className="text-success" />
             </div>
-            <p className="text-lg font-display font-bold text-white">
+            <p className="text-lg font-heading font-bold text-foreground">
               {successRate}%
             </p>
-            <p className="text-[10px] font-mono text-gray-600">Success</p>
+            <p className="text-[10px] font-mono text-muted">Success</p>
           </div>
         </div>
 
         {/* Staked */}
-        <div className="flex items-center justify-between p-2 bg-glass/30 rounded-lg mb-3">
-          <span className="text-gray-500 font-mono text-xs">Staked</span>
-          <span className="text-neuron-gold font-mono text-xs font-semibold">
+        <div className="flex items-center justify-between p-2 bg-surface-alt rounded-lg mb-3">
+          <span className="text-muted font-mono text-xs">Staked</span>
+          <span className="text-warning font-mono text-xs font-semibold">
             {formatEth(stakedAmount)} ETH
           </span>
         </div>
@@ -127,19 +117,19 @@ export function AgentCard({
             {capabilities.slice(0, 4).map((cap, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 text-[10px] font-mono rounded-md bg-glass border border-glass-border text-gray-400"
+                className="px-2 py-0.5 text-[10px] font-mono rounded-md bg-surface-alt border border-border text-muted"
               >
                 {cap}
               </span>
             ))}
             {capabilities.length > 4 && (
-              <span className="px-2 py-0.5 text-[10px] font-mono text-gray-600">
+              <span className="px-2 py-0.5 text-[10px] font-mono text-muted">
                 +{capabilities.length - 4}
               </span>
             )}
           </div>
         )}
-      </GlassCard>
+      </Card>
     </motion.div>
   );
 }

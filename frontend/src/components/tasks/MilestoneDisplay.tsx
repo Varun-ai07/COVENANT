@@ -61,9 +61,9 @@ function MilestoneItem({
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-3 p-3 rounded-xl border border-glass-border bg-glass/50">
-        <Loader2 size={18} className="text-synapse-violet flex-shrink-0 animate-spin" />
-        <span className="text-sm text-gray-400">Loading milestone {index + 1}...</span>
+      <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface-alt/50">
+        <Loader2 size={18} className="text-accent flex-shrink-0 animate-spin" />
+        <span className="text-sm text-muted">Loading milestone {index + 1}...</span>
       </div>
     );
   }
@@ -72,31 +72,31 @@ function MilestoneItem({
     <div
       className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 ${
         isCompleted
-          ? "border-synapse-violet/30 bg-synapse-violet/5"
-          : "border-glass-border bg-glass/50"
+          ? "border-accent/30 bg-accent/5"
+          : "border-border bg-surface-alt/50"
       }`}
     >
       {isCompleted ? (
-        <CheckCircle2 size={18} className="text-synapse-violet flex-shrink-0" />
+        <CheckCircle2 size={18} className="text-accent flex-shrink-0" />
       ) : (
-        <Circle size={18} className="text-gray-600 flex-shrink-0" />
+        <Circle size={18} className="text-charcoal flex-shrink-0" />
       )}
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm ${
-            isCompleted ? "text-gray-200" : "text-gray-400"
+            isCompleted ? "text-foreground" : "text-muted"
           } truncate`}
         >
           {milestone?.description || `Milestone ${index + 1}`}
         </p>
         {isCompleted && milestone?.completedAt && (
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-muted mt-0.5">
             Completed at block {milestone.completedAt.toString()}
           </p>
         )}
       </div>
       {isCompleted && (
-        <span className="text-xs text-synapse-violet font-mono">Done</span>
+        <span className="text-xs text-accent font-mono">Done</span>
       )}
     </div>
   );
@@ -141,15 +141,15 @@ export default function MilestoneDisplay({
   if (countLoading) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <Loader2 size={16} className="animate-spin text-synapse-violet" />
-        <span className="text-sm text-gray-400">Loading milestones...</span>
+        <Loader2 size={16} className="animate-spin text-accent" />
+        <span className="text-sm text-muted">Loading milestones...</span>
       </div>
     );
   }
 
   if (milestoneCount === 0) {
     return (
-      <div className={`text-sm text-gray-500 ${className}`}>
+      <div className={`text-sm text-muted ${className}`}>
         No milestones set for this task.
       </div>
     );
@@ -157,7 +157,7 @@ export default function MilestoneDisplay({
 
   return (
     <div className={`space-y-3 ${className}`}>
-      <h4 className="font-mono text-sm text-synapse-violet uppercase tracking-wider">
+      <h4 className="font-mono text-sm text-accent uppercase tracking-wider">
         Milestones ({milestoneCount})
       </h4>
       <div className="space-y-2">

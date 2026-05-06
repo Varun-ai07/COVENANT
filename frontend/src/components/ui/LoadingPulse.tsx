@@ -19,7 +19,7 @@ export const LoadingPulse = memo(function LoadingPulse({
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
-          className="h-4 rounded-lg bg-glass"
+          className="h-4 rounded-lg bg-surface-alt"
           style={{ width: `${widths[i % widths.length]}%` }}
         />
       ))}

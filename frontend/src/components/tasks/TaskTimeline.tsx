@@ -33,30 +33,30 @@ export default function TaskTimeline({
         const isFailed = normalizedStatus === TaskStatus.Failed;
         const isDisputed = normalizedStatus === TaskStatus.Disputed;
 
-        let nodeColor = "bg-gray-700 border-gray-600";
-        let textColor = "text-gray-500";
+        let nodeColor = "bg-surface-alt border-charcoal";
+        let textColor = "text-muted";
         let glowClass = "";
 
         if (isCompleted || isCurrent) {
-          nodeColor = "bg-synapse-violet border-synapse-violet";
-          textColor = TASK_STATUS_COLORS[status as TaskStatus] || "text-synapse-violet";
-          glowClass = "shadow-glow-violet";
+          nodeColor = "bg-accent border-accent";
+          textColor = TASK_STATUS_COLORS[status as TaskStatus] || "text-accent";
+          glowClass = "";
         }
 
         if (isCurrent) {
-          glowClass = "shadow-glow-violet animate-pulse-glow";
+          glowClass = "animate-pulse";
         }
 
         if (isFailed && index >= statusIndex) {
-          nodeColor = "bg-red-500 border-red-500";
-          textColor = "text-red-400";
-          glowClass = "shadow-glow-pink animate-pulse-glow";
+          nodeColor = "bg-danger border-danger";
+          textColor = "text-danger";
+          glowClass = "animate-pulse";
         }
 
         if (isDisputed && index >= statusIndex) {
-          nodeColor = "bg-orange-500 border-orange-500";
-          textColor = "text-orange-400";
-          glowClass = "shadow-glow-gold animate-pulse-glow";
+          nodeColor = "bg-warning border-warning";
+          textColor = "text-warning";
+          glowClass = "animate-pulse";
         }
 
         return {
@@ -80,7 +80,7 @@ export default function TaskTimeline({
           {index < stages.length - 1 && (
             <div
               className={`absolute left-[11px] top-[24px] w-[2px] h-[calc(100%-8px)] ${
-                stage.isCompleted ? "bg-synapse-violet/50" : "bg-gray-700/50"
+                stage.isCompleted ? "bg-accent/50" : "bg-surface-alt/50"
               }`}
             />
           )}
@@ -93,7 +93,7 @@ export default function TaskTimeline({
           >
             {stage.isCompleted && !stage.isCurrent && (
               <svg
-                className="absolute inset-0 w-full h-full text-white p-0.5"
+                className="absolute inset-0 w-full h-full text-foreground p-0.5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -120,7 +120,7 @@ export default function TaskTimeline({
               {stage.label}
             </span>
             {stage.isCurrent && (
-              <span className="ml-2 text-xs text-gray-400">(current)</span>
+              <span className="ml-2 text-xs text-muted">(current)</span>
             )}
           </div>
         </div>

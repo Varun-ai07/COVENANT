@@ -28,13 +28,13 @@ interface NetworkGraphProps {
 }
 
 const COLORS = {
-  violet: "#8b5cf6",
-  pink: "#d946ef",
-  cyan: "#22d3ee",
-  gold: "#fbbf24",
-  node: "#1a0a3e",
-  edge: "rgba(139, 92, 246, 0.2)",
-  text: "#e2e8f0",
+  accent: "#575757",
+  accentHover: "#3d3d3d",
+  info: "#0891b2",
+  warning: "#d97706",
+  node: "#1a1917",
+  edge: "rgba(26, 25, 23, 0.15)",
+  text: "#1a1917",
 };
 
 export function NetworkGraph({
@@ -48,7 +48,6 @@ export function NetworkGraph({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const animationRef = useRef<number>();
 
-  // Initialize positions with force-directed layout seed
   const nodes: Node[] = useMemo(() => {
     const cx = width / 2;
     const cy = height / 2;
@@ -61,7 +60,7 @@ export function NetworkGraph({
         x: cx + r * Math.cos(angle),
         y: cy + r * Math.sin(angle),
         radius: 20,
-        color: n.color || COLORS.violet,
+        color: n.color || COLORS.accent,
         vx: 0,
         vy: 0,
       };
@@ -77,7 +76,6 @@ export function NetworkGraph({
     [inputEdges]
   );
 
-  // Simple force simulation
   useEffect(() => {
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     const cx = width / 2;
@@ -89,13 +87,11 @@ export function NetworkGraph({
     const step = () => {
       if (frame++ > maxFrames) return;
 
-      // Center gravity
       for (const node of nodes) {
         node.vx += (cx - node.x) * 0.001;
         node.vy += (cy - node.y) * 0.001;
       }
 
-      // Repulsion between nodes
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const dx = nodes[j].x - nodes[i].x;
@@ -111,7 +107,6 @@ export function NetworkGraph({
         }
       }
 
-      // Spring along edges
       for (const edge of edges) {
         const a = nodeMap.get(edge.from);
         const b = nodeMap.get(edge.to);
@@ -129,13 +124,11 @@ export function NetworkGraph({
         b.vy -= fy;
       }
 
-      // Apply velocity with damping
       for (const node of nodes) {
         node.vx *= 0.9;
         node.vy *= 0.9;
         node.x += node.vx;
         node.y += node.vy;
-        // Bounds
         node.x = Math.max(node.radius, Math.min(width - node.radius, node.x));
         node.y = Math.max(node.radius, Math.min(height - node.radius, node.y));
       }
@@ -158,7 +151,6 @@ export function NetworkGraph({
 
     ctx.clearRect(0, 0, width, height);
 
-    // Draw edges
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     for (const edge of edges) {
       const from = nodeMap.get(edge.from);
@@ -172,11 +164,9 @@ export function NetworkGraph({
       ctx.stroke();
     }
 
-    // Draw nodes
     for (const node of nodes) {
       const isHovered = hoveredNode === node.id;
 
-      // Glow
       if (isHovered) {
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius + 8, 0, Math.PI * 2);
@@ -184,7 +174,6 @@ export function NetworkGraph({
         ctx.fill();
       }
 
-      // Node circle
       ctx.beginPath();
       ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
       ctx.fillStyle = COLORS.node;
@@ -193,16 +182,14 @@ export function NetworkGraph({
       ctx.fill();
       ctx.stroke();
 
-      // Label
       ctx.fillStyle = COLORS.text;
-      ctx.font = "10px JetBrains Mono, monospace";
+      ctx.font = "10px Space Mono, monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
       ctx.fillText(node.label.slice(0, 8), node.x, node.y + node.radius + 4);
     }
   };
 
-  // Handle mouse hover
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;

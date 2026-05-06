@@ -13,8 +13,8 @@ import {
   Coins,
   LogIn,
 } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useAgent, useAgentByAddress } from "@/hooks/useAgent";
@@ -32,8 +32,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 export default function DashboardPage() {
@@ -51,37 +51,83 @@ export default function DashboardPage() {
   const workerTaskList = (workerTasks as bigint[] | undefined) || [];
   const receiptList = (receipts as any[] | undefined) || [];
 
-  // ---- Wallet not connected ----
+  // ---- Wallet not connected — rich preview ----
   if (!isConnected) {
     return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GlassCard className="p-10 max-w-md text-center" glowColor="violet">
-            <LogIn size={48} className="text-synapse-violet mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
-              Connect Your Wallet
-            </h2>
-            <p className="text-gray-400 font-body mb-6">
-              Connect your wallet to access the COVENANT dashboard and manage your agent profile, tasks, and receipts.
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <Layout size={40} className="text-accent" />
+              Dashboard
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              Your command center for the COVENANT protocol. Monitor agent profiles, track tasks, manage receipts, and oversee insurance status — all in one place.
             </p>
+          </div>
+
+          {/* Feature preview cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Card className="p-5 border-accent/30">
+              <User size={20} className="text-accent mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Agent Profile</h3>
+              <p className="text-muted font-mono text-xs">View your on-chain identity, reputation score, capabilities, and stake amount.</p>
+            </Card>
+            <Card className="p-5 border-info/30">
+              <Activity size={20} className="text-info mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Task Tracker</h3>
+              <p className="text-muted font-mono text-xs">Monitor tasks you&apos;ve created as a client and tasks assigned to you as a worker.</p>
+            </Card>
+            <Card className="p-5 border-warning/30">
+              <Coins size={20} className="text-warning mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">ERC-8004 Receipts</h3>
+              <p className="text-muted font-mono text-xs">Immutable on-chain attestation receipts for every completed task.</p>
+            </Card>
+            <Card className="p-5 border-danger/30">
+              <Shield size={20} className="text-danger mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Insurance</h3>
+              <p className="text-muted font-mono text-xs">Check your pool membership status and coverage for failed tasks.</p>
+            </Card>
+          </div>
+
+          {/* Protocol overview */}
+          <Card className="p-6 mb-8">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Activity size={20} className="text-accent" />
+              What You Can Do
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                <p className="font-heading font-semibold text-foreground mb-1">Post & Accept Tasks</p>
+                <p className="text-muted font-body">Create tasks with escrowed payments or accept open marketplace tasks.</p>
+              </div>
+              <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                <p className="font-heading font-semibold text-foreground mb-1">Build Reputation</p>
+                <p className="text-muted font-body">Every completed task earns an ERC-8004 receipt and increases your on-chain reputation.</p>
+              </div>
+              <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                <p className="font-heading font-semibold text-foreground mb-1">Join Insurance</p>
+                <p className="text-muted font-body">Protect yourself against failed tasks by joining the community insurance pool.</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to interact with the protocol.</p>
             <Link href="/">
-              <NeonButton variant="primary" size="lg">
-                <LogIn size={18} />
-                Go to Home
-              </NeonButton>
+              <Button variant="secondary">Go to Home to Connect</Button>
             </Link>
-          </GlassCard>
-        </motion.div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen neural-bg py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <motion.div
         className="max-w-7xl mx-auto"
         variants={containerVariants}
@@ -92,19 +138,19 @@ export default function DashboardPage() {
         <motion.div variants={itemVariants} className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 flex items-center gap-3">
-                <Layout size={40} className="text-synapse-violet" />
+              <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+                <Layout size={40} className="text-accent" />
                 Dashboard
               </h1>
-              <p className="text-gray-400 font-mono text-sm">
+              <p className="text-muted font-mono text-sm">
                 {formatAddress(address)}
               </p>
             </div>
             <Link href="/marketplace">
-              <NeonButton variant="secondary" size="sm">
+              <Button variant="secondary" size="sm">
                 Marketplace
                 <ArrowRight size={14} />
-              </NeonButton>
+              </Button>
             </Link>
           </div>
         </motion.div>
@@ -112,26 +158,26 @@ export default function DashboardPage() {
         {/* Agent Profile Card */}
         <motion.div variants={itemVariants} className="mb-8">
           {agentLoading ? (
-            <GlassCard className="p-6">
+            <Card className="p-6">
               <LoadingPulse lines={4} />
-            </GlassCard>
+            </Card>
           ) : agent && agent.isActive ? (
-            <GlassCard className="p-6" glowColor="violet">
+            <Card className="p-6">
               <div className="flex flex-col md:flex-row md:items-start gap-6">
                 {/* Avatar / Icon */}
                 <div className="flex-shrink-0">
-                  <div className="w-16 h-16 rounded-2xl bg-synapse-violet/20 border border-synapse-violet/40 flex items-center justify-center">
-                    <User size={32} className="text-synapse-violet" />
+                  <div className="w-16 h-16 rounded-2xl bg-accent/20 border border-accent/40 flex items-center justify-center">
+                    <User size={32} className="text-accent" />
                   </div>
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <h2 className="text-2xl font-display font-bold text-white">
+                    <h2 className="text-2xl font-heading font-bold text-foreground">
                       {agent.name}
                     </h2>
-                    <span className="px-2 py-0.5 text-xs font-mono rounded-full bg-neuron-gold/10 border border-neuron-gold/30 text-neuron-gold">
+                    <span className="px-2 py-0.5 text-xs font-mono rounded-full bg-warning/10 border border-warning/30 text-warning">
                       Registered
                     </span>
                   </div>
@@ -139,34 +185,34 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                     {/* DID */}
                     <div>
-                      <p className="text-gray-500 font-mono text-xs mb-0.5">DID</p>
-                      <p className="text-biolum-cyan font-mono text-xs truncate">
+                      <p className="text-muted font-mono text-xs mb-0.5">DID</p>
+                      <p className="text-info font-mono text-xs truncate">
                         {formatAddress(agent.did)}
                       </p>
                     </div>
 
                     {/* Reputation */}
                     <div>
-                      <p className="text-gray-500 font-mono text-xs mb-0.5">Reputation</p>
-                      <p className="text-white font-display text-lg">
+                      <p className="text-muted font-mono text-xs mb-0.5">Reputation</p>
+                      <p className="text-foreground font-heading text-lg">
                         {Number(agent.reputation)}
                       </p>
                     </div>
 
                     {/* Stake */}
                     <div>
-                      <p className="text-gray-500 font-mono text-xs mb-0.5">Staked</p>
-                      <p className="text-neuron-gold font-mono">
+                      <p className="text-muted font-mono text-xs mb-0.5">Staked</p>
+                      <p className="text-warning font-mono">
                         {formatEth(agent.stakedAmount)} ETH
                       </p>
                     </div>
 
                     {/* Tasks */}
                     <div>
-                      <p className="text-gray-500 font-mono text-xs mb-0.5">Tasks Done</p>
-                      <p className="text-white font-mono">
+                      <p className="text-muted font-mono text-xs mb-0.5">Tasks Done</p>
+                      <p className="text-foreground font-mono">
                         {Number(agent.tasksCompleted)}{" "}
-                        <span className="text-gray-500">/ {Number(agent.tasksFailed)} failed</span>
+                        <span className="text-muted">/ {Number(agent.tasksFailed)} failed</span>
                       </p>
                     </div>
                   </div>
@@ -174,12 +220,12 @@ export default function DashboardPage() {
                   {/* Capabilities */}
                   {agent.capabilities && agent.capabilities.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-gray-500 font-mono text-xs mb-2">Capabilities</p>
+                      <p className="text-muted font-mono text-xs mb-2">Capabilities</p>
                       <div className="flex flex-wrap gap-2">
                         {agent.capabilities.map((cap: string, i: number) => (
                           <span
                             key={i}
-                            className="px-2.5 py-1 text-xs font-mono rounded-lg bg-glass border border-glass-border text-gray-300"
+                            className="px-2.5 py-1 text-xs font-mono rounded-lg bg-surface-alt border border-border text-muted"
                           >
                             {cap}
                           </span>
@@ -189,23 +235,23 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-            </GlassCard>
+            </Card>
           ) : (
-            <GlassCard className="p-8 text-center" glowColor="pink">
-              <User size={40} className="text-plasma-pink mx-auto mb-4 opacity-60" />
-              <h3 className="text-xl font-display font-semibold text-white mb-2">
+            <Card className="p-8 text-center">
+              <User size={40} className="text-danger mx-auto mb-4 opacity-60" />
+              <h3 className="text-xl font-heading font-semibold text-foreground mb-2">
                 Not Registered Yet?
               </h3>
-              <p className="text-gray-400 font-body mb-6 max-w-md mx-auto">
+              <p className="text-muted font-body mb-6 max-w-md mx-auto">
                 Register as an agent on COVENANT to start accepting tasks, building reputation, and earning ETH.
               </p>
               <Link href="/marketplace">
-                <NeonButton variant="secondary">
+                <Button variant="secondary">
                   Register in Marketplace
                   <ArrowRight size={16} />
-                </NeonButton>
+                </Button>
               </Link>
-            </GlassCard>
+            </Card>
           )}
         </motion.div>
 
@@ -214,7 +260,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* My Tasks (Client) */}
             <StatCard
-              icon={<FileText size={20} className="text-synapse-violet" />}
+              icon={<FileText size={20} className="text-accent" />}
               label="My Tasks"
               sublabel="(as client)"
               value={clientTasksLoading ? undefined : clientTaskList.length}
@@ -223,7 +269,7 @@ export default function DashboardPage() {
 
             {/* My Tasks (Worker) */}
             <StatCard
-              icon={<Activity size={20} className="text-biolum-cyan" />}
+              icon={<Activity size={20} className="text-info" />}
               label="Assigned Tasks"
               sublabel="(as worker)"
               value={workerTasksLoading ? undefined : workerTaskList.length}
@@ -232,7 +278,7 @@ export default function DashboardPage() {
 
             {/* Receipts */}
             <StatCard
-              icon={<Coins size={20} className="text-neuron-gold" />}
+              icon={<Coins size={20} className="text-warning" />}
               label="Receipts"
               sublabel="ERC-8004"
               value={receiptsLoading ? undefined : receiptList.length}
@@ -241,7 +287,7 @@ export default function DashboardPage() {
 
             {/* Insurance */}
             <StatCard
-              icon={<Shield size={20} className="text-plasma-pink" />}
+              icon={<Shield size={20} className="text-danger" />}
               label="Insurance"
               sublabel="pool status"
               value={
@@ -259,14 +305,14 @@ export default function DashboardPage() {
 
         {/* Recent Activity */}
         <motion.div variants={itemVariants}>
-          <GlassCard className="p-6" glowColor="violet">
+          <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-display font-semibold text-white flex items-center gap-2">
-                <Activity size={20} className="text-synapse-violet" />
+              <h3 className="text-xl font-heading font-semibold text-foreground flex items-center gap-2">
+                <Activity size={20} className="text-accent" />
                 Recent Activity
               </h3>
               <Link href="/marketplace">
-                <span className="text-sm font-mono text-synapse-violet hover:text-plasma-pink transition-colors flex items-center gap-1">
+                <span className="text-sm font-mono text-accent hover:text-danger transition-colors flex items-center gap-1">
                   View All
                   <ArrowRight size={14} />
                 </span>
@@ -277,15 +323,15 @@ export default function DashboardPage() {
               <LoadingPulse lines={5} />
             ) : clientTaskList.length === 0 && workerTaskList.length === 0 && receiptList.length === 0 ? (
               <div className="text-center py-12">
-                <Activity size={32} className="text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500 font-body">
+                <Activity size={32} className="text-muted mx-auto mb-3" />
+                <p className="text-muted font-body">
                   No activity yet. Browse the marketplace to find or post tasks.
                 </p>
                 <Link href="/marketplace">
-                  <NeonButton variant="ghost" size="sm" className="mt-4">
+                  <Button variant="ghost" size="sm" className="mt-4">
                     Go to Marketplace
                     <ArrowRight size={14} />
-                  </NeonButton>
+                  </Button>
                 </Link>
               </div>
             ) : (
@@ -314,7 +360,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
-          </GlassCard>
+          </Card>
         </motion.div>
       </motion.div>
     </div>
@@ -339,37 +385,36 @@ function StatCard({
   isText?: boolean;
 }) {
   const glowMap = {
-    violet: "border-synapse-violet/30 hover:border-synapse-violet/60",
-    cyan: "border-biolum-cyan/30 hover:border-biolum-cyan/60",
-    gold: "border-neuron-gold/30 hover:border-neuron-gold/60",
-    pink: "border-plasma-pink/30 hover:border-plasma-pink/60",
+    violet: "border-accent/30 hover:border-accent/60",
+    cyan: "border-info/30 hover:border-info/60",
+    gold: "border-warning/30 hover:border-warning/60",
+    pink: "border-danger/30 hover:border-danger/60",
   };
 
   const textMap = {
-    violet: "text-synapse-violet",
-    cyan: "text-biolum-cyan",
-    gold: "text-neuron-gold",
-    pink: "text-plasma-pink",
+    violet: "text-accent",
+    cyan: "text-info",
+    gold: "text-warning",
+    pink: "text-danger",
   };
 
   return (
-    <GlassCard
+    <Card
       className={`p-4 transition-all duration-300 ${glowMap[color]}`}
-      glowColor={color}
     >
       <div className="flex items-start justify-between mb-3">
         {icon}
       </div>
       {value === undefined ? (
-        <div className="h-8 w-16 rounded-lg bg-glass animate-pulse" />
+        <div className="h-8 w-16 rounded-lg bg-surface-alt animate-pulse" />
       ) : isText ? (
         <p className={`font-mono text-sm font-semibold ${textMap[color]}`}>{value}</p>
       ) : (
-        <p className="text-3xl font-display font-bold text-white">{value}</p>
+        <p className="text-3xl font-heading font-bold text-foreground">{value}</p>
       )}
-      <p className="text-gray-500 font-mono text-xs mt-1">{label}</p>
-      <p className="text-gray-600 font-mono text-[10px]">{sublabel}</p>
-    </GlassCard>
+      <p className="text-muted font-mono text-xs mt-1">{label}</p>
+      <p className="text-muted font-mono text-[10px]">{sublabel}</p>
+    </Card>
   );
 }
 
@@ -380,26 +425,26 @@ function ActivityRow({ taskId, role }: { taskId: bigint; role: "client" | "worke
 
   if (isLoading) {
     return (
-      <div className="p-3 bg-glass/30 rounded-xl animate-pulse h-14" />
+      <div className="p-3 bg-surface-alt/30 rounded-xl animate-pulse h-14" />
     );
   }
 
   const roleLabel = role === "client" ? "Created" : "Assigned";
-  const roleColor = role === "client" ? "text-synapse-violet" : "text-biolum-cyan";
+  const roleColor = role === "client" ? "text-accent" : "text-info";
 
   return (
     <Link href={`/marketplace`} className="block">
-      <div className="flex items-center justify-between p-3 bg-glass/30 border border-glass-border rounded-xl hover:border-synapse-violet/40 transition-colors group">
+      <div className="flex items-center justify-between p-3 bg-surface-alt/30 border border-border rounded-xl hover:border-accent/40 transition-colors group">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex-shrink-0">
             {role === "client" ? (
-              <FileText size={16} className="text-synapse-violet" />
+              <FileText size={16} className="text-accent" />
             ) : (
-              <Activity size={16} className="text-biolum-cyan" />
+              <Activity size={16} className="text-info" />
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-white font-mono text-sm truncate">
+            <p className="text-foreground font-mono text-sm truncate">
               Task #{taskId.toString()}
             </p>
             <p className={`font-mono text-xs ${roleColor}`}>{roleLabel}</p>
@@ -407,7 +452,7 @@ function ActivityRow({ taskId, role }: { taskId: bigint; role: "client" | "worke
         </div>
         <ArrowRight
           size={16}
-          className="text-gray-600 group-hover:text-synapse-violet transition-colors flex-shrink-0"
+          className="text-muted group-hover:text-accent transition-colors flex-shrink-0"
         />
       </div>
     </Link>
@@ -420,14 +465,14 @@ function ReceiptRow({ receipt }: { receipt: any }) {
   const isValid = receipt?.isValid ?? receipt?.[7];
 
   return (
-    <div className="flex items-center justify-between p-3 bg-glass/30 border border-glass-border rounded-xl">
+    <div className="flex items-center justify-between p-3 bg-surface-alt/30 border border-border rounded-xl">
       <div className="flex items-center gap-3 min-w-0">
-        <Coins size={16} className="text-neuron-gold flex-shrink-0" />
+        <Coins size={16} className="text-warning flex-shrink-0" />
         <div className="min-w-0">
-          <p className="text-white font-mono text-sm truncate">
+          <p className="text-foreground font-mono text-sm truncate">
             Receipt {receiptId ? formatAddress(String(receiptId)) : "---"}
           </p>
-          <p className="text-gray-500 font-mono text-xs">
+          <p className="text-muted font-mono text-xs">
             {timestamp
               ? new Date(Number(timestamp) * 1000).toLocaleDateString()
               : "---"}

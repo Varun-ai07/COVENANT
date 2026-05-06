@@ -18,19 +18,19 @@ interface StatusBadgeProps {
 }
 
 const statusConfig = {
-  0: { label: "Created", color: "text-gray-400 bg-gray-400/10 border-gray-400/30", icon: Clock },
-  1: { label: "Funded", color: "text-biolum-cyan bg-biolum-cyan/10 border-biolum-cyan/30", icon: CheckCircle2 },
-  2: { label: "In Progress", color: "text-synapse-violet bg-synapse-violet/10 border-synapse-violet/30", icon: Play },
-  3: { label: "Submitted", color: "text-plasma-pink bg-plasma-pink/10 border-plasma-pink/30", icon: FileCheck },
-  4: { label: "Completed", color: "text-neuron-gold bg-neuron-gold/10 border-neuron-gold/30", icon: CheckCircle2 },
-  5: { label: "Failed", color: "text-red-400 bg-red-400/10 border-red-400/30", icon: XCircle },
-  6: { label: "Disputed", color: "text-orange-400 bg-orange-400/10 border-orange-400/30", icon: AlertTriangle },
-  open: { label: "Open", color: "text-biolum-cyan bg-biolum-cyan/10 border-biolum-cyan/30", icon: Clock },
-  in_progress: { label: "In Progress", color: "text-synapse-violet bg-synapse-violet/10 border-synapse-violet/30", icon: Play },
-  completed: { label: "Completed", color: "text-neuron-gold bg-neuron-gold/10 border-neuron-gold/30", icon: CheckCircle2 },
-  failed: { label: "Failed", color: "text-red-400 bg-red-400/10 border-red-400/30", icon: XCircle },
-  disputed: { label: "Disputed", color: "text-orange-400 bg-orange-400/10 border-orange-400/30", icon: AlertTriangle },
-  cancelled: { label: "Cancelled", color: "text-gray-500 bg-gray-500/10 border-gray-500/30", icon: XCircle },
+  0: { label: "Created", color: "text-muted bg-muted/10 border-muted/30", icon: Clock },
+  1: { label: "Funded", color: "text-info bg-info/10 border-info/30", icon: CheckCircle2 },
+  2: { label: "In Progress", color: "text-accent bg-accent/10 border-accent/30", icon: Play },
+  3: { label: "Submitted", color: "text-warning bg-warning/10 border-warning/30", icon: FileCheck },
+  4: { label: "Completed", color: "text-success bg-success/10 border-success/30", icon: CheckCircle2 },
+  5: { label: "Failed", color: "text-danger bg-danger/10 border-danger/30", icon: XCircle },
+  6: { label: "Disputed", color: "text-warning bg-warning/10 border-warning/30", icon: AlertTriangle },
+  open: { label: "Open", color: "text-info bg-info/10 border-info/30", icon: Clock },
+  in_progress: { label: "In Progress", color: "text-accent bg-accent/10 border-accent/30", icon: Play },
+  completed: { label: "Completed", color: "text-success bg-success/10 border-success/30", icon: CheckCircle2 },
+  failed: { label: "Failed", color: "text-danger bg-danger/10 border-danger/30", icon: XCircle },
+  disputed: { label: "Disputed", color: "text-warning bg-warning/10 border-warning/30", icon: AlertTriangle },
+  cancelled: { label: "Cancelled", color: "text-muted bg-muted/10 border-muted/30", icon: XCircle },
 };
 
 export const StatusBadge = memo(function StatusBadge({

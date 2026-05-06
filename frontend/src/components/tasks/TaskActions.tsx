@@ -89,7 +89,7 @@ export default function TaskActions({
 
       {/* Show loading state */}
       {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-muted">
           <Loader2 size={14} className="animate-spin" />
           Processing transaction...
         </div>

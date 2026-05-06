@@ -15,8 +15,8 @@ import {
   LogIn,
 } from "lucide-react";
 import Link from "next/link";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { useAgentCount } from "@/hooks/useAgent";
 import { useTaskCounter } from "@/hooks/useTask";
@@ -40,8 +40,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 /* ─────────────────────── Stat Card Config ───────────────────────── */
@@ -155,37 +155,76 @@ export default function AnalyticsPage() {
     },
   ];
 
-  // ---- Wallet not connected ----
+  // ---- Wallet not connected — rich preview ----
   if (!isConnected) {
     return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GlassCard className="p-10 max-w-md text-center" glowColor="violet">
-            <BarChart3 size={48} className="text-synapse-violet mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
-              Connect Your Wallet
-            </h2>
-            <p className="text-gray-400 font-body mb-6">
-              Connect your wallet to view COVENANT protocol analytics and on-chain metrics.
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-10">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <BarChart3 size={40} className="text-accent" />
+              Protocol Analytics
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              Real-time on-chain metrics across the COVENANT network. Track agent registrations, task escrows, receipt issuances, insurance claims, batch operations, and dispute activity.
             </p>
+          </div>
+
+          {/* Stats preview grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+            {stats.map((stat) => (
+              <AnalyticsStatCard key={stat.label} {...stat} />
+            ))}
+          </div>
+
+          {/* Explanation cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-warning/15 border border-warning/30 flex items-center justify-center">
+                  <Droplets size={20} className="text-warning" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-heading font-bold text-foreground">Insurance Pool Balance</h3>
+                  <p className="text-muted font-mono text-xs">collective risk pool</p>
+                </div>
+              </div>
+              <p className="text-muted font-body text-sm">
+                Shared pool backing insurance claims across all registered agents. Claims are voted on by pool members. The balance reflects total ETH deposited by all participants.
+              </p>
+            </Card>
+            <Card className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center">
+                  <TrendingUp size={20} className="text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-heading font-bold text-foreground">Network Health</h3>
+                  <p className="text-muted font-mono text-xs">protocol-wide summary</p>
+                </div>
+              </div>
+              <p className="text-muted font-body text-sm">
+                Derived metrics including agent density (tasks per agent), completion signal (receipts vs tasks), dispute rate, and batch utilization give a holistic view of protocol health.
+              </p>
+            </Card>
+          </div>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to interact with the protocol.</p>
             <Link href="/">
-              <NeonButton variant="primary" size="lg">
-                <LogIn size={18} />
-                Go to Home
-              </NeonButton>
+              <Button variant="secondary">Go to Home to Connect</Button>
             </Link>
-          </GlassCard>
-        </motion.div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen neural-bg py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <motion.div
         className="max-w-7xl mx-auto"
         variants={containerVariants}
@@ -194,11 +233,11 @@ export default function AnalyticsPage() {
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 flex items-center gap-3">
-            <BarChart3 size={40} className="text-synapse-violet" />
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+            <BarChart3 size={40} className="text-accent" />
             Protocol Analytics
           </h1>
-          <p className="text-gray-400 font-mono text-sm">
+          <p className="text-muted font-mono text-sm">
             Real-time on-chain metrics across the COVENANT network
           </p>
         </motion.div>
@@ -215,16 +254,16 @@ export default function AnalyticsPage() {
         {/* Pool Balance & Activity Summary Row */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Insurance Pool Balance */}
-          <GlassCard className="p-6" glowColor="gold">
+          <Card className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-neuron-gold/15 border border-neuron-gold/30 flex items-center justify-center">
-                <Droplets size={20} className="text-neuron-gold" />
+              <div className="w-10 h-10 rounded-xl bg-warning/15 border border-warning/30 flex items-center justify-center">
+                <Droplets size={20} className="text-warning" />
               </div>
               <div>
-                <h3 className="text-lg font-display font-bold text-white">
+                <h3 className="text-lg font-heading font-bold text-foreground">
                   Insurance Pool Balance
                 </h3>
-                <p className="text-gray-500 font-mono text-xs">
+                <p className="text-muted font-mono text-xs">
                   collective risk pool
                 </p>
               </div>
@@ -234,32 +273,32 @@ export default function AnalyticsPage() {
               <LoadingPulse lines={2} />
             ) : (
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-display font-bold text-neuron-gold">
+                <span className="text-4xl font-heading font-bold text-warning">
                   {poolBalance !== undefined ? formatEth(poolBalance) : "0.0000"}
                 </span>
-                <span className="text-gray-400 font-mono text-sm">ETH</span>
+                <span className="text-muted font-mono text-sm">ETH</span>
               </div>
             )}
 
-            <div className="mt-4 pt-4 border-t border-glass-border">
-              <p className="text-gray-500 font-body text-sm">
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-muted font-body text-sm">
                 Shared pool backing insurance claims across all registered agents.
                 Claims are voted on by pool members.
               </p>
             </div>
-          </GlassCard>
+          </Card>
 
           {/* Network Health Summary */}
-          <GlassCard className="p-6" glowColor="violet">
+          <Card className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-synapse-violet/15 border border-synapse-violet/30 flex items-center justify-center">
-                <TrendingUp size={20} className="text-synapse-violet" />
+              <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center">
+                <TrendingUp size={20} className="text-accent" />
               </div>
               <div>
-                <h3 className="text-lg font-display font-bold text-white">
+                <h3 className="text-lg font-heading font-bold text-foreground">
                   Network Health
                 </h3>
-                <p className="text-gray-500 font-mono text-xs">
+                <p className="text-muted font-mono text-xs">
                   protocol-wide summary
                 </p>
               </div>
@@ -274,32 +313,32 @@ export default function AnalyticsPage() {
                   value={agentCount !== undefined && taskCount !== undefined && agentCount > 0
                     ? `${(taskCount / agentCount).toFixed(1)} tasks / agent`
                     : "N/A"}
-                  color="text-synapse-violet"
+                  color="text-accent"
                 />
                 <HealthRow
                   label="Completion Signal"
                   value={receiptCount !== undefined && taskCount !== undefined && taskCount > 0
                     ? `${((receiptCount / taskCount) * 100).toFixed(1)}%`
                     : "N/A"}
-                  color="text-biolum-cyan"
+                  color="text-info"
                 />
                 <HealthRow
                   label="Dispute Rate"
                   value={disputesDisplay !== undefined && taskCount !== undefined && taskCount > 0
                     ? `${((disputesDisplay / taskCount) * 100).toFixed(2)}%`
                     : "N/A"}
-                  color="text-plasma-pink"
+                  color="text-danger"
                 />
                 <HealthRow
                   label="Batch Utilization"
                   value={batchesDisplay !== undefined
                     ? `${batchesDisplay} parallel batches`
                     : "N/A"}
-                  color="text-neuron-gold"
+                  color="text-warning"
                 />
               </div>
             )}
-          </GlassCard>
+          </Card>
         </motion.div>
       </motion.div>
     </div>
@@ -317,30 +356,29 @@ function AnalyticsStatCard({
   isLoading,
 }: StatConfig) {
   const iconColorMap = {
-    violet: "text-synapse-violet",
-    cyan: "text-biolum-cyan",
-    gold: "text-neuron-gold",
-    pink: "text-plasma-pink",
+    violet: "text-accent",
+    cyan: "text-info",
+    gold: "text-warning",
+    pink: "text-danger",
   };
 
   const bgMap = {
-    violet: "bg-synapse-violet/15 border-synapse-violet/30",
-    cyan: "bg-biolum-cyan/15 border-biolum-cyan/30",
-    gold: "bg-neuron-gold/15 border-neuron-gold/30",
-    pink: "bg-plasma-pink/15 border-plasma-pink/30",
+    violet: "bg-accent/15 border-accent/30",
+    cyan: "bg-info/15 border-info/30",
+    gold: "bg-warning/15 border-warning/30",
+    pink: "bg-danger/15 border-danger/30",
   };
 
   const borderHoverMap = {
-    violet: "border-synapse-violet/30 hover:border-synapse-violet/60",
-    cyan: "border-biolum-cyan/30 hover:border-biolum-cyan/60",
-    gold: "border-neuron-gold/30 hover:border-neuron-gold/60",
-    pink: "border-plasma-pink/30 hover:border-plasma-pink/60",
+    violet: "border-accent/30 hover:border-accent/60",
+    cyan: "border-info/30 hover:border-info/60",
+    gold: "border-warning/30 hover:border-warning/60",
+    pink: "border-danger/30 hover:border-danger/60",
   };
 
   return (
-    <GlassCard
+    <Card
       className={`p-5 transition-all duration-300 ${borderHoverMap[color]}`}
-      glowColor={color}
     >
       <div className="flex items-start justify-between mb-4">
         <div
@@ -351,16 +389,16 @@ function AnalyticsStatCard({
       </div>
 
       {isLoading ? (
-        <div className="h-9 w-20 rounded-lg bg-glass animate-pulse mb-2" />
+        <div className="h-9 w-20 rounded-lg bg-surface-alt animate-pulse mb-2" />
       ) : (
-        <p className="text-3xl font-display font-bold text-white mb-1">
+        <p className="text-3xl font-heading font-bold text-foreground mb-1">
           {value !== undefined ? value.toLocaleString() : "—"}
         </p>
       )}
 
-      <p className="text-gray-300 font-mono text-xs font-medium">{label}</p>
-      <p className="text-gray-600 font-mono text-[10px]">{sublabel}</p>
-    </GlassCard>
+      <p className="text-muted font-mono text-xs font-medium">{label}</p>
+      <p className="text-muted font-mono text-[10px]">{sublabel}</p>
+    </Card>
   );
 }
 
@@ -375,7 +413,7 @@ function HealthRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-gray-400 font-mono text-sm">{label}</span>
+      <span className="text-muted font-mono text-sm">{label}</span>
       <span className={`font-mono text-sm font-semibold ${color}`}>{value}</span>
     </div>
   );

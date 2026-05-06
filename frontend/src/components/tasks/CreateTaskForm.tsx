@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import { parseEther } from "viem";
 import { useCreateTask } from "@/hooks/useTask";
-import { NeonButton } from "@/components/ui/NeonButton";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { Loader2, Send } from "lucide-react";
 
 interface CreateTaskFormProps {
@@ -48,18 +48,18 @@ export default function CreateTaskForm({
 
   if (isConfirmed) {
     return (
-      <GlassCard className={`p-6 ${className}`}>
+      <Card className={`p-6 ${className}`}>
         <div className="text-center space-y-3">
-          <div className="w-12 h-12 mx-auto rounded-full bg-synapse-violet/20 flex items-center justify-center">
-            <svg className="w-6 h-6 text-synapse-violet" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-12 h-12 mx-auto rounded-full bg-accent/20 flex items-center justify-center">
+            <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3 className="font-heading text-xl text-white">Task Created!</h3>
-          <p className="text-sm text-gray-400">
+          <h3 className="font-heading text-xl text-foreground">Task Created!</h3>
+          <p className="text-sm text-muted">
             Your task has been successfully created and funded.
           </p>
-          <NeonButton
+          <Button
             onClick={() => {
               setWorker("");
               setPayment("");
@@ -68,20 +68,20 @@ export default function CreateTaskForm({
             }}
           >
             Create Another
-          </NeonButton>
+          </Button>
         </div>
-      </GlassCard>
+      </Card>
     );
   }
 
   return (
-    <GlassCard className={`p-6 ${className}`}>
-      <h3 className="font-heading text-xl text-white mb-6">Create New Task</h3>
+    <Card className={`p-6 ${className}`}>
+      <h3 className="font-heading text-xl text-foreground mb-6">Create New Task</h3>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Worker Address */}
         <div className="space-y-2">
-          <label className="block text-sm font-mono text-gray-300">
+          <label className="block text-sm font-mono text-foreground/70">
             Worker Address
           </label>
           <input
@@ -89,14 +89,14 @@ export default function CreateTaskForm({
             value={worker}
             onChange={(e) => setWorker(e.target.value)}
             placeholder="0x..."
-            className="w-full px-4 py-2.5 bg-neural-dark border border-glass-border rounded-xl text-white placeholder-gray-600 font-mono text-sm focus:outline-none focus:border-synapse-violet/50 focus:ring-1 focus:ring-synapse-violet/30 transition-colors"
+            className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-foreground placeholder-muted/50 font-mono text-sm focus:outline-none focus:border-accent/50 transition-colors"
             disabled={isLoading}
           />
         </div>
 
         {/* Payment */}
         <div className="space-y-2">
-          <label className="block text-sm font-mono text-gray-300">
+          <label className="block text-sm font-mono text-foreground/70">
             Payment (ETH)
           </label>
           <input
@@ -105,14 +105,14 @@ export default function CreateTaskForm({
             value={payment}
             onChange={(e) => setPayment(e.target.value)}
             placeholder="0.01"
-            className="w-full px-4 py-2.5 bg-neural-dark border border-glass-border rounded-xl text-white placeholder-gray-600 font-mono text-sm focus:outline-none focus:border-synapse-violet/50 focus:ring-1 focus:ring-synapse-violet/30 transition-colors"
+            className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-foreground placeholder-muted/50 font-mono text-sm focus:outline-none focus:border-accent/50 transition-colors"
             disabled={isLoading}
           />
         </div>
 
         {/* Deadline */}
         <div className="space-y-2">
-          <label className="block text-sm font-mono text-gray-300">
+          <label className="block text-sm font-mono text-foreground/70">
             Deadline (hours from now)
           </label>
           <input
@@ -120,14 +120,14 @@ export default function CreateTaskForm({
             value={deadlineHours}
             onChange={(e) => setDeadlineHours(e.target.value)}
             placeholder="24"
-            className="w-full px-4 py-2.5 bg-neural-dark border border-glass-border rounded-xl text-white placeholder-gray-600 font-mono text-sm focus:outline-none focus:border-synapse-violet/50 focus:ring-1 focus:ring-synapse-violet/30 transition-colors"
+            className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-foreground placeholder-muted/50 font-mono text-sm focus:outline-none focus:border-accent/50 transition-colors"
             disabled={isLoading}
           />
         </div>
 
         {/* Description Hash */}
         <div className="space-y-2">
-          <label className="block text-sm font-mono text-gray-300">
+          <label className="block text-sm font-mono text-foreground/70">
             Description Hash (IPFS)
           </label>
           <input
@@ -135,20 +135,20 @@ export default function CreateTaskForm({
             value={descriptionHash}
             onChange={(e) => setDescriptionHash(e.target.value)}
             placeholder="Qm..."
-            className="w-full px-4 py-2.5 bg-neural-dark border border-glass-border rounded-xl text-white placeholder-gray-600 font-mono text-sm focus:outline-none focus:border-synapse-violet/50 focus:ring-1 focus:ring-synapse-violet/30 transition-colors"
+            className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-foreground placeholder-muted/50 font-mono text-sm focus:outline-none focus:border-accent/50 transition-colors"
             disabled={isLoading}
           />
         </div>
 
         {/* Error */}
         {error && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+          <div className="p-3 rounded-xl bg-danger/10 border border-danger/30 text-danger text-sm">
             {error.message || "Transaction failed"}
           </div>
         )}
 
         {/* Submit Button */}
-        <NeonButton
+        <Button
           type="submit"
           loading={isLoading}
           disabled={isLoading || !worker || !payment || !deadlineHours || !descriptionHash}
@@ -156,8 +156,8 @@ export default function CreateTaskForm({
         >
           <Send size={16} />
           {isPending ? "Confirming in Wallet..." : isConfirming ? "Waiting for Confirmation..." : "Create & Fund Task"}
-        </NeonButton>
+        </Button>
       </form>
-    </GlassCard>
+    </Card>
   );
 }

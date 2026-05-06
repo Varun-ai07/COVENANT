@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 
 interface BarChartData {
   label: string;
@@ -23,13 +23,14 @@ interface AnalyticsChartsProps {
 }
 
 const COLORS = {
-  violet: "#8b5cf6",
-  pink: "#d946ef",
-  cyan: "#22d3ee",
-  gold: "#fbbf24",
+  accent: "#575757",
+  accentLight: "#6b6b6b",
+  info: "#0891b2",
+  warning: "#d97706",
+  success: "#16a34a",
 };
 
-const defaultColors = [COLORS.violet, COLORS.cyan, COLORS.gold, COLORS.pink];
+const defaultColors = [COLORS.accent, COLORS.info, COLORS.warning, COLORS.success];
 
 export function AnalyticsCharts({
   title,
@@ -40,22 +41,22 @@ export function AnalyticsCharts({
 }: AnalyticsChartsProps) {
   if (data.length === 0) {
     return (
-      <GlassCard className={`p-5 ${className || ""}`}>
-        <h4 className="text-sm font-display font-semibold text-white mb-3">{title}</h4>
+      <Card variant="elevated" padding="md" className={className}>
+        <h4 className="text-sm font-heading font-semibold text-foreground mb-3">{title}</h4>
         <div className="flex items-center justify-center h-40">
-          <p className="text-gray-500 font-mono text-xs">No data available</p>
+          <p className="text-muted font-mono text-xs">No data available</p>
         </div>
-      </GlassCard>
+      </Card>
     );
   }
 
   return (
-    <GlassCard className={`p-5 ${className || ""}`}>
-      <h4 className="text-sm font-display font-semibold text-white mb-4">{title}</h4>
+    <Card variant="elevated" padding="md" className={className}>
+      <h4 className="text-sm font-heading font-semibold text-foreground mb-4">{title}</h4>
       {type === "bar" && <BarChart data={data as BarChartData[]} height={height} />}
       {type === "line" && <LineChart data={data as LineChartData[]} height={height} />}
       {type === "donut" && <DonutChart data={data as BarChartData[]} />}
-    </GlassCard>
+    </Card>
   );
 }
 
@@ -70,7 +71,7 @@ function BarChart({ data, height }: { data: BarChartData[]; height: number }) {
         const color = item.color || defaultColors[i % defaultColors.length];
         return (
           <div key={i} className="flex flex-col items-center gap-1">
-            <span className="text-[10px] font-mono text-gray-400">
+            <span className="text-[10px] font-mono text-muted">
               {item.value}
             </span>
             <div
@@ -79,10 +80,9 @@ function BarChart({ data, height }: { data: BarChartData[]; height: number }) {
                 width: barWidth,
                 height: Math.max(4, h),
                 background: `linear-gradient(to top, ${color}33, ${color})`,
-                boxShadow: `0 0 12px ${color}44`,
               }}
             />
-            <span className="text-[10px] font-mono text-gray-500 truncate max-w-[60px] text-center">
+            <span className="text-[10px] font-mono text-muted truncate max-w-[60px] text-center">
               {item.label}
             </span>
           </div>
@@ -115,34 +115,30 @@ function LineChart({ data, height }: { data: LineChartData[]; height: number }) 
       <svg width={w} height={height} viewBox={`0 0 ${w} ${height}`}>
         <defs>
           <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={COLORS.cyan} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={COLORS.cyan} stopOpacity="0" />
+            <stop offset="0%" stopColor={COLORS.accent} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={COLORS.accent} stopOpacity="0" />
           </linearGradient>
         </defs>
-        {/* Area fill */}
         <path d={areaD} fill="url(#lineGrad)" />
-        {/* Line */}
         <path
           d={pathD}
           fill="none"
-          stroke={COLORS.cyan}
+          stroke={COLORS.accent}
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {/* Dots */}
         {points.map((p, i) => (
           <circle
             key={i}
             cx={p.x}
             cy={p.y}
             r="3"
-            fill={COLORS.cyan}
-            stroke="#0a0118"
+            fill={COLORS.accent}
+            stroke="#D8C9AE"
             strokeWidth="1.5"
           />
         ))}
-        {/* Labels */}
         {data.map((d, i) => {
           if (data.length > 10 && i % Math.ceil(data.length / 10) !== 0) return null;
           return (
@@ -151,9 +147,9 @@ function LineChart({ data, height }: { data: LineChartData[]; height: number }) 
               x={points[i].x}
               y={height - 4}
               textAnchor="middle"
-              className="fill-gray-500"
+              className="fill-muted"
               fontSize="8"
-              fontFamily="JetBrains Mono, monospace"
+              fontFamily="Space Mono, monospace"
             >
               {d.label}
             </text>
@@ -210,14 +206,13 @@ function DonutChart({ data }: { data: BarChartData[] }) {
             className="hover:opacity-100 transition-opacity"
           />
         ))}
-        {/* Center text */}
         <text
           x={cx}
           y={cy - 6}
           textAnchor="middle"
-          className="fill-white"
+          className="fill-foreground"
           fontSize="18"
-          fontFamily="Cormorant Garamond, serif"
+          fontFamily="Space Grotesk, system-ui"
           fontWeight="bold"
         >
           {total}
@@ -226,9 +221,9 @@ function DonutChart({ data }: { data: BarChartData[] }) {
           x={cx}
           y={cy + 10}
           textAnchor="middle"
-          className="fill-gray-500"
+          className="fill-muted"
           fontSize="8"
-          fontFamily="JetBrains Mono, monospace"
+          fontFamily="Space Mono, monospace"
         >
           total
         </text>
@@ -240,7 +235,7 @@ function DonutChart({ data }: { data: BarChartData[] }) {
               className="w-2.5 h-2.5 rounded-full"
               style={{ backgroundColor: seg.color }}
             />
-            <span className="text-xs font-mono text-gray-400">
+            <span className="text-xs font-mono text-muted">
               {seg.label}: {seg.value} ({Math.round((seg.value / total) * 100)}%)
             </span>
           </div>

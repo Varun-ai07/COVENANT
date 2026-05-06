@@ -31,11 +31,11 @@ export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
 };
 
 export const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
-  [TaskStatus.Created]: "text-gray-400",
-  [TaskStatus.Funded]: "text-biolum-cyan",
-  [TaskStatus.InProgress]: "text-synapse-violet",
-  [TaskStatus.Submitted]: "text-plasma-pink",
-  [TaskStatus.Completed]: "text-neuron-gold",
-  [TaskStatus.Failed]: "text-red-400",
-  [TaskStatus.Disputed]: "text-orange-400",
+  [TaskStatus.Created]: "text-muted",
+  [TaskStatus.Funded]: "text-info",
+  [TaskStatus.InProgress]: "text-accent",
+  [TaskStatus.Submitted]: "text-warning",
+  [TaskStatus.Completed]: "text-success",
+  [TaskStatus.Failed]: "text-danger",
+  [TaskStatus.Disputed]: "text-warning",
 };

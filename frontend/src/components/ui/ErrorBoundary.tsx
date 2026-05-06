@@ -2,7 +2,8 @@
 
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { NeonButton } from "./NeonButton";
+import { Card } from "./Card";
+import { Button } from "./Button";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -32,13 +33,15 @@ export class ErrorBoundary extends Component<
 
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-6">
-          <div className="glass-card p-8 max-w-md text-center space-y-4">
-            <AlertTriangle size={48} className="text-red-400 mx-auto mb-4" />
-            <h3 className="font-heading text-xl text-white">Something went wrong</h3>
-            <p className="font-body text-sm text-gray-400">
+          <Card variant="elevated" padding="lg" className="max-w-md text-center space-y-4">
+            <AlertTriangle size={48} className="text-danger mx-auto mb-4" />
+            <h3 className="font-heading text-xl text-foreground">
+              Something went wrong
+            </h3>
+            <p className="font-body text-sm text-muted">
               {this.state.error?.message || "An unexpected error occurred"}
             </p>
-            <NeonButton
+            <Button
               variant="secondary"
               onClick={() => {
                 this.setState({ hasError: false, error: undefined });
@@ -47,8 +50,8 @@ export class ErrorBoundary extends Component<
             >
               <RefreshCw size={16} />
               Reload Page
-            </NeonButton>
-          </div>
+            </Button>
+          </Card>
         </div>
       );
     }

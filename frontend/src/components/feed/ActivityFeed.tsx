@@ -51,42 +51,42 @@ const activityConfig: Record<
   task_created: {
     icon: <FileText size={14} />,
     label: "Created a task",
-    color: "text-synapse-violet",
+    color: "text-accent",
   },
   task_completed: {
     icon: <CheckCircle2 size={14} />,
     label: "Completed a task",
-    color: "text-green-400",
+    color: "text-success",
   },
   task_failed: {
     icon: <XCircle size={14} />,
     label: "Task failed",
-    color: "text-plasma-pink",
+    color: "text-danger",
   },
   receipt_issued: {
     icon: <Coins size={14} />,
     label: "Receipt issued",
-    color: "text-neuron-gold",
+    color: "text-warning",
   },
   agent_registered: {
     icon: <Shield size={14} />,
     label: "Registered as agent",
-    color: "text-biolum-cyan",
+    color: "text-info",
   },
   payment_sent: {
     icon: <Coins size={14} />,
     label: "Payment sent",
-    color: "text-neuron-gold",
+    color: "text-warning",
   },
   dispute_opened: {
     icon: <Shield size={14} />,
     label: "Dispute opened",
-    color: "text-plasma-pink",
+    color: "text-danger",
   },
   collective_joined: {
     icon: <Users size={14} />,
     label: "Joined collective",
-    color: "text-biolum-cyan",
+    color: "text-info",
   },
 };
 
@@ -108,8 +108,8 @@ export function ActivityFeed({
   if (items.length === 0) {
     return (
       <div className="text-center py-12">
-        <Clock size={32} className="text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-500 font-body">{emptyMessage}</p>
+        <Clock size={32} className="text-muted mx-auto mb-3" />
+        <p className="text-muted font-body">{emptyMessage}</p>
       </div>
     );
   }
@@ -121,24 +121,24 @@ export function ActivityFeed({
         return (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.3 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: i * 0.03, duration: 0.2 }}
           >
-            <div className="flex items-center gap-3 px-4 py-3 bg-glass/30 border border-glass-border rounded-xl hover:border-synapse-violet/30 transition-colors">
+            <div className="flex items-center gap-3 px-4 py-3 bg-surface border border-border rounded-xl hover:border-border-hover transition-colors">
               {/* Icon */}
               <div
-                className={`flex-shrink-0 w-8 h-8 rounded-lg bg-glass border border-glass-border flex items-center justify-center ${config.color}`}
+                className={`flex-shrink-0 w-8 h-8 rounded-lg bg-surface-alt border border-border flex items-center justify-center ${config.color}`}
               >
                 {config.icon}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white font-mono truncate">
+                <p className="text-sm text-foreground font-mono truncate">
                   {config.label}
                 </p>
-                <p className="text-[10px] text-gray-500 font-mono truncate">
+                <p className="text-[10px] text-muted font-mono truncate">
                   {formatAddress(item.actor)}
                   {item.detail && ` · ${item.detail}`}
                 </p>
@@ -147,11 +147,11 @@ export function ActivityFeed({
               {/* Right side */}
               <div className="flex-shrink-0 text-right">
                 {item.value !== undefined && (
-                  <p className="text-xs font-mono text-neuron-gold">
+                  <p className="text-xs font-mono text-warning">
                     {formatEth(item.value)} ETH
                   </p>
                 )}
-                <p className="text-[10px] font-mono text-gray-600">
+                <p className="text-[10px] font-mono text-muted">
                   {timeAgo(item.timestamp)}
                 </p>
               </div>
@@ -161,7 +161,7 @@ export function ActivityFeed({
                 <Link href={`/tasks/${item.taskId}`}>
                   <ArrowRight
                     size={14}
-                    className="text-gray-600 hover:text-synapse-violet transition-colors"
+                    className="text-muted hover:text-accent transition-colors"
                   />
                 </Link>
               )}

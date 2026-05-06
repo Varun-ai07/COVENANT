@@ -16,8 +16,8 @@ import {
   Key,
   AlertTriangle,
 } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import {
   useIsAuthorizedIssuer,
@@ -34,8 +34,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 export default function VerifierPage() {
@@ -63,34 +63,72 @@ export default function VerifierPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GlassCard className="p-10 max-w-md text-center" glowColor="cyan">
-            <ShieldCheck size={48} className="text-biolum-cyan mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <ShieldCheck className="w-10 h-10 text-info" />
               Capability Verifier
-            </h2>
-            <p className="text-gray-400 font-body mb-6">
-              Connect your wallet to manage authorized issuers and verify capability proofs.
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              Zero-knowledge capability verification for agent authorization. The CapabilityVerifier uses ZK proofs to verify agent capabilities without revealing sensitive data.
             </p>
+          </div>
+
+          {/* How it works */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="p-5 border-info/30">
+              <Key size={20} className="text-info mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">ZK Proofs</h3>
+              <p className="text-muted font-mono text-xs">Submit Groth16 zero-knowledge proofs that attest to an agent&apos;s capabilities without exposing private data.</p>
+            </Card>
+            <Card className="p-5 border-accent/30">
+              <ShieldCheck size={20} className="text-accent mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">On-Chain Verification</h3>
+              <p className="text-muted font-mono text-xs">The contract verifies proofs on-chain and records attestations. Only authorized issuers can submit capability proofs.</p>
+            </Card>
+            <Card className="p-5 border-warning/30">
+              <AlertTriangle size={20} className="text-warning mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Issuer Management</h3>
+              <p className="text-muted font-mono text-xs">Manage the set of trusted issuers who can authorize agent capabilities. Add or remove issuers as needed.</p>
+            </Card>
+          </div>
+
+          {/* Proof format preview */}
+          <Card className="p-6 mb-8">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Key size={20} className="text-info" />
+              Proof Format
+            </h3>
+            <p className="text-muted font-body text-sm mb-4">
+              Generate proofs using the snarkjs circuit. The contract expects a Groth16 proof with public signals encoding agent capabilities.
+            </p>
+            <div className="p-4 bg-surface/30 rounded-xl border border-border">
+              <code className="text-info text-xs block space-y-1 font-mono">
+                <p>pA: [bigint, bigint]</p>
+                <p>pB: [[bigint, bigint], [bigint, bigint]]</p>
+                <p>pC: [bigint, bigint]</p>
+                <p>pubSignals: [bigint, bigint, bigint, bigint, bigint]</p>
+              </code>
+            </div>
+          </Card>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to manage issuers and verify capability proofs.</p>
             <Link href="/">
-              <NeonButton variant="primary" size="lg">
-                <LogIn size={18} />
-                Go to Home
-              </NeonButton>
+              <Button variant="secondary">Go to Home to Connect</Button>
             </Link>
-          </GlassCard>
-        </motion.div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen neural-bg py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <motion.div
         className="max-w-4xl mx-auto"
         variants={containerVariants}
@@ -99,39 +137,39 @@ export default function VerifierPage() {
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 flex items-center gap-3">
-            <ShieldCheck size={40} className="text-biolum-cyan" />
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+            <ShieldCheck size={40} className="text-info" />
             Capability Verifier
           </h1>
-          <p className="text-gray-400 font-mono text-sm">
+          <p className="text-muted font-mono text-sm">
             Zero-knowledge capability verification for agent authorization
           </p>
         </motion.div>
 
         {/* Info Card */}
         <motion.div variants={itemVariants} className="mb-8">
-          <GlassCard className="p-6" glowColor="cyan">
+          <Card className="p-6">
             <div className="flex items-start gap-4">
-              <Key size={24} className="text-biolum-cyan flex-shrink-0 mt-1" />
+              <Key size={24} className="text-info flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-display font-semibold text-white mb-2">
+                <h3 className="text-lg font-heading font-semibold text-foreground mb-2">
                   How It Works
                 </h3>
-                <p className="text-gray-400 font-body text-sm leading-relaxed">
+                <p className="text-muted font-body text-sm leading-relaxed">
                   The CapabilityVerifier uses zero-knowledge proofs to verify agent capabilities without
                   revealing sensitive data. Authorized issuers can submit ZK proofs that attest to an
                   agent&apos;s abilities. The contract verifies the proof on-chain and records the attestation.
                 </p>
               </div>
             </div>
-          </GlassCard>
+          </Card>
         </motion.div>
 
         {/* Check Issuer Status */}
         <motion.div variants={itemVariants} className="mb-8">
-          <GlassCard className="p-6" glowColor="violet">
-            <h3 className="text-xl font-display font-semibold text-white mb-6 flex items-center gap-2">
-              <ShieldCheck size={20} className="text-synapse-violet" />
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+              <ShieldCheck size={20} className="text-accent" />
               Check Issuer Authorization
             </h3>
             <div className="flex gap-3">
@@ -140,37 +178,37 @@ export default function VerifierPage() {
                 value={checkAddress}
                 onChange={(e) => setCheckAddress(e.target.value)}
                 placeholder="0x..."
-                className="flex-1 p-3 bg-glass border border-glass-border rounded-xl font-mono text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-synapse-violet/50"
+                className="flex-1 p-3 bg-surface-alt border border-border rounded-xl font-mono text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent/50"
               />
-              <NeonButton
+              <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => {}} // The hook auto-fetches on checkAddress change
               >
                 Check
-              </NeonButton>
+              </Button>
             </div>
 
             {checkAddress && checkAddress.length === 42 && (
-              <div className="mt-4 p-4 bg-glass/30 rounded-xl border border-glass-border">
+              <div className="mt-4 p-4 bg-surface/30 rounded-xl border border-border">
                 {checkLoading ? (
                   <div className="flex items-center gap-2">
-                    <Loader2 size={16} className="animate-spin text-gray-500" />
-                    <span className="text-gray-500 font-mono text-sm">Checking...</span>
+                    <Loader2 size={16} className="animate-spin text-muted" />
+                    <span className="text-muted font-mono text-sm">Checking...</span>
                   </div>
                 ) : isAuthorized !== undefined ? (
                   <div className="flex items-center gap-2">
                     {isAuthorized ? (
                       <>
-                        <CheckCircle2 size={18} className="text-green-400" />
-                        <span className="text-green-400 font-mono text-sm">
+                        <CheckCircle2 size={18} className="text-success" />
+                        <span className="text-success font-mono text-sm">
                           {formatAddress(checkAddress)} is an authorized issuer
                         </span>
                       </>
                     ) : (
                       <>
-                        <XCircle size={18} className="text-plasma-pink" />
-                        <span className="text-plasma-pink font-mono text-sm">
+                        <XCircle size={18} className="text-danger" />
+                        <span className="text-danger font-mono text-sm">
                           {formatAddress(checkAddress)} is not authorized
                         </span>
                       </>
@@ -179,20 +217,20 @@ export default function VerifierPage() {
                 ) : null}
               </div>
             )}
-          </GlassCard>
+          </Card>
         </motion.div>
 
         {/* Manage Issuers */}
         <motion.div variants={itemVariants} className="mb-8">
-          <GlassCard className="p-6" glowColor="gold">
-            <h3 className="text-xl font-display font-semibold text-white mb-6 flex items-center gap-2">
-              <Key size={20} className="text-neuron-gold" />
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+              <Key size={20} className="text-warning" />
               Manage Authorized Issuers
             </h3>
 
             <form className="space-y-4">
               <div>
-                <label className="block text-sm font-mono text-gray-400 mb-2">
+                <label className="block text-sm font-mono text-muted mb-2">
                   Issuer Address
                 </label>
                 <input
@@ -200,12 +238,12 @@ export default function VerifierPage() {
                   value={issuerAddress}
                   onChange={(e) => setIssuerAddress(e.target.value)}
                   placeholder="0x..."
-                  className="w-full p-3 bg-glass border border-glass-border rounded-xl font-mono text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-neuron-gold/50"
+                  className="w-full p-3 bg-surface-alt border border-border rounded-xl font-mono text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-warning/50"
                 />
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <NeonButton
+                <Button
                   variant="primary"
                   size="sm"
                   loading={isAdding}
@@ -214,8 +252,8 @@ export default function VerifierPage() {
                 >
                   <UserPlus size={16} />
                   Add Issuer
-                </NeonButton>
-                <NeonButton
+                </Button>
+                <Button
                   variant="danger"
                   size="sm"
                   loading={isRemoving}
@@ -224,58 +262,58 @@ export default function VerifierPage() {
                 >
                   <UserMinus size={16} />
                   Remove Issuer
-                </NeonButton>
+                </Button>
               </div>
 
               {addConfirmed && (
-                <div className="p-3 bg-green-900/20 border border-green-500/30 rounded-xl flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-green-400" />
-                  <span className="text-green-400 font-mono text-sm">Issuer added successfully</span>
+                <div className="p-3 bg-success/10 border border-success/30 rounded-xl flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-success" />
+                  <span className="text-success font-mono text-sm">Issuer added successfully</span>
                 </div>
               )}
               {removeConfirmed && (
-                <div className="p-3 bg-green-900/20 border border-green-500/30 rounded-xl flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-green-400" />
-                  <span className="text-green-400 font-mono text-sm">Issuer removed successfully</span>
+                <div className="p-3 bg-success/10 border border-success/30 rounded-xl flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-success" />
+                  <span className="text-success font-mono text-sm">Issuer removed successfully</span>
                 </div>
               )}
             </form>
-          </GlassCard>
+          </Card>
         </motion.div>
 
         {/* ZK Proof Section */}
         <motion.div variants={itemVariants} className="mb-8">
-          <GlassCard className="p-6" glowColor="pink">
-            <h3 className="text-xl font-display font-semibold text-white mb-4 flex items-center gap-2">
-              <AlertTriangle size={20} className="text-plasma-pink" />
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+              <AlertTriangle size={20} className="text-danger" />
               ZK Proof Verification
             </h3>
-            <p className="text-gray-400 font-body text-sm mb-4">
+            <p className="text-muted font-body text-sm mb-4">
               Submit a zero-knowledge capability proof for on-chain verification. This requires
               a valid Groth16 proof with the correct public signals encoding agent capabilities.
             </p>
-            <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
-              <p className="font-mono text-xs text-gray-500 mb-2">Proof format:</p>
-              <code className="text-biolum-cyan text-xs block space-y-1">
+            <div className="p-4 bg-surface/30 rounded-xl border border-border">
+              <p className="font-mono text-xs text-muted mb-2">Proof format:</p>
+              <code className="text-info text-xs block space-y-1">
                 <p>pA: [bigint, bigint]</p>
                 <p>pB: [[bigint, bigint], [bigint, bigint]]</p>
                 <p>pC: [bigint, bigint]</p>
                 <p>pubSignals: [bigint, bigint, bigint, bigint, bigint]</p>
               </code>
             </div>
-            <p className="text-gray-600 font-mono text-xs mt-3">
+            <p className="text-muted font-mono text-xs mt-3">
               Generate proofs using the snarkjs circuit in /agents/contracts/capabilityVerifier.circom
             </p>
-          </GlassCard>
+          </Card>
         </motion.div>
 
         {/* Back Link */}
         <motion.div variants={itemVariants} className="text-center">
           <Link href="/dashboard">
-            <NeonButton variant="ghost" size="sm">
+            <Button variant="ghost" size="sm">
               <ArrowRight size={14} className="rotate-180" />
               Back to Dashboard
-            </NeonButton>
+            </Button>
           </Link>
         </motion.div>
       </motion.div>

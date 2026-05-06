@@ -14,8 +14,8 @@ import {
   Cpu,
   Layers,
 } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { useAgentCount } from "@/hooks/useAgent";
 import { useTaskCounter } from "@/hooks/useTask";
@@ -31,8 +31,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 export default function NetworkPage() {
@@ -53,53 +53,98 @@ export default function NetworkPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GlassCard className="p-10 max-w-md text-center" glowColor="cyan">
-            <GitBranch size={48} className="text-biolum-cyan mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
-              Network Overview
-            </h2>
-            <p className="text-gray-400 font-body mb-6">
-              Connect your wallet to view COVENANT network statistics and contract status.
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <GitBranch size={40} className="text-info" />
+              Network
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              Explore the COVENANT protocol network. View on-chain statistics, deployed contract addresses, chain information, and real-time activity metrics.
             </p>
+          </div>
+
+          {/* Stats preview */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Card className="p-4 border-accent/30">
+              <Users size={20} className="text-accent mb-3" />
+              <p className="text-3xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs mt-1">Registered Agents</p>
+            </Card>
+            <Card className="p-4 border-info/30">
+              <Activity size={20} className="text-info mb-3" />
+              <p className="text-3xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs mt-1">Total Tasks</p>
+            </Card>
+            <Card className="p-4 border-warning/30">
+              <Server size={20} className="text-warning mb-3" />
+              <p className="text-3xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs mt-1">Receipts Issued</p>
+            </Card>
+            <Card className="p-4 border-danger/30">
+              <Layers size={20} className="text-danger mb-3" />
+              <p className="text-3xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs mt-1">Batches Created</p>
+            </Card>
+          </div>
+
+          {/* Network info explanation */}
+          <Card className="p-6 mb-8">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Cpu size={20} className="text-info" />
+              Network Information
+            </h3>
+            <p className="text-muted font-body text-sm mb-4">
+              COVENANT deploys 9 smart contracts on Base Sepolia (L2). The network page shows live chain data, contract addresses, dispute counts, and your connected address — all pulled directly from on-chain reads.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div className="flex justify-between p-3 bg-surface-alt/30 rounded-xl">
+                <span className="text-muted font-mono">Network</span>
+                <span className="text-foreground font-mono">Base Sepolia</span>
+              </div>
+              <div className="flex justify-between p-3 bg-surface-alt/30 rounded-xl">
+                <span className="text-muted font-mono">Chain ID</span>
+                <span className="text-info font-mono">84532</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to interact with the protocol.</p>
             <Link href="/">
-              <NeonButton variant="primary" size="lg">
-                <LogIn size={18} />
-                Go to Home
-              </NeonButton>
+              <Button variant="secondary">Go to Home to Connect</Button>
             </Link>
-          </GlassCard>
-        </motion.div>
+          </div>
+        </div>
       </div>
     );
   }
 
   const statCards = [
     {
-      icon: <Users size={20} className="text-synapse-violet" />,
+      icon: <Users size={20} className="text-accent" />,
       label: "Registered Agents",
       value: agentCount !== undefined ? Number(agentCount) : undefined,
       color: "violet" as const,
     },
     {
-      icon: <Activity size={20} className="text-biolum-cyan" />,
+      icon: <Activity size={20} className="text-info" />,
       label: "Total Tasks",
       value: taskCount !== undefined ? Number(taskCount) : undefined,
       color: "cyan" as const,
     },
     {
-      icon: <Server size={20} className="text-neuron-gold" />,
+      icon: <Server size={20} className="text-warning" />,
       label: "Receipts Issued",
       value: receiptCount !== undefined ? Number(receiptCount) : undefined,
       color: "gold" as const,
     },
     {
-      icon: <Layers size={20} className="text-plasma-pink" />,
+      icon: <Layers size={20} className="text-danger" />,
       label: "Batches Created",
       value: batchCount !== undefined ? Number(batchCount) : undefined,
       color: "pink" as const,
@@ -119,7 +164,7 @@ export default function NetworkPage() {
   ];
 
   return (
-    <div className="min-h-screen neural-bg py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <motion.div
         className="max-w-6xl mx-auto"
         variants={containerVariants}
@@ -128,11 +173,11 @@ export default function NetworkPage() {
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 flex items-center gap-3">
-            <GitBranch size={40} className="text-biolum-cyan" />
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+            <GitBranch size={40} className="text-info" />
             Network
           </h1>
-          <p className="text-gray-400 font-mono text-sm flex items-center gap-2">
+          <p className="text-muted font-mono text-sm flex items-center gap-2">
             <Globe size={14} />
             {networkName} &middot; Chain ID {chainId}
           </p>
@@ -143,27 +188,26 @@ export default function NetworkPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {statCards.map((card) => {
               const glowMap = {
-                violet: "border-synapse-violet/30",
-                cyan: "border-biolum-cyan/30",
-                gold: "border-neuron-gold/30",
-                pink: "border-plasma-pink/30",
+                violet: "border-accent/30",
+                cyan: "border-info/30",
+                gold: "border-warning/30",
+                pink: "border-danger/30",
               };
               return (
-                <GlassCard
+                <Card
                   key={card.label}
                   className={`p-4 ${glowMap[card.color]}`}
-                  glowColor={card.color}
                 >
                   <div className="mb-3">{card.icon}</div>
                   {card.value === undefined ? (
-                    <div className="h-8 w-16 rounded-lg bg-glass animate-pulse" />
+                    <div className="h-8 w-16 rounded-lg bg-surface-alt animate-pulse" />
                   ) : (
-                    <p className="text-3xl font-display font-bold text-white">
+                    <p className="text-3xl font-heading font-bold text-foreground">
                       {card.value}
                     </p>
                   )}
-                  <p className="text-gray-500 font-mono text-xs mt-1">{card.label}</p>
-                </GlassCard>
+                  <p className="text-muted font-mono text-xs mt-1">{card.label}</p>
+                </Card>
               );
             })}
           </div>
@@ -171,41 +215,41 @@ export default function NetworkPage() {
 
         {/* Network Info */}
         <motion.div variants={itemVariants} className="mb-8">
-          <GlassCard className="p-6" glowColor="cyan">
-            <h3 className="text-xl font-display font-semibold text-white mb-4 flex items-center gap-2">
-              <Cpu size={20} className="text-biolum-cyan" />
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Cpu size={20} className="text-info" />
               Network Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="flex justify-between p-3 bg-glass/30 rounded-xl">
-                <span className="text-gray-500 font-mono">Network</span>
-                <span className="text-white font-mono">{networkName}</span>
+              <div className="flex justify-between p-3 bg-surface-alt/30 rounded-xl">
+                <span className="text-muted font-mono">Network</span>
+                <span className="text-foreground font-mono">{networkName}</span>
               </div>
-              <div className="flex justify-between p-3 bg-glass/30 rounded-xl">
-                <span className="text-gray-500 font-mono">Chain ID</span>
-                <span className="text-biolum-cyan font-mono">{chainId}</span>
+              <div className="flex justify-between p-3 bg-surface-alt/30 rounded-xl">
+                <span className="text-muted font-mono">Chain ID</span>
+                <span className="text-info font-mono">{chainId}</span>
               </div>
-              <div className="flex justify-between p-3 bg-glass/30 rounded-xl">
-                <span className="text-gray-500 font-mono">Disputes</span>
-                <span className="text-plasma-pink font-mono">
+              <div className="flex justify-between p-3 bg-surface-alt/30 rounded-xl">
+                <span className="text-muted font-mono">Disputes</span>
+                <span className="text-danger font-mono">
                   {disputeCount !== undefined ? Number(disputeCount) : "---"}
                 </span>
               </div>
-              <div className="flex justify-between p-3 bg-glass/30 rounded-xl">
-                <span className="text-gray-500 font-mono">Your Address</span>
-                <span className="text-white font-mono text-xs truncate max-w-[180px]">
+              <div className="flex justify-between p-3 bg-surface-alt/30 rounded-xl">
+                <span className="text-muted font-mono">Your Address</span>
+                <span className="text-foreground font-mono text-xs truncate max-w-[180px]">
                   {address}
                 </span>
               </div>
             </div>
-          </GlassCard>
+          </Card>
         </motion.div>
 
         {/* Contract Addresses */}
         <motion.div variants={itemVariants}>
-          <GlassCard className="p-6" glowColor="violet">
-            <h3 className="text-xl font-display font-semibold text-white mb-6 flex items-center gap-2">
-              <Server size={20} className="text-synapse-violet" />
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+              <Server size={20} className="text-accent" />
               Deployed Contracts
             </h3>
             <div className="space-y-2">
@@ -214,13 +258,13 @@ export default function NetworkPage() {
                 return (
                   <div
                     key={entry.name}
-                    className="flex items-center justify-between px-4 py-3 bg-glass/30 border border-glass-border rounded-xl"
+                    className="flex items-center justify-between px-4 py-3 bg-surface-alt/30 border border-border rounded-xl"
                   >
-                    <span className="font-mono text-sm text-gray-300">{entry.name}</span>
+                    <span className="font-mono text-sm text-muted">{entry.name}</span>
                     {isZero ? (
-                      <span className="font-mono text-xs text-gray-600">Not deployed</span>
+                      <span className="font-mono text-xs text-muted">Not deployed</span>
                     ) : (
-                      <span className="font-mono text-xs text-biolum-cyan truncate ml-4 max-w-[280px]">
+                      <span className="font-mono text-xs text-info truncate ml-4 max-w-[280px]">
                         {entry.address}
                       </span>
                     )}
@@ -228,7 +272,7 @@ export default function NetworkPage() {
                 );
               })}
             </div>
-          </GlassCard>
+          </Card>
         </motion.div>
       </motion.div>
     </div>

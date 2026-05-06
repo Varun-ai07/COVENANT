@@ -11,15 +11,14 @@ export default function ClientLayout({
   const pathname = usePathname();
 
   return (
-    <main className="min-h-screen pt-16">
+    <main className="min-h-[calc(100vh-3.5rem)]">
       <AnimatePresence mode="wait">
         <motion.div
           key={pathname}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="min-h-[calc(100vh-4rem)]"
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
         >
           {children}
         </motion.div>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CreditCard, Droplets, ExternalLink, X, Wallet } from "lucide-react";
 import { useAccount, useChainId } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Button } from "@/components/ui/Button";
 
 const FAUCET_URLS = [
   {
@@ -35,14 +35,14 @@ export function FiatOnRamp() {
 
   return (
     <>
-      <NeonButton
+      <Button
         variant="secondary"
         size="sm"
         onClick={() => setIsOpen(true)}
       >
         <CreditCard size={14} />
         Get ETH
-      </NeonButton>
+      </Button>
 
       <AnimatePresence>
         {isOpen && (
@@ -50,28 +50,28 @@ export function FiatOnRamp() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40"
             onClick={() => setIsOpen(false)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
               transition={{ duration: 0.2 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md mx-4 rounded-2xl border border-glass-border bg-neural-dark/95 backdrop-blur-xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md mx-4 rounded-xl border border-border bg-surface overflow-hidden"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-synapse-violet/20">
-                    <Wallet size={20} className="text-synapse-violet" />
+                  <div className="p-2 rounded-lg bg-accent-muted">
+                    <Wallet size={20} className="text-accent" />
                   </div>
                   <div>
-                    <h3 className="font-heading text-lg text-white">
+                    <h3 className="font-heading text-lg text-foreground">
                       {isTestnet ? "Get Testnet ETH" : "Buy ETH"}
                     </h3>
-                    <p className="font-body text-xs text-gray-400">
+                    <p className="font-body text-xs text-muted">
                       {isTestnet
                         ? "Base Sepolia test network"
                         : "Base mainnet"}
@@ -80,7 +80,7 @@ export function FiatOnRamp() {
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-glass transition-colors"
+                  className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-alt transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -90,7 +90,7 @@ export function FiatOnRamp() {
               <div className="p-6 space-y-4">
                 {isTestnet ? (
                   <>
-                    <p className="font-body text-sm text-gray-300">
+                    <p className="font-body text-sm text-foreground/70">
                       Get free test ETH to interact with COVENANT on Base Sepolia.
                       No real funds needed.
                     </p>
@@ -101,23 +101,23 @@ export function FiatOnRamp() {
                           href={faucet.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-3 rounded-xl border border-glass-border bg-glass/50 hover:bg-glass hover:border-synapse-violet/30 transition-all group"
+                          className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface-alt hover:bg-surface hover:border-accent/30 transition-all group"
                         >
                           <Droplets
                             size={18}
-                            className="text-biolum-cyan group-hover:text-synapse-violet transition-colors"
+                            className="text-info group-hover:text-accent transition-colors"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-body text-sm font-medium text-white">
+                            <p className="font-body text-sm font-medium text-foreground">
                               {faucet.name}
                             </p>
-                            <p className="font-body text-xs text-gray-400 truncate">
+                            <p className="font-body text-xs text-muted truncate">
                               {faucet.description}
                             </p>
                           </div>
                           <ExternalLink
                             size={14}
-                            className="text-gray-500 group-hover:text-synapse-violet transition-colors flex-shrink-0"
+                            className="text-muted group-hover:text-accent transition-colors flex-shrink-0"
                           />
                         </a>
                       ))}
@@ -125,7 +125,7 @@ export function FiatOnRamp() {
                   </>
                 ) : (
                   <>
-                    <p className="font-body text-sm text-gray-300">
+                    <p className="font-body text-sm text-foreground/70">
                       Buy ETH with credit card, debit card, or bank transfer.
                       Funds go directly to your connected wallet.
                     </p>
@@ -133,27 +133,27 @@ export function FiatOnRamp() {
                       href={`${TRANSAK_URL}?apiKey=demo&walletAddress=${address || ""}&network=base&cryptoCurrency=ETH`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-4 rounded-xl border border-plasma-pink/30 bg-plasma-pink/10 hover:bg-plasma-pink/20 hover:border-plasma-pink/50 transition-all group"
+                      className="flex items-center gap-3 p-4 rounded-xl border border-accent/30 bg-accent-muted hover:bg-accent/20 hover:border-accent/50 transition-all group"
                     >
                       <CreditCard
                         size={24}
-                        className="text-plasma-pink group-hover:text-white transition-colors"
+                        className="text-accent group-hover:text-foreground transition-colors"
                       />
                       <div className="flex-1">
-                        <p className="font-body text-base font-medium text-white">
+                        <p className="font-body text-base font-medium text-foreground">
                           Buy with Transak
                         </p>
-                        <p className="font-body text-xs text-gray-400">
+                        <p className="font-body text-xs text-muted">
                           Visa, Mastercard, Apple Pay, Google Pay
                         </p>
                       </div>
                       <ExternalLink
                         size={16}
-                        className="text-gray-500 group-hover:text-plasma-pink transition-colors"
+                        className="text-muted group-hover:text-accent transition-colors"
                       />
                     </a>
-                    <div className="pt-2 border-t border-glass-border">
-                      <p className="font-body text-xs text-gray-500 text-center">
+                    <div className="pt-2 border-t border-border">
+                      <p className="font-body text-xs text-muted text-center">
                         Powered by Transak. COVENANT does not charge additional fees.
                       </p>
                     </div>
@@ -162,7 +162,7 @@ export function FiatOnRamp() {
               </div>
 
               {/* Footer accent */}
-              <div className="h-[2px] bg-gradient-to-r from-transparent via-synapse-violet/50 to-transparent" />
+              <div className="h-[1px] bg-border" />
             </motion.div>
           </motion.div>
         )}

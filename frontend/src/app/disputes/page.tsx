@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { motion } from "framer-motion";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import Link from "next/link";
 import { Scale, Gavel, Vote, ArrowRight, LogIn } from "lucide-react";
 import {
   useDisputeCounter,
@@ -30,9 +31,9 @@ function DisputeCard({ disputeId }: DisputeCardProps) {
 
   if (isLoading) {
     return (
-      <GlassCard className="p-6">
+      <Card className="p-6">
         <LoadingPulse lines={4} />
-      </GlassCard>
+      </Card>
     );
   }
 
@@ -48,27 +49,24 @@ function DisputeCard({ disputeId }: DisputeCardProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
     >
-      <GlassCard
-        className="p-6"
-        glowColor={d.resolved ? "gold" : "pink"}
-      >
+      <Card className="p-6">
         {/* Header row */}
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <Gavel size={20} className={d.resolved ? "text-neuron-gold" : "text-plasma-pink"} />
-            <h3 className="text-lg font-display font-bold text-white">
+            <Gavel size={20} className={d.resolved ? "text-warning" : "text-danger"} />
+            <h3 className="text-lg font-heading font-bold text-foreground">
               Dispute #{disputeId.toString()}
             </h3>
           </div>
           <span
             className={`px-3 py-1 rounded-full text-xs font-mono border ${
               d.resolved
-                ? "bg-neuron-gold/10 border-neuron-gold/40 text-neuron-gold"
-                : "bg-plasma-pink/10 border-plasma-pink/40 text-plasma-pink"
+                ? "bg-warning/10 border-warning/40 text-warning"
+                : "bg-danger/10 border-danger/40 text-danger"
             }`}
           >
             {d.resolved ? "Resolved" : "Pending"}
@@ -78,20 +76,20 @@ function DisputeCard({ disputeId }: DisputeCardProps) {
         {/* Details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-5">
           <div className="flex justify-between sm:flex-col sm:gap-1">
-            <span className="text-gray-400 font-mono">Challenger</span>
-            <span className="text-white font-mono">{formatAddress(d.challenger)}</span>
+            <span className="text-muted font-mono">Challenger</span>
+            <span className="text-foreground font-mono">{formatAddress(d.challenger)}</span>
           </div>
           <div className="flex justify-between sm:flex-col sm:gap-1">
-            <span className="text-gray-400 font-mono">Client</span>
-            <span className="text-white font-mono">{formatAddress(d.client)}</span>
+            <span className="text-muted font-mono">Client</span>
+            <span className="text-foreground font-mono">{formatAddress(d.client)}</span>
           </div>
           <div className="flex justify-between sm:flex-col sm:gap-1">
-            <span className="text-gray-400 font-mono">Task ID</span>
-            <span className="text-biolum-cyan font-mono">#{d.taskId.toString()}</span>
+            <span className="text-muted font-mono">Task ID</span>
+            <span className="text-info font-mono">#{d.taskId.toString()}</span>
           </div>
           <div className="flex justify-between sm:flex-col sm:gap-1">
-            <span className="text-gray-400 font-mono">Deadline</span>
-            <span className={`font-mono ${isExpired && !d.resolved ? "text-red-400" : "text-white"}`}>
+            <span className="text-muted font-mono">Deadline</span>
+            <span className={`font-mono ${isExpired && !d.resolved ? "text-danger" : "text-foreground"}`}>
               {deadlineDate.toLocaleString()}
             </span>
           </div>
@@ -100,20 +98,20 @@ function DisputeCard({ disputeId }: DisputeCardProps) {
         {/* Vote progress bar */}
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-            <span className="text-neon-green">For ({forVotes})</span>
-            <span className="text-red-400">Against ({againstVotes})</span>
+            <span className="text-success">For ({forVotes})</span>
+            <span className="text-danger">Against ({againstVotes})</span>
           </div>
-          <div className="w-full h-2.5 rounded-full bg-glass overflow-hidden flex">
+          <div className="w-full h-2.5 rounded-full bg-surface-alt overflow-hidden flex">
             <div
-              className="h-full bg-neon-green transition-all duration-500"
+              className="h-full bg-success transition-all duration-500"
               style={{ width: `${forPct}%` }}
             />
             <div
-              className="h-full bg-red-400 transition-all duration-500"
+              className="h-full bg-danger transition-all duration-500"
               style={{ width: `${100 - forPct}%` }}
             />
           </div>
-          <p className="text-gray-500 font-mono text-xs mt-1 text-center">
+          <p className="text-muted font-mono text-xs mt-1 text-center">
             {totalVotes} total vote{totalVotes !== 1 ? "s" : ""}
           </p>
         </div>
@@ -121,7 +119,7 @@ function DisputeCard({ disputeId }: DisputeCardProps) {
         {/* Vote buttons (only when not resolved) */}
         {!d.resolved && (
           <div className="flex gap-3">
-            <NeonButton
+            <Button
               variant="primary"
               size="sm"
               loading={isVoting}
@@ -130,8 +128,8 @@ function DisputeCard({ disputeId }: DisputeCardProps) {
             >
               <Vote size={14} />
               Vote For
-            </NeonButton>
-            <NeonButton
+            </Button>
+            <Button
               variant="danger"
               size="sm"
               loading={isVoting}
@@ -140,10 +138,10 @@ function DisputeCard({ disputeId }: DisputeCardProps) {
             >
               <Vote size={14} />
               Vote Against
-            </NeonButton>
+            </Button>
           </div>
         )}
-      </GlassCard>
+      </Card>
     </motion.div>
   );
 }
@@ -168,17 +166,64 @@ export default function DisputesPage() {
     setDisputeTaskId("");
   };
 
-  /* ---- Wallet gate ---- */
+  /* ---- Not connected — rich preview ---- */
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <GlassCard className="p-8 text-center max-w-md w-full">
-          <LogIn className="w-12 h-12 mx-auto mb-4 text-neon-blue" />
-          <h2 className="text-2xl font-bold mb-2">Connect Wallet</h2>
-          <p className="text-gray-400">
-            Please connect your wallet to access dispute arbitration.
-          </p>
-        </GlassCard>
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <Scale className="w-10 h-10 text-accent" />
+              Dispute Arbitration
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              File disputes against unsatisfactory task deliverables or refused payments, and let the community vote on resolution. The losing side&apos;s escrowed funds are redistributed accordingly.
+            </p>
+          </div>
+
+          {/* How it works */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="p-5 border-accent/30">
+              <Scale size={20} className="text-accent mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">File a Dispute</h3>
+              <p className="text-muted font-mono text-xs">Submit a dispute against any task ID. Both clients and workers can initiate disputes for DAO arbitration.</p>
+            </Card>
+            <Card className="p-5 border-info/30">
+              <Vote size={20} className="text-info mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Community Votes</h3>
+              <p className="text-muted font-mono text-xs">Token holders vote For or Against the dispute. A transparent voting bar shows real-time tallies.</p>
+            </Card>
+            <Card className="p-5 border-warning/30">
+              <Gavel size={20} className="text-warning mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Resolution</h3>
+              <p className="text-muted font-mono text-xs">When voting concludes, escrowed funds are redistributed to the winning party automatically on-chain.</p>
+            </Card>
+          </div>
+
+          {/* Stats preview */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <Card className="p-4">
+              <Gavel size={20} className="text-danger mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs">Total Disputes</p>
+            </Card>
+            <Card className="p-4">
+              <Vote size={20} className="text-info mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs">Votes Cast</p>
+            </Card>
+          </div>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to file disputes and participate in voting.</p>
+            <Link href="/">
+              <Button variant="secondary">Go to Home to Connect</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -191,12 +236,12 @@ export default function DisputesPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-4xl md:text-5xl font-display font-bold flex items-center gap-3">
-          <Scale className="w-10 h-10 text-synapse-violet" />
-          <span className="text-white">Dispute </span>
-          <span className="text-synapse-violet">Arbitration</span>
+        <h1 className="text-4xl md:text-5xl font-heading font-bold flex items-center gap-3">
+          <Scale className="w-10 h-10 text-accent" />
+          <span className="text-foreground">Dispute </span>
+          <span className="text-accent">Arbitration</span>
         </h1>
-        <p className="text-gray-400 font-body mt-2">
+        <p className="text-muted font-body mt-2">
           File disputes against tasks and let the community vote on resolution.
         </p>
       </motion.div>
@@ -208,19 +253,19 @@ export default function DisputesPage() {
         transition={{ delay: 0.1 }}
         className="mb-8"
       >
-        <GlassCard className="p-6" glowColor="violet">
+        <Card className="p-6">
           <div className="flex items-start gap-4">
-            <Gavel className="w-8 h-8 text-synapse-violet flex-shrink-0 mt-1" />
+            <Gavel className="w-8 h-8 text-accent flex-shrink-0 mt-1" />
             <div>
-              <h2 className="text-xl font-display font-semibold text-white mb-2">
+              <h2 className="text-xl font-heading font-semibold text-foreground mb-2">
                 How Disputes Work
               </h2>
-              <p className="text-gray-300 font-body mb-4">
+              <p className="text-muted font-body mb-4">
                 If a task deliverable is unsatisfactory or a client refuses payment, any party
                 can file a dispute. Token holders then vote to determine the outcome — the
                 losing side's escrowed funds are redistributed accordingly.
               </p>
-              <div className="flex flex-wrap gap-4 text-sm text-gray-400 font-mono">
+              <div className="flex flex-wrap gap-4 text-sm text-muted font-mono">
                 <div className="flex items-center gap-2">
                   <Scale size={14} />
                   <span>File a dispute with a task ID</span>
@@ -236,7 +281,7 @@ export default function DisputesPage() {
               </div>
             </div>
           </div>
-        </GlassCard>
+        </Card>
       </motion.div>
 
       {/* ---- File Dispute Form ---- */}
@@ -246,14 +291,14 @@ export default function DisputesPage() {
         transition={{ delay: 0.2 }}
         className="mb-8"
       >
-        <GlassCard className="p-6" glowColor="pink">
-          <h2 className="text-xl font-display font-semibold text-white mb-5 flex items-center gap-2">
-            <Gavel size={20} className="text-plasma-pink" />
+        <Card className="p-6">
+          <h2 className="text-xl font-heading font-semibold text-foreground mb-5 flex items-center gap-2">
+            <Gavel size={20} className="text-danger" />
             File a Dispute
           </h2>
           <form onSubmit={handleFileDispute} className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-mono text-gray-400 mb-1.5">
+              <label className="block text-sm font-mono text-muted mb-1.5">
                 Task ID
               </label>
               <input
@@ -262,12 +307,12 @@ export default function DisputesPage() {
                 value={disputeTaskId}
                 onChange={(e) => setDisputeTaskId(e.target.value)}
                 placeholder="Enter the task ID to dispute"
-                className="w-full px-4 py-2.5 bg-glass border border-glass-border rounded-xl text-white font-mono text-sm focus:border-plasma-pink focus:outline-none transition-colors"
+                className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-foreground font-mono text-sm focus:border-danger focus:outline-none transition-colors"
                 required
               />
             </div>
             <div className="flex items-end">
-              <NeonButton
+              <Button
                 type="submit"
                 variant="secondary"
                 loading={isFilingDispute}
@@ -276,10 +321,10 @@ export default function DisputesPage() {
               >
                 <Gavel size={16} />
                 File Dispute
-              </NeonButton>
+              </Button>
             </div>
           </form>
-        </GlassCard>
+        </Card>
       </motion.div>
 
       {/* ---- Disputes List ---- */}
@@ -288,11 +333,11 @@ export default function DisputesPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
-          <Vote className="w-6 h-6 text-neon-blue" />
+        <h2 className="text-2xl font-heading font-bold mb-6 flex items-center gap-2">
+          <Vote className="w-6 h-6 text-info" />
           Active Disputes
           {!isLoadingCounter && (
-            <span className="text-sm font-mono text-gray-400 ml-2">
+            <span className="text-sm font-mono text-muted ml-2">
               ({totalDisputes})
             </span>
           )}
@@ -301,12 +346,12 @@ export default function DisputesPage() {
         {isLoadingCounter ? (
           <LoadingPulse lines={6} />
         ) : totalDisputes === 0 ? (
-          <GlassCard className="p-8 text-center">
-            <Scale className="w-10 h-10 mx-auto mb-3 text-gray-600" />
-            <p className="text-gray-400 font-body">
+          <Card className="p-8 text-center">
+            <Scale className="w-10 h-10 mx-auto mb-3 text-muted" />
+            <p className="text-muted font-body">
               No disputes have been filed. The network is at peace.
             </p>
-          </GlassCard>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {Array.from({ length: totalDisputes }, (_, i) => i)

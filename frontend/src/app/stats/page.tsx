@@ -15,8 +15,8 @@ import {
   ArrowRight,
   Globe,
 } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { useAgentCount } from "@/hooks/useAgent";
 import { useTaskCounter } from "@/hooks/useTask";
@@ -32,8 +32,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 export default function StatsPage() {
@@ -51,58 +51,30 @@ export default function StatsPage() {
   const { count: memberCount } = useInsuranceMemberCount();
   const { count: claimCount } = useInsuranceClaimCount();
 
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GlassCard className="p-10 max-w-md text-center" glowColor="violet">
-            <BarChart3 size={48} className="text-synapse-violet mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
-              Protocol Statistics
-            </h2>
-            <p className="text-gray-400 font-body mb-6">
-              Connect your wallet to view COVENANT protocol analytics.
-            </p>
-            <Link href="/">
-              <NeonButton variant="primary" size="lg">
-                <LogIn size={18} />
-                Go to Home
-              </NeonButton>
-            </Link>
-          </GlassCard>
-        </motion.div>
-      </div>
-    );
-  }
-
   const coreStats = [
     {
-      icon: <Users size={22} className="text-synapse-violet" />,
+      icon: <Users size={22} className="text-accent" />,
       label: "Registered Agents",
       value: agentCount !== undefined ? Number(agentCount) : undefined,
       color: "violet" as const,
       description: "Unique AI agents on-chain",
     },
     {
-      icon: <FileText size={22} className="text-biolum-cyan" />,
+      icon: <FileText size={22} className="text-info" />,
       label: "Tasks Created",
       value: taskCount !== undefined ? Number(taskCount) : undefined,
       color: "cyan" as const,
       description: "Total escrowed tasks",
     },
     {
-      icon: <Coins size={22} className="text-neuron-gold" />,
+      icon: <Coins size={22} className="text-warning" />,
       label: "Receipts Issued",
       value: receiptCount !== undefined ? Number(receiptCount) : undefined,
       color: "gold" as const,
       description: "ERC-8004 attestations",
     },
     {
-      icon: <Layers size={22} className="text-plasma-pink" />,
+      icon: <Layers size={22} className="text-danger" />,
       label: "Batches",
       value: batchCount !== undefined ? Number(batchCount) : undefined,
       color: "pink" as const,
@@ -112,31 +84,93 @@ export default function StatsPage() {
 
   const protocolStats = [
     {
-      icon: <Shield size={18} className="text-plasma-pink" />,
+      icon: <Shield size={18} className="text-danger" />,
       label: "Insurance Pool",
       value: insuranceBalance !== undefined ? `${formatEth(insuranceBalance)} ETH` : undefined,
     },
     {
-      icon: <Users size={18} className="text-biolum-cyan" />,
+      icon: <Users size={18} className="text-info" />,
       label: "Insurance Members",
       value: memberCount !== undefined ? Number(memberCount).toLocaleString() : undefined,
     },
     {
-      icon: <Shield size={18} className="text-neuron-gold" />,
+      icon: <Shield size={18} className="text-warning" />,
       label: "Insurance Claims",
       value: claimCount !== undefined ? Number(claimCount).toLocaleString() : undefined,
     },
     {
-      icon: <Globe size={18} className="text-synapse-violet" />,
+      icon: <Globe size={18} className="text-accent" />,
       label: "Active Disputes",
       value: disputeCount !== undefined ? Number(disputeCount).toLocaleString() : undefined,
     },
   ];
 
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <BarChart3 size={40} className="text-accent" />
+              Protocol Stats
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              Real-time statistics from the COVENANT autonomous agent network. View aggregate counts of agents, tasks, receipts, batches, disputes, and the insurance pool.
+            </p>
+          </div>
+
+          {/* Core stats preview */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {coreStats.map((stat) => (
+              <Card key={stat.label} className="p-5 border-border">
+                <div className="mb-3">{stat.icon}</div>
+                <p className="text-4xl font-heading font-bold text-foreground">---</p>
+                <p className="text-muted font-mono text-sm mt-2">{stat.label}</p>
+                <p className="text-muted font-mono text-xs">{stat.description}</p>
+              </Card>
+            ))}
+          </div>
+
+          {/* Protocol metrics preview */}
+          <Card className="p-6 mb-8">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+              <TrendingUp size={20} className="text-accent" />
+              Protocol Metrics
+            </h3>
+            <p className="text-muted font-body text-sm mb-4">
+              Beyond core counts, COVENANT tracks insurance pool balance, member count, claim activity, and active disputes — giving a complete picture of protocol health.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {protocolStats.map((stat) => (
+                <div key={stat.label} className="p-4 bg-surface/30 border border-border rounded-xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    {stat.icon}
+                    <span className="text-xs font-mono text-muted uppercase tracking-wider">{stat.label}</span>
+                  </div>
+                  <p className="text-2xl font-heading font-bold text-foreground">---</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to interact with the protocol.</p>
+            <Link href="/">
+              <Button variant="secondary">Go to Home to Connect</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const anyLoading = agentsLoading || tasksLoading || receiptsLoading;
 
   return (
-    <div className="min-h-screen neural-bg py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <motion.div
         className="max-w-6xl mx-auto"
         variants={containerVariants}
@@ -145,11 +179,11 @@ export default function StatsPage() {
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 flex items-center gap-3">
-            <BarChart3 size={40} className="text-synapse-violet" />
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+            <BarChart3 size={40} className="text-accent" />
             Protocol Stats
           </h1>
-          <p className="text-gray-400 font-mono text-sm">
+          <p className="text-muted font-mono text-sm">
             Real-time statistics from the COVENANT autonomous agent network
           </p>
         </motion.div>
@@ -159,28 +193,27 @@ export default function StatsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {coreStats.map((stat) => {
               const borderMap = {
-                violet: "border-synapse-violet/30 hover:border-synapse-violet/60",
-                cyan: "border-biolum-cyan/30 hover:border-biolum-cyan/60",
-                gold: "border-neuron-gold/30 hover:border-neuron-gold/60",
-                pink: "border-plasma-pink/30 hover:border-plasma-pink/60",
+                violet: "border-accent/30 hover:border-accent/60",
+                cyan: "border-info/30 hover:border-info/60",
+                gold: "border-warning/30 hover:border-warning/60",
+                pink: "border-danger/30 hover:border-danger/60",
               };
               return (
-                <GlassCard
+                <Card
                   key={stat.label}
                   className={`p-5 transition-all duration-300 ${borderMap[stat.color]}`}
-                  glowColor={stat.color}
                 >
                   <div className="mb-3">{stat.icon}</div>
                   {stat.value === undefined ? (
-                    <div className="h-10 w-20 rounded-lg bg-glass animate-pulse" />
+                    <div className="h-10 w-20 rounded-lg bg-surface-alt animate-pulse" />
                   ) : (
-                    <p className="text-4xl font-display font-bold text-white">
+                    <p className="text-4xl font-heading font-bold text-foreground">
                       {stat.value}
                     </p>
                   )}
-                  <p className="text-gray-400 font-mono text-sm mt-2">{stat.label}</p>
-                  <p className="text-gray-600 font-mono text-xs">{stat.description}</p>
-                </GlassCard>
+                  <p className="text-muted font-mono text-sm mt-2">{stat.label}</p>
+                  <p className="text-muted font-mono text-xs">{stat.description}</p>
+                </Card>
               );
             })}
           </div>
@@ -188,40 +221,40 @@ export default function StatsPage() {
 
         {/* Protocol Metrics */}
         <motion.div variants={itemVariants} className="mb-8">
-          <GlassCard className="p-6" glowColor="violet">
-            <h3 className="text-xl font-display font-semibold text-white mb-6 flex items-center gap-2">
-              <TrendingUp size={20} className="text-synapse-violet" />
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+              <TrendingUp size={20} className="text-accent" />
               Protocol Metrics
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {protocolStats.map((stat) => (
                 <div
                   key={stat.label}
-                  className="p-4 bg-glass/30 border border-glass-border rounded-xl"
+                  className="p-4 bg-surface/30 border border-border rounded-xl"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {stat.icon}
-                    <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+                    <span className="text-xs font-mono text-muted uppercase tracking-wider">
                       {stat.label}
                     </span>
                   </div>
                   {stat.value === undefined ? (
-                    <div className="h-7 w-16 rounded-lg bg-glass animate-pulse" />
+                    <div className="h-7 w-16 rounded-lg bg-surface-alt animate-pulse" />
                   ) : (
-                    <p className="text-2xl font-display font-bold text-white">
+                    <p className="text-2xl font-heading font-bold text-foreground">
                       {stat.value}
                     </p>
                   )}
                 </div>
               ))}
             </div>
-          </GlassCard>
+          </Card>
         </motion.div>
 
         {/* Network Health */}
         <motion.div variants={itemVariants} className="mb-8">
-          <GlassCard className="p-6" glowColor="cyan">
-            <h3 className="text-xl font-display font-semibold text-white mb-6">
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-6">
               Network Health
             </h3>
             {anyLoading ? (
@@ -229,65 +262,65 @@ export default function StatsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Agent Activity */}
-                <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
-                  <p className="text-gray-500 font-mono text-xs mb-2">Agent Activity</p>
+                <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                  <p className="text-muted font-mono text-xs mb-2">Agent Activity</p>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-green-400 font-mono text-sm">Active</span>
+                    <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                    <span className="text-success font-mono text-sm">Active</span>
                   </div>
-                  <p className="text-gray-500 font-mono text-xs mt-2">
+                  <p className="text-muted font-mono text-xs mt-2">
                     {agentCount !== undefined ? `${Number(agentCount)} agents registered` : "---"}
                   </p>
                 </div>
 
                 {/* Task Flow */}
-                <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
-                  <p className="text-gray-500 font-mono text-xs mb-2">Task Flow</p>
+                <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                  <p className="text-muted font-mono text-xs mb-2">Task Flow</p>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-biolum-cyan animate-pulse" />
-                    <span className="text-biolum-cyan font-mono text-sm">Processing</span>
+                    <div className="w-2 h-2 rounded-full bg-info animate-pulse" />
+                    <span className="text-info font-mono text-sm">Processing</span>
                   </div>
-                  <p className="text-gray-500 font-mono text-xs mt-2">
+                  <p className="text-muted font-mono text-xs mt-2">
                     {taskCount !== undefined ? `${Number(taskCount)} tasks escrowed` : "---"}
                   </p>
                 </div>
 
                 {/* Insurance Pool */}
-                <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
-                  <p className="text-gray-500 font-mono text-xs mb-2">Insurance Pool</p>
+                <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                  <p className="text-muted font-mono text-xs mb-2">Insurance Pool</p>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-neuron-gold animate-pulse" />
-                    <span className="text-neuron-gold font-mono text-sm">Funded</span>
+                    <div className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+                    <span className="text-warning font-mono text-sm">Funded</span>
                   </div>
-                  <p className="text-gray-500 font-mono text-xs mt-2">
+                  <p className="text-muted font-mono text-xs mt-2">
                     {insuranceBalance !== undefined ? `${formatEth(insuranceBalance)} ETH pool` : "---"}
                   </p>
                 </div>
               </div>
             )}
-          </GlassCard>
+          </Card>
         </motion.div>
 
         {/* Quick Links */}
         <motion.div variants={itemVariants}>
           <div className="flex flex-wrap justify-center gap-3">
             <Link href="/leaderboard">
-              <NeonButton variant="ghost" size="sm">
+              <Button variant="ghost" size="sm">
                 Leaderboard
                 <ArrowRight size={14} />
-              </NeonButton>
+              </Button>
             </Link>
             <Link href="/analytics">
-              <NeonButton variant="ghost" size="sm">
+              <Button variant="ghost" size="sm">
                 Analytics
                 <ArrowRight size={14} />
-              </NeonButton>
+              </Button>
             </Link>
             <Link href="/network">
-              <NeonButton variant="ghost" size="sm">
+              <Button variant="ghost" size="sm">
                 Network
                 <ArrowRight size={14} />
-              </NeonButton>
+              </Button>
             </Link>
           </div>
         </motion.div>

@@ -14,8 +14,8 @@ import {
   XCircle,
   Hash,
 } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -31,8 +31,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 export default function ReceiptsPage() {
@@ -47,34 +47,72 @@ export default function ReceiptsPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GlassCard className="p-10 max-w-md text-center" glowColor="gold">
-            <FileText size={48} className="text-neuron-gold mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <FileText size={40} className="text-warning" />
               ERC-8004 Receipts
-            </h2>
-            <p className="text-gray-400 font-body mb-6">
-              Connect your wallet to view your on-chain attestation receipts.
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              Every completed task on COVENANT generates an immutable ERC-8004 attestation receipt on-chain. These receipts serve as cryptographic proof of work and build your agent&apos;s reputation.
             </p>
+          </div>
+
+          {/* Receipt explanation */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="p-5 border-warning/30">
+              <Coins size={20} className="text-warning mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">What Is a Receipt?</h3>
+              <p className="text-muted font-mono text-xs">An ERC-8004 attestation is an on-chain record linking client, worker, task type, and data hash. It&apos;s immutable and publicly verifiable.</p>
+            </Card>
+            <Card className="p-5 border-info/30">
+              <ShieldCheck size={20} className="text-info mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Why It Matters</h3>
+              <p className="text-muted font-mono text-xs">Receipts are the foundation of trust in the protocol. They prove an agent completed work satisfactorily and feed into reputation scoring.</p>
+            </Card>
+            <Card className="p-5 border-accent/30">
+              <CheckCircle2 size={20} className="text-accent mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">How to Earn One</h3>
+              <p className="text-muted font-mono text-xs">Accept a task on the marketplace, submit your deliverable, and pass the verification pipeline. A receipt is issued automatically on approval.</p>
+            </Card>
+          </div>
+
+          {/* Stats preview */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <Card className="p-4">
+              <Coins size={20} className="text-warning mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs">Total Receipts</p>
+            </Card>
+            <Card className="p-4">
+              <ShieldCheck size={20} className="text-info mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs">Your Receipts</p>
+            </Card>
+            <Card className="p-4">
+              <CheckCircle2 size={20} className="text-accent mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">---</p>
+              <p className="text-muted font-mono text-xs">Valid</p>
+            </Card>
+          </div>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to view your attestation receipts.</p>
             <Link href="/">
-              <NeonButton variant="primary" size="lg">
-                <LogIn size={18} />
-                Go to Home
-              </NeonButton>
+              <Button variant="secondary">Go to Home to Connect</Button>
             </Link>
-          </GlassCard>
-        </motion.div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen neural-bg py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <motion.div
         className="max-w-5xl mx-auto"
         variants={containerVariants}
@@ -83,11 +121,11 @@ export default function ReceiptsPage() {
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 flex items-center gap-3">
-            <FileText size={40} className="text-neuron-gold" />
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+            <FileText size={40} className="text-warning" />
             Receipts
           </h1>
-          <p className="text-gray-400 font-mono text-sm">
+          <p className="text-muted font-mono text-sm">
             ERC-8004 attestation receipts for completed agent work
           </p>
         </motion.div>
@@ -95,35 +133,35 @@ export default function ReceiptsPage() {
         {/* Stats Row */}
         <motion.div variants={itemVariants} className="mb-8">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <GlassCard className="p-4" glowColor="gold">
-              <Coins size={20} className="text-neuron-gold mb-2" />
-              <p className="text-2xl font-display font-bold text-white">
+            <Card className="p-4">
+              <Coins size={20} className="text-warning mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">
                 {totalCount !== undefined ? Number(totalCount) : "---"}
               </p>
-              <p className="text-gray-500 font-mono text-xs">Total Receipts</p>
-            </GlassCard>
-            <GlassCard className="p-4" glowColor="cyan">
-              <ShieldCheck size={20} className="text-biolum-cyan mb-2" />
-              <p className="text-2xl font-display font-bold text-white">
+              <p className="text-muted font-mono text-xs">Total Receipts</p>
+            </Card>
+            <Card className="p-4">
+              <ShieldCheck size={20} className="text-info mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">
                 {myCount !== undefined ? Number(myCount) : "---"}
               </p>
-              <p className="text-gray-500 font-mono text-xs">Your Receipts</p>
-            </GlassCard>
-            <GlassCard className="p-4" glowColor="violet">
-              <CheckCircle2 size={20} className="text-synapse-violet mb-2" />
-              <p className="text-2xl font-display font-bold text-white">
+              <p className="text-muted font-mono text-xs">Your Receipts</p>
+            </Card>
+            <Card className="p-4">
+              <CheckCircle2 size={20} className="text-accent mb-2" />
+              <p className="text-2xl font-heading font-bold text-foreground">
                 {receiptList.filter((r: any) => r.isValid ?? r[7]).length}
               </p>
-              <p className="text-gray-500 font-mono text-xs">Valid</p>
-            </GlassCard>
+              <p className="text-muted font-mono text-xs">Valid</p>
+            </Card>
           </div>
         </motion.div>
 
         {/* Receipts List */}
         <motion.div variants={itemVariants}>
-          <GlassCard className="p-6" glowColor="gold">
-            <h3 className="text-xl font-display font-semibold text-white mb-6 flex items-center gap-2">
-              <ShieldCheck size={20} className="text-neuron-gold" />
+          <Card className="p-6">
+            <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+              <ShieldCheck size={20} className="text-warning" />
               Your Attestation Receipts
             </h3>
 
@@ -131,21 +169,21 @@ export default function ReceiptsPage() {
               <LoadingPulse lines={6} />
             ) : receiptList.length === 0 ? (
               <div className="text-center py-12">
-                <FileText size={32} className="text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500 font-body mb-4">
+                <FileText size={32} className="text-muted mx-auto mb-3" />
+                <p className="text-muted font-body mb-4">
                   No receipts yet. Complete tasks on the marketplace to earn ERC-8004 receipts.
                 </p>
                 <Link href="/marketplace">
-                  <NeonButton variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm">
                     Browse Marketplace
                     <ArrowRight size={14} />
-                  </NeonButton>
+                  </Button>
                 </Link>
               </div>
             ) : (
               <div className="space-y-3">
                 {/* Header */}
-                <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-xs font-mono text-gray-600 uppercase tracking-wider">
+                <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-2 text-xs font-mono text-muted uppercase tracking-wider">
                   <div className="col-span-2">Receipt</div>
                   <div className="col-span-2">Counterparty</div>
                   <div className="col-span-2">Type</div>
@@ -166,26 +204,26 @@ export default function ReceiptsPage() {
                   return (
                     <div
                       key={idx}
-                      className="grid grid-cols-12 gap-3 items-center px-4 py-3 bg-glass/30 border border-glass-border rounded-xl hover:border-neuron-gold/30 transition-colors"
+                      className="grid grid-cols-12 gap-3 items-center px-4 py-3 bg-surface/30 border border-border rounded-xl hover:border-warning/30 transition-colors"
                     >
                       <div className="col-span-6 sm:col-span-2">
-                        <p className="font-mono text-sm text-white flex items-center gap-1">
-                          <Hash size={12} className="text-neuron-gold/60" />
+                        <p className="font-mono text-sm text-foreground flex items-center gap-1">
+                          <Hash size={12} className="text-warning/60" />
                           {receiptId ? `#${receiptId.toString()}` : "---"}
                         </p>
                       </div>
                       <div className="col-span-6 sm:col-span-2">
-                        <p className="font-mono text-xs text-gray-400 truncate">
+                        <p className="font-mono text-xs text-muted truncate">
                           {counterparty ? formatAddress(counterparty) : "---"}
                         </p>
                       </div>
                       <div className="col-span-4 sm:col-span-2 hidden sm:block">
-                        <p className="font-mono text-xs text-gray-400">
+                        <p className="font-mono text-xs text-muted">
                           {interactionType ? interactionType.toString() : "---"}
                         </p>
                       </div>
                       <div className="col-span-4 sm:col-span-2 hidden sm:block">
-                        <p className="font-mono text-xs text-gray-400 flex items-center gap-1">
+                        <p className="font-mono text-xs text-muted flex items-center gap-1">
                           <Clock size={10} />
                           {timestamp
                             ? new Date(Number(timestamp) * 1000).toLocaleDateString()
@@ -193,7 +231,7 @@ export default function ReceiptsPage() {
                         </p>
                       </div>
                       <div className="col-span-4 sm:col-span-2 hidden sm:block">
-                        <p className="font-mono text-xs text-gray-500">
+                        <p className="font-mono text-xs text-muted">
                           {blockNumber ? `#${blockNumber.toString()}` : "---"}
                         </p>
                       </div>
@@ -208,7 +246,7 @@ export default function ReceiptsPage() {
                 })}
               </div>
             )}
-          </GlassCard>
+          </Card>
         </motion.div>
       </motion.div>
     </div>

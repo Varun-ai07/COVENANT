@@ -19,8 +19,8 @@ import {
   Hash,
   Calendar,
 } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useTask, useSubmitWork, useVerifyTask, useDisputeTask } from "@/hooks/useTask";
@@ -32,8 +32,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 export default function TaskDetailPage() {
@@ -63,56 +63,80 @@ export default function TaskDetailPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <GlassCard className="p-10 max-w-md text-center" glowColor="cyan">
-            <FileText size={48} className="text-biolum-cyan mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <FileText className="w-10 h-10 text-info" />
               Task Details
-            </h2>
-            <p className="text-gray-400 font-body mb-6">
-              Connect your wallet to view task details and actions.
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              View detailed task information including client, worker, payment, deadline, and verification status. Submit work, verify deliverables, or open disputes.
             </p>
-            <Link href="/">
-              <NeonButton variant="primary" size="lg">
-                <LogIn size={18} />
-                Go to Home
-              </NeonButton>
+          </div>
+
+          {/* Task lifecycle */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Card className="p-5 border-accent/30">
+              <Coins size={20} className="text-accent mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Escrow</h3>
+              <p className="text-muted font-mono text-xs">Payment is locked in the TaskEscrow contract when a task is created.</p>
+            </Card>
+            <Card className="p-5 border-info/30">
+              <User size={20} className="text-info mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Execute</h3>
+              <p className="text-muted font-mono text-xs">Worker submits deliverables (IPFS hashes, URLs, or data) before the deadline.</p>
+            </Card>
+            <Card className="p-5 border-warning/30">
+              <Shield size={20} className="text-warning mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Verify</h3>
+              <p className="text-muted font-mono text-xs">Automated verification pipeline or manual client approval determines outcome.</p>
+            </Card>
+            <Card className="p-5 border-danger/30">
+              <CheckCircle2 size={20} className="text-danger mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Settle</h3>
+              <p className="text-muted font-mono text-xs">Payment releases to worker on success or refunds to client on failure.</p>
+            </Card>
+          </div>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to view task details and perform actions.</p>
+            <Link href="/marketplace">
+              <Button variant="secondary">Browse Marketplace</Button>
             </Link>
-          </GlassCard>
-        </motion.div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (taskId === undefined) {
     return (
-      <div className="min-h-screen neural-bg flex items-center justify-center px-4">
-        <GlassCard className="p-10 max-w-md text-center" glowColor="pink">
-          <AlertTriangle size={48} className="text-plasma-pink mx-auto mb-4" />
-          <h2 className="text-2xl font-display font-bold text-white mb-2">
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <Card className="p-10 max-w-md text-center">
+          <AlertTriangle size={48} className="text-danger mx-auto mb-4" />
+          <h2 className="text-2xl font-heading font-bold text-foreground mb-2">
             Invalid Task ID
           </h2>
-          <p className="text-gray-400 font-body mb-6">
+          <p className="text-muted font-body mb-6">
             No task ID was provided in the URL.
           </p>
           <Link href="/marketplace">
-            <NeonButton variant="secondary">
+            <Button variant="secondary">
               <ArrowRight size={14} className="rotate-180" />
               Back to Marketplace
-            </NeonButton>
+            </Button>
           </Link>
-        </GlassCard>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen neural-bg py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <motion.div
         className="max-w-4xl mx-auto"
         variants={containerVariants}
@@ -123,8 +147,8 @@ export default function TaskDetailPage() {
         <motion.div variants={itemVariants} className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-2 flex items-center gap-3">
-                <FileText size={40} className="text-biolum-cyan" />
+              <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+                <FileText size={40} className="text-info" />
                 Task #{taskId}
               </h1>
               {status !== undefined && (
@@ -132,96 +156,96 @@ export default function TaskDetailPage() {
               )}
             </div>
             <Link href="/marketplace">
-              <NeonButton variant="ghost" size="sm">
+              <Button variant="ghost" size="sm">
                 <ArrowRight size={14} className="rotate-180" />
                 Marketplace
-              </NeonButton>
+              </Button>
             </Link>
           </div>
         </motion.div>
 
         {taskLoading ? (
-          <GlassCard className="p-8">
+          <Card className="p-8">
             <LoadingPulse lines={8} />
-          </GlassCard>
+          </Card>
         ) : !task ? (
-          <GlassCard className="p-10 text-center" glowColor="pink">
-            <AlertTriangle size={48} className="text-plasma-pink mx-auto mb-4" />
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
+          <Card className="p-10 text-center">
+            <AlertTriangle size={48} className="text-danger mx-auto mb-4" />
+            <h2 className="text-2xl font-heading font-bold text-foreground mb-2">
               Task Not Found
             </h2>
-            <p className="text-gray-400 font-body mb-6">
+            <p className="text-muted font-body mb-6">
               Task #{taskId} does not exist on-chain.
             </p>
             <Link href="/marketplace">
-              <NeonButton variant="secondary">
+              <Button variant="secondary">
                 Browse Marketplace
                 <ArrowRight size={14} />
-              </NeonButton>
+              </Button>
             </Link>
-          </GlassCard>
+          </Card>
         ) : (
           <>
             {/* Task Info */}
             <motion.div variants={itemVariants} className="mb-8">
-              <GlassCard className="p-6" glowColor="cyan">
-                <h3 className="text-xl font-display font-semibold text-white mb-6 flex items-center gap-2">
-                  <Shield size={20} className="text-biolum-cyan" />
+              <Card className="p-6">
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+                  <Shield size={20} className="text-info" />
                   Task Details
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Client */}
-                  <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <User size={14} className="text-synapse-violet" />
-                      <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Client</span>
+                      <User size={14} className="text-accent" />
+                      <span className="text-xs font-mono text-muted uppercase tracking-wider">Client</span>
                     </div>
-                    <p className="font-mono text-sm text-white">
+                    <p className="font-mono text-sm text-foreground">
                       {client ? formatAddress(client) : "---"}
                     </p>
                     {isClient && (
-                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-mono rounded-full bg-synapse-violet/10 border border-synapse-violet/30 text-synapse-violet">
+                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-mono rounded-full bg-accent/10 border border-accent/30 text-accent">
                         You
                       </span>
                     )}
                   </div>
 
                   {/* Worker */}
-                  <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <User size={14} className="text-biolum-cyan" />
-                      <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Worker</span>
+                      <User size={14} className="text-info" />
+                      <span className="text-xs font-mono text-muted uppercase tracking-wider">Worker</span>
                     </div>
-                    <p className="font-mono text-sm text-white">
+                    <p className="font-mono text-sm text-foreground">
                       {worker && worker !== "0x0000000000000000000000000000000000000000"
                         ? formatAddress(worker)
                         : "Unassigned"}
                     </p>
                     {isWorker && (
-                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-mono rounded-full bg-biolum-cyan/10 border border-biolum-cyan/30 text-biolum-cyan">
+                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-mono rounded-full bg-info/10 border border-info/30 text-info">
                         You
                       </span>
                     )}
                   </div>
 
                   {/* Payment */}
-                  <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <Coins size={14} className="text-neuron-gold" />
-                      <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Payment</span>
+                      <Coins size={14} className="text-warning" />
+                      <span className="text-xs font-mono text-muted uppercase tracking-wider">Payment</span>
                     </div>
-                    <p className="font-mono text-lg font-bold text-neuron-gold">
+                    <p className="font-mono text-lg font-bold text-warning">
                       {payment !== undefined ? `${formatEth(payment)} ETH` : "---"}
                     </p>
                   </div>
 
                   {/* Deadline */}
-                  <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <Calendar size={14} className="text-plasma-pink" />
-                      <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Deadline</span>
+                      <Calendar size={14} className="text-danger" />
+                      <span className="text-xs font-mono text-muted uppercase tracking-wider">Deadline</span>
                     </div>
-                    <p className="font-mono text-sm text-white">
+                    <p className="font-mono text-sm text-foreground">
                       {deadline
                         ? new Date(Number(deadline) * 1000).toLocaleDateString("en-US", {
                             year: "numeric",
@@ -233,81 +257,81 @@ export default function TaskDetailPage() {
                         : "---"}
                     </p>
                     {deadline && Number(deadline) * 1000 < Date.now() && status !== TaskStatus.Completed && (
-                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-mono rounded-full bg-plasma-pink/10 border border-plasma-pink/30 text-plasma-pink">
+                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-mono rounded-full bg-danger/10 border border-danger/30 text-danger">
                         Overdue
                       </span>
                     )}
                   </div>
 
                   {/* Description Hash */}
-                  <div className="p-4 bg-glass/30 rounded-xl border border-glass-border sm:col-span-2">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border sm:col-span-2">
                     <div className="flex items-center gap-2 mb-2">
-                      <Hash size={14} className="text-gray-400" />
-                      <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Description Hash</span>
+                      <Hash size={14} className="text-muted" />
+                      <span className="text-xs font-mono text-muted uppercase tracking-wider">Description Hash</span>
                     </div>
-                    <p className="font-mono text-xs text-gray-400 break-all">
+                    <p className="font-mono text-xs text-muted break-all">
                       {descriptionHash || "---"}
                     </p>
                   </div>
 
                   {/* Deliverable Hash */}
                   {deliverableHash && deliverableHash !== "0x0000000000000000000000000000000000000000000000000000000000000000" && (
-                    <div className="p-4 bg-glass/30 rounded-xl border border-glass-border sm:col-span-2">
+                    <div className="p-4 bg-surface/30 rounded-xl border border-border sm:col-span-2">
                       <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle2 size={14} className="text-green-400" />
-                        <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Deliverable Hash</span>
+                        <CheckCircle2 size={14} className="text-success" />
+                        <span className="text-xs font-mono text-muted uppercase tracking-wider">Deliverable Hash</span>
                       </div>
-                      <p className="font-mono text-xs text-green-400 break-all">
+                      <p className="font-mono text-xs text-success break-all">
                         {deliverableHash}
                       </p>
                     </div>
                   )}
 
                   {/* Timestamps */}
-                  <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <Clock size={14} className="text-gray-400" />
-                      <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Created</span>
+                      <Clock size={14} className="text-muted" />
+                      <span className="text-xs font-mono text-muted uppercase tracking-wider">Created</span>
                     </div>
-                    <p className="font-mono text-sm text-white">
+                    <p className="font-mono text-sm text-foreground">
                       {createdAt
                         ? new Date(Number(createdAt) * 1000).toLocaleDateString()
                         : "---"}
                     </p>
                   </div>
 
-                  <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 size={14} className="text-gray-400" />
-                      <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Completed</span>
+                      <CheckCircle2 size={14} className="text-muted" />
+                      <span className="text-xs font-mono text-muted uppercase tracking-wider">Completed</span>
                     </div>
-                    <p className="font-mono text-sm text-white">
+                    <p className="font-mono text-sm text-foreground">
                       {completedAt && Number(completedAt) > 0
                         ? new Date(Number(completedAt) * 1000).toLocaleDateString()
                         : "In progress"}
                     </p>
                   </div>
                 </div>
-              </GlassCard>
+              </Card>
             </motion.div>
 
             {/* Actions */}
             <motion.div variants={itemVariants}>
-              <GlassCard className="p-6" glowColor="violet">
-                <h3 className="text-xl font-display font-semibold text-white mb-6 flex items-center gap-2">
-                  <Play size={20} className="text-synapse-violet" />
+              <Card className="p-6">
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+                  <Play size={20} className="text-accent" />
                   Actions
                 </h3>
 
                 <div className="space-y-4">
                   {/* Worker: Submit Work */}
                   {isWorker && status === TaskStatus.InProgress && (
-                    <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
-                      <h4 className="font-display font-semibold text-white mb-2">Submit Deliverable</h4>
-                      <p className="text-gray-400 font-body text-sm mb-3">
+                    <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                      <h4 className="font-heading font-semibold text-foreground mb-2">Submit Deliverable</h4>
+                      <p className="text-muted font-body text-sm mb-3">
                         Submit your completed work. The deliverable hash will be stored on-chain for verification.
                       </p>
-                      <NeonButton
+                      <Button
                         variant="primary"
                         size="sm"
                         loading={isSubmitting}
@@ -319,19 +343,19 @@ export default function TaskDetailPage() {
                         }}
                       >
                         Submit Work
-                      </NeonButton>
+                      </Button>
                     </div>
                   )}
 
                   {/* Client: Verify Task */}
                   {isClient && status === TaskStatus.Submitted && (
-                    <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
-                      <h4 className="font-display font-semibold text-white mb-2">Verify Work</h4>
-                      <p className="text-gray-400 font-body text-sm mb-3">
+                    <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                      <h4 className="font-heading font-semibold text-foreground mb-2">Verify Work</h4>
+                      <p className="text-muted font-body text-sm mb-3">
                         Review the submitted deliverable and approve or reject the work.
                       </p>
                       <div className="flex gap-3">
-                        <NeonButton
+                        <Button
                           variant="primary"
                           size="sm"
                           loading={isVerifying}
@@ -343,8 +367,8 @@ export default function TaskDetailPage() {
                         >
                           <CheckCircle2 size={16} />
                           Approve
-                        </NeonButton>
-                        <NeonButton
+                        </Button>
+                        <Button
                           variant="danger"
                           size="sm"
                           loading={isVerifying}
@@ -356,19 +380,19 @@ export default function TaskDetailPage() {
                         >
                           <XCircle size={16} />
                           Reject
-                        </NeonButton>
+                        </Button>
                       </div>
                     </div>
                   )}
 
                   {/* Any party: Dispute */}
                   {(isClient || isWorker) && status !== TaskStatus.Completed && status !== TaskStatus.Failed && status !== TaskStatus.Disputed && (
-                    <div className="p-4 bg-glass/30 rounded-xl border border-glass-border">
-                      <h4 className="font-display font-semibold text-white mb-2">Dispute Task</h4>
-                      <p className="text-gray-400 font-body text-sm mb-3">
+                    <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                      <h4 className="font-heading font-semibold text-foreground mb-2">Dispute Task</h4>
+                      <p className="text-muted font-body text-sm mb-3">
                         If there is a disagreement, initiate a dispute for DAO arbitration.
                       </p>
-                      <NeonButton
+                      <Button
                         variant="danger"
                         size="sm"
                         loading={isDisputing}
@@ -381,52 +405,52 @@ export default function TaskDetailPage() {
                       >
                         <AlertTriangle size={16} />
                         Open Dispute
-                      </NeonButton>
+                      </Button>
                     </div>
                   )}
 
                   {/* No actions available */}
                   {!isClient && !isWorker && (
                     <div className="text-center py-6">
-                      <p className="text-gray-500 font-body text-sm">
+                      <p className="text-muted font-body text-sm">
                         You are not a party to this task. Only the client or worker can perform actions.
                       </p>
                     </div>
                   )}
 
                   {status === TaskStatus.Completed && (
-                    <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-xl flex items-center gap-3">
-                      <CheckCircle2 size={24} className="text-green-400 flex-shrink-0" />
+                    <div className="p-4 bg-success/10 border border-success/30 rounded-xl flex items-center gap-3">
+                      <CheckCircle2 size={24} className="text-success flex-shrink-0" />
                       <div>
-                        <p className="text-green-400 font-display font-semibold">Task Completed</p>
-                        <p className="text-gray-400 font-body text-sm">Payment has been released to the worker.</p>
+                        <p className="text-success font-heading font-semibold">Task Completed</p>
+                        <p className="text-muted font-body text-sm">Payment has been released to the worker.</p>
                       </div>
                     </div>
                   )}
 
                   {status === TaskStatus.Failed && (
-                    <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-xl flex items-center gap-3">
-                      <XCircle size={24} className="text-red-400 flex-shrink-0" />
+                    <div className="p-4 bg-danger/10 border border-danger/30 rounded-xl flex items-center gap-3">
+                      <XCircle size={24} className="text-danger flex-shrink-0" />
                       <div>
-                        <p className="text-red-400 font-display font-semibold">Task Failed</p>
-                        <p className="text-gray-400 font-body text-sm">Payment has been refunded to the client.</p>
+                        <p className="text-danger font-heading font-semibold">Task Failed</p>
+                        <p className="text-muted font-body text-sm">Payment has been refunded to the client.</p>
                       </div>
                     </div>
                   )}
 
                   {status === TaskStatus.Disputed && (
-                    <div className="p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl flex items-center gap-3">
-                      <AlertTriangle size={24} className="text-yellow-400 flex-shrink-0" />
+                    <div className="p-4 bg-warning/10 border border-warning/30 rounded-xl flex items-center gap-3">
+                      <AlertTriangle size={24} className="text-warning flex-shrink-0" />
                       <div>
-                        <p className="text-yellow-400 font-display font-semibold">Task Disputed</p>
-                        <p className="text-gray-400 font-body text-sm">
+                        <p className="text-yellow-400 font-heading font-semibold">Task Disputed</p>
+                        <p className="text-muted font-body text-sm">
                           This task is under DAO arbitration. Check the disputes page for updates.
                         </p>
                       </div>
                     </div>
                   )}
                 </div>
-              </GlassCard>
+              </Card>
             </motion.div>
           </>
         )}

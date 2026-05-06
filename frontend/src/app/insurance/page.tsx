@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useAccount } from "wagmi";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { NeonButton } from "@/components/ui/NeonButton";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -45,9 +46,9 @@ function ClaimCard({ claimId }: { claimId: number }) {
 
   if (isLoading) {
     return (
-      <GlassCard className="p-5">
+      <Card className="p-5">
         <LoadingPulse lines={4} />
-      </GlassCard>
+      </Card>
     );
   }
 
@@ -60,12 +61,12 @@ function ClaimCard({ claimId }: { claimId: number }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
     >
-      <GlassCard className="p-5" glowColor={claim.paid ? "gold" : claim.approved ? "cyan" : "violet"}>
+      <Card className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <h4 className="text-lg font-display font-semibold text-white">
+            <h4 className="text-lg font-heading font-semibold text-foreground">
               Claim #{claim.claimId.toString()}
             </h4>
             {claim.paid ? (
@@ -78,7 +79,7 @@ function ClaimCard({ claimId }: { claimId: number }) {
               <StatusBadge status="failed" size="sm" />
             )}
           </div>
-          <span className="text-sm text-gray-500 font-mono flex items-center gap-1.5">
+          <span className="text-sm text-muted font-mono flex items-center gap-1.5">
             <Clock size={14} />
             {isActive
               ? `Voting ends ${new Date(voteDeadline).toLocaleString()}`
@@ -88,36 +89,36 @@ function ClaimCard({ claimId }: { claimId: number }) {
 
         <div className="space-y-2 text-sm font-mono mb-4">
           <div className="flex justify-between">
-            <span className="text-gray-400">Claimant:</span>
-            <span className="text-white">{formatAddress(claim.claimant)}</span>
+            <span className="text-muted">Claimant:</span>
+            <span className="text-foreground">{formatAddress(claim.claimant)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">Task ID:</span>
-            <span className="text-white">#{claim.taskId.toString()}</span>
+            <span className="text-muted">Task ID:</span>
+            <span className="text-foreground">#{claim.taskId.toString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">Amount:</span>
-            <span className="text-neuron-gold">{formatEth(claim.amount)} ETH</span>
+            <span className="text-muted">Amount:</span>
+            <span className="text-warning">{formatEth(claim.amount)} ETH</span>
           </div>
         </div>
 
         {/* Vote tally */}
         <div className="flex items-center gap-6 mb-4 text-sm font-mono">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={16} className="text-green-400" />
-            <span className="text-green-400">For: {claim.forVotes.toString()}</span>
+            <CheckCircle2 size={16} className="text-success" />
+            <span className="text-success">For: {claim.forVotes.toString()}</span>
           </div>
           <div className="flex items-center gap-2">
-            <XCircle size={16} className="text-red-400" />
-            <span className="text-red-400">Against: {claim.againstVotes.toString()}</span>
+            <XCircle size={16} className="text-danger" />
+            <span className="text-danger">Against: {claim.againstVotes.toString()}</span>
           </div>
-          <span className="text-gray-500">({claim.votersCount.toString()} voters)</span>
+          <span className="text-muted">({claim.votersCount.toString()} voters)</span>
         </div>
 
         {/* Vote buttons */}
         {!claim.paid && isActive && (
           <div className="flex gap-3">
-            <NeonButton
+            <Button
               variant="primary"
               size="sm"
               onClick={() => voteOnClaim(claim.claimId, true)}
@@ -126,8 +127,8 @@ function ClaimCard({ claimId }: { claimId: number }) {
             >
               <CheckCircle2 size={14} />
               Vote For
-            </NeonButton>
-            <NeonButton
+            </Button>
+            <Button
               variant="danger"
               size="sm"
               onClick={() => voteOnClaim(claim.claimId, false)}
@@ -136,10 +137,10 @@ function ClaimCard({ claimId }: { claimId: number }) {
             >
               <XCircle size={14} />
               Vote Against
-            </NeonButton>
+            </Button>
           </div>
         )}
-      </GlassCard>
+      </Card>
     </motion.div>
   );
 }
@@ -170,19 +171,80 @@ export default function InsurancePage() {
   const [premiumTaskId, setPremiumTaskId] = useState("");
   const [claimTaskId, setClaimTaskId] = useState("");
 
-  /* ---- Not connected ---- */
+  /* ---- Not connected — rich preview ---- */
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <GlassCard className="p-8 text-center max-w-md w-full">
-          <LogIn className="w-12 h-12 mx-auto mb-4 text-synapse-violet" />
-          <h2 className="text-2xl font-display font-bold mb-2 text-white">
-            Connect Wallet
-          </h2>
-          <p className="text-gray-400 font-body">
-            Please connect your wallet to view and manage Agent Insurance.
-          </p>
-        </GlassCard>
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <Shield className="w-10 h-10 text-accent" />
+              Agent Insurance
+            </h1>
+            <p className="text-muted font-body max-w-2xl">
+              Protect your agents against failed tasks. COVENANT&apos;s community-governed insurance pool lets members stake ETH, pay premiums per task, file claims, and vote on disputed payouts.
+            </p>
+          </div>
+
+          {/* Pool overview explanation */}
+          <Card className="p-6 mb-8">
+            <div className="flex items-start gap-4 mb-6">
+              <Shield className="w-8 h-8 text-accent flex-shrink-0 mt-1" />
+              <div>
+                <h2 className="text-2xl font-heading font-bold mb-1 text-foreground">Pool Overview</h2>
+                <p className="text-muted text-sm font-body">
+                  Community-governed insurance pool backed by member stakes and premiums.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-surface-alt/50 border border-border rounded-xl p-4 text-center">
+                <Coins className="w-5 h-5 text-warning mx-auto mb-2" />
+                <p className="text-xs text-muted font-mono mb-1">Pool Balance</p>
+                <p className="text-xl font-heading font-bold text-warning">---</p>
+              </div>
+              <div className="bg-surface-alt/50 border border-border rounded-xl p-4 text-center">
+                <Users className="w-5 h-5 text-info mx-auto mb-2" />
+                <p className="text-xs text-muted font-mono mb-1">Members</p>
+                <p className="text-xl font-heading font-bold text-info">---</p>
+              </div>
+              <div className="bg-surface-alt/50 border border-border rounded-xl p-4 text-center">
+                <FileText className="w-5 h-5 text-danger mx-auto mb-2" />
+                <p className="text-xs text-muted font-mono mb-1">Claims</p>
+                <p className="text-xl font-heading font-bold text-danger">---</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* How it works */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="p-5 border-accent/30">
+              <Plus size={20} className="text-accent mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Join & Stake</h3>
+              <p className="text-muted font-mono text-xs">Deposit ETH into the pool to become a member. Your stake backs the collective risk.</p>
+            </Card>
+            <Card className="p-5 border-warning/30">
+              <Coins size={20} className="text-warning mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">Pay Premiums</h3>
+              <p className="text-muted font-mono text-xs">For each task you want covered, pay a premium to the pool. This extends coverage to that specific task.</p>
+            </Card>
+            <Card className="p-5 border-danger/30">
+              <Vote size={20} className="text-danger mb-3" />
+              <h3 className="font-heading font-semibold text-foreground mb-1">File & Vote</h3>
+              <p className="text-muted font-mono text-xs">If a task fails, file a claim. Pool members vote to approve or reject — approved claims are paid from the pool.</p>
+            </Card>
+          </div>
+
+          {/* Subtle CTA */}
+          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
+            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
+            <p className="text-muted font-body text-sm mb-4">Connect your wallet to interact with the protocol.</p>
+            <Link href="/">
+              <Button variant="secondary">Go to Home to Connect</Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -202,11 +264,11 @@ export default function InsurancePage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-4xl font-bold flex items-center gap-3 text-white">
-          <Shield className="w-10 h-10 text-synapse-violet" />
+        <h1 className="text-4xl font-bold flex items-center gap-3 text-foreground">
+          <Shield className="w-10 h-10 text-accent" />
           Agent Insurance
         </h1>
-        <p className="text-gray-400 mt-2 font-body">
+        <p className="text-muted mt-2 font-body">
           Protect your agents against failed tasks. Join the pool, pay premiums,
           file claims, and vote on disputed payouts.
         </p>
@@ -219,14 +281,14 @@ export default function InsurancePage() {
         transition={{ delay: 0.1 }}
         className="mb-8"
       >
-        <GlassCard className="p-6" glowColor="violet">
+        <Card className="p-6">
           <div className="flex items-start gap-4 mb-6">
-            <Shield className="w-8 h-8 text-synapse-violet flex-shrink-0 mt-1" />
+            <Shield className="w-8 h-8 text-accent flex-shrink-0 mt-1" />
             <div>
-              <h2 className="text-2xl font-display font-bold mb-1 text-white">
+              <h2 className="text-2xl font-heading font-bold mb-1 text-foreground">
                 Pool Overview
               </h2>
-              <p className="text-gray-400 text-sm font-body">
+              <p className="text-muted text-sm font-body">
                 Community-governed insurance pool backed by member stakes and
                 premiums.
               </p>
@@ -234,41 +296,41 @@ export default function InsurancePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-glass/50 border border-glass-border rounded-xl p-4 text-center">
-              <Coins className="w-5 h-5 text-neuron-gold mx-auto mb-2" />
-              <p className="text-xs text-gray-400 font-mono mb-1">Pool Balance</p>
+            <div className="bg-surface-alt/50 border border-border rounded-xl p-4 text-center">
+              <Coins className="w-5 h-5 text-warning mx-auto mb-2" />
+              <p className="text-xs text-muted font-mono mb-1">Pool Balance</p>
               {isBalanceLoading ? (
                 <LoadingPulse lines={1} />
               ) : (
-                <p className="text-xl font-display font-bold text-neuron-gold">
+                <p className="text-xl font-heading font-bold text-warning">
                   {formatEth(poolBalance)} ETH
                 </p>
               )}
             </div>
-            <div className="bg-glass/50 border border-glass-border rounded-xl p-4 text-center">
-              <Users className="w-5 h-5 text-biolum-cyan mx-auto mb-2" />
-              <p className="text-xs text-gray-400 font-mono mb-1">Members</p>
+            <div className="bg-surface-alt/50 border border-border rounded-xl p-4 text-center">
+              <Users className="w-5 h-5 text-info mx-auto mb-2" />
+              <p className="text-xs text-muted font-mono mb-1">Members</p>
               {isMemberCountLoading ? (
                 <LoadingPulse lines={1} />
               ) : (
-                <p className="text-xl font-display font-bold text-biolum-cyan">
+                <p className="text-xl font-heading font-bold text-info">
                   {memberCount?.toString() ?? "0"}
                 </p>
               )}
             </div>
-            <div className="bg-glass/50 border border-glass-border rounded-xl p-4 text-center">
-              <FileText className="w-5 h-5 text-plasma-pink mx-auto mb-2" />
-              <p className="text-xs text-gray-400 font-mono mb-1">Claims</p>
+            <div className="bg-surface-alt/50 border border-border rounded-xl p-4 text-center">
+              <FileText className="w-5 h-5 text-danger mx-auto mb-2" />
+              <p className="text-xs text-muted font-mono mb-1">Claims</p>
               {isClaimCountLoading ? (
                 <LoadingPulse lines={1} />
               ) : (
-                <p className="text-xl font-display font-bold text-plasma-pink">
+                <p className="text-xl font-heading font-bold text-danger">
                   {claimCount?.toString() ?? "0"}
                 </p>
               )}
             </div>
           </div>
-        </GlassCard>
+        </Card>
       </motion.div>
 
       {/* ---- Member Actions ---- */}
@@ -278,9 +340,9 @@ export default function InsurancePage() {
         transition={{ delay: 0.2 }}
         className="mb-8"
       >
-        <GlassCard className="p-6" glowColor="cyan">
-          <h2 className="text-2xl font-display font-bold mb-2 text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-biolum-cyan" />
+        <Card className="p-6">
+          <h2 className="text-2xl font-heading font-bold mb-2 text-foreground flex items-center gap-2">
+            <Users className="w-6 h-6 text-info" />
             Member Actions
           </h2>
 
@@ -289,33 +351,33 @@ export default function InsurancePage() {
           ) : !isMember ? (
             /* ---- Not a member ---- */
             <div className="text-center py-6">
-              <p className="text-gray-400 font-body mb-4">
+              <p className="text-muted font-body mb-4">
                 You are not yet a member of the insurance pool. Join to get
                 coverage and participate in claim voting.
               </p>
-              <NeonButton
+              <Button
                 variant="primary"
                 onClick={() => joinPool()}
                 loading={isJoining}
               >
                 <Plus size={16} />
                 Join Insurance Pool
-              </NeonButton>
+              </Button>
             </div>
           ) : (
             /* ---- Is a member ---- */
             <div className="space-y-6">
               {/* Member summary */}
               <div className="flex flex-wrap gap-4 text-sm font-mono">
-                <span className="text-gray-400">
+                <span className="text-muted">
                   Stake:{" "}
-                  <span className="text-neuron-gold">
+                  <span className="text-warning">
                     {formatEth(memberInfo?.stake)} ETH
                   </span>
                 </span>
-                <span className="text-gray-400">
+                <span className="text-muted">
                   Premiums Paid:{" "}
-                  <span className="text-biolum-cyan">
+                  <span className="text-info">
                     {formatEth(memberInfo?.premiumPaid)} ETH
                   </span>
                 </span>
@@ -323,8 +385,8 @@ export default function InsurancePage() {
 
               {/* Pay Premium */}
               <div>
-                <h3 className="text-lg font-display font-semibold text-white mb-3 flex items-center gap-2">
-                  <Coins size={18} className="text-neuron-gold" />
+                <h3 className="text-lg font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Coins size={18} className="text-warning" />
                   Pay Premium
                 </h3>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -333,9 +395,9 @@ export default function InsurancePage() {
                     value={premiumTaskId}
                     onChange={(e) => setPremiumTaskId(e.target.value)}
                     placeholder="Task ID"
-                    className="flex-1 px-4 py-2.5 bg-glass border border-glass-border rounded-xl text-white font-mono text-sm focus:border-synapse-violet focus:outline-none transition-colors"
+                    className="flex-1 px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-foreground font-mono text-sm focus:border-accent focus:outline-none transition-colors"
                   />
-                  <NeonButton
+                  <Button
                     variant="secondary"
                     onClick={() => {
                       if (premiumTaskId) payPremium(BigInt(premiumTaskId));
@@ -345,14 +407,14 @@ export default function InsurancePage() {
                   >
                     <Coins size={14} />
                     Pay Premium
-                  </NeonButton>
+                  </Button>
                 </div>
               </div>
 
               {/* File Claim */}
               <div>
-                <h3 className="text-lg font-display font-semibold text-white mb-3 flex items-center gap-2">
-                  <FileText size={18} className="text-plasma-pink" />
+                <h3 className="text-lg font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <FileText size={18} className="text-danger" />
                   File Claim
                 </h3>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -361,9 +423,9 @@ export default function InsurancePage() {
                     value={claimTaskId}
                     onChange={(e) => setClaimTaskId(e.target.value)}
                     placeholder="Task ID"
-                    className="flex-1 px-4 py-2.5 bg-glass border border-glass-border rounded-xl text-white font-mono text-sm focus:border-plasma-pink focus:outline-none transition-colors"
+                    className="flex-1 px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-foreground font-mono text-sm focus:border-danger focus:outline-none transition-colors"
                   />
-                  <NeonButton
+                  <Button
                     variant="secondary"
                     onClick={() => {
                       if (claimTaskId) claimInsurance(BigInt(claimTaskId));
@@ -373,32 +435,32 @@ export default function InsurancePage() {
                   >
                     <ArrowRight size={14} />
                     File Claim
-                  </NeonButton>
+                  </Button>
                 </div>
               </div>
 
               {/* Withdraw */}
               <div>
-                <h3 className="text-lg font-display font-semibold text-white mb-3 flex items-center gap-2">
-                  <ArrowDownToLine size={18} className="text-green-400" />
+                <h3 className="text-lg font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <ArrowDownToLine size={18} className="text-success" />
                   Withdraw Stake
                 </h3>
-                <p className="text-gray-400 text-sm font-body mb-3">
+                <p className="text-muted text-sm font-body mb-3">
                   Withdraw your stake from the insurance pool. This will remove
                   your membership and coverage.
                 </p>
-                <NeonButton
+                <Button
                   variant="ghost"
                   onClick={() => withdraw()}
                   loading={isWithdrawing}
                 >
                   <ArrowDownToLine size={14} />
                   Withdraw
-                </NeonButton>
+                </Button>
               </div>
             </div>
           )}
-        </GlassCard>
+        </Card>
       </motion.div>
 
       {/* ---- Claims List ---- */}
@@ -407,8 +469,8 @@ export default function InsurancePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2 text-white">
-          <Vote className="w-6 h-6 text-synapse-violet" />
+        <h2 className="text-2xl font-heading font-bold mb-6 flex items-center gap-2 text-foreground">
+          <Vote className="w-6 h-6 text-accent" />
           Insurance Claims
         </h2>
 
@@ -417,11 +479,11 @@ export default function InsurancePage() {
             <LoadingPulse lines={5} />
           </div>
         ) : claimIds.length === 0 ? (
-          <GlassCard className="p-8 text-center">
-            <p className="text-gray-400 font-body">
+          <Card className="p-8 text-center">
+            <p className="text-muted font-body">
               No claims have been filed yet. File one above if you need coverage!
             </p>
-          </GlassCard>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {claimIds.map((id) => (
