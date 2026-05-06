@@ -3,7 +3,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useChainId } from "wagmi";
 import TaskEscrowABI from "@/contracts/TaskEscrow.json";
-import { getContractAddresses } from "@/config/contracts";
+import { getContractAddresses, isDeployed } from "@/config/contracts";
 import type { Address } from "viem";
 
 export interface TaskData {
@@ -41,6 +41,7 @@ export function useTaskCounter() {
     address: contracts.TaskEscrow as Address,
     abi: TaskEscrowABI as any,
     functionName: "taskCounter",
+    query: { enabled: isDeployed(contracts.TaskEscrow) },
   });
 }
 

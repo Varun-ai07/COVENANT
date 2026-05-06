@@ -3,7 +3,7 @@
 import { useReadContract } from "wagmi";
 import { useChainId } from "wagmi";
 import ReceiptVerifierABI from "@/contracts/ReceiptVerifier.json";
-import { getContractAddresses } from "@/config/contracts";
+import { getContractAddresses, isDeployed } from "@/config/contracts";
 import type { Address } from "viem";
 
 export interface ReceiptData {
@@ -55,6 +55,7 @@ export function useReceiptCount() {
     address: contracts.ReceiptVerifier as Address,
     abi: ReceiptVerifierABI as any,
     functionName: "receiptCount",
+    query: { enabled: isDeployed(contracts.ReceiptVerifier) },
   });
 }
 

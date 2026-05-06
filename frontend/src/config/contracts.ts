@@ -44,6 +44,12 @@ export const CONTRACT_ADDRESSES = {
   },
 } as const;
 
+export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
+
+export function isDeployed(address: string): boolean {
+  return address !== ZERO_ADDRESS;
+}
+
 export function getContractAddresses(chainId: number) {
   return CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES] || CONTRACT_ADDRESSES[84532];
 }

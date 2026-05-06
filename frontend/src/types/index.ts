@@ -1,6 +1,20 @@
-export function formatEth(wei: bigint | string | undefined): string {
+/** Safely convert a value to bigint. Returns 0n for invalid/non-numeric input. */
+export function safeBigInt(value: unknown): bigint {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number" && Number.isFinite(value))
+    return BigInt(Math.trunc(value));
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    // Only accept decimal digits (optionally negative) or 0x-prefixed hex
+    if (/^-?\d+$/.test(trimmed)) return BigInt(trimmed);
+    if (/^0x[0-9a-fA-F]+$/.test(trimmed)) return BigInt(trimmed);
+  }
+  return 0n;
+}
+
+export function formatEth(wei: bigint | string | number | undefined | null): string {
   if (!wei) return "0.0";
-  const value = typeof wei === "string" ? BigInt(wei) : wei;
+  const value = safeBigInt(wei);
   const eth = Number(value) / 1e18;
   return eth.toFixed(4);
 }

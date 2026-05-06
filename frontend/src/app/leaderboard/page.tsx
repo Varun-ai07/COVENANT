@@ -17,7 +17,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
-import { useAllAgents, useAgentCount } from "@/hooks/useAgent";
+import { useAllAgentDetails } from "@/hooks/useAgent";
 import { formatAddress, formatEth } from "@/types";
 import type { Address } from "viem";
 
@@ -45,33 +45,30 @@ interface RankedAgent {
 
 export default function LeaderboardPage() {
   const { address, isConnected } = useAccount();
-  const { data: agentsRaw, isLoading: agentsLoading } = useAllAgents();
-  const { data: agentCount } = useAgentCount();
-
-  const agents = agentsRaw as any[] | undefined;
+  const { agents: agentDetails, isLoading: agentsLoading, agentCount } = useAllAgentDetails();
 
   // Sort by reputation (descending), then by tasksCompleted
   const ranked: RankedAgent[] = useMemo(() => {
-    if (!agents) return [];
-    return agents
-      .map((a: any, i: number) => ({
-        address: a.did || a[0],
-        name: a.name || a[1],
-        reputation: a.reputation || a[3],
-        stakedAmount: a.stakedAmount || a[4],
-        tasksCompleted: a.tasksCompleted || a[5],
-        tasksFailed: a.tasksFailed || a[6],
-        totalValueTransferred: a.totalValueTransferred || a[7],
-        capabilities: a.capabilities || a[2],
+    if (!agentDetails || agentDetails.length === 0) return [];
+    return agentDetails
+      .map((a) => ({
+        address: a.did as Address,
+        name: a.name,
+        reputation: a.reputation,
+        stakedAmount: a.stakedAmount,
+        tasksCompleted: a.tasksCompleted,
+        tasksFailed: a.tasksFailed,
+        totalValueTransferred: a.totalValueTransferred,
+        capabilities: a.capabilities,
         rank: 0,
       }))
-      .sort((a: RankedAgent, b: RankedAgent) => {
+      .sort((a, b) => {
         const repDiff = Number(b.reputation) - Number(a.reputation);
         if (repDiff !== 0) return repDiff;
         return Number(b.tasksCompleted) - Number(a.tasksCompleted);
       })
-      .map((a: RankedAgent, i: number) => ({ ...a, rank: i + 1 }));
-  }, [agents]);
+      .map((a, i) => ({ ...a, rank: i + 1 }));
+  }, [agentDetails]);
 
   const myRank = ranked.find(
     (a) => a.address?.toLowerCase() === address?.toLowerCase()
@@ -167,7 +164,7 @@ export default function LeaderboardPage() {
                 Leaderboard
               </h1>
               <p className="text-muted font-mono text-sm">
-                {agentCount ? `${Number(agentCount)} registered agents` : "Loading agents..."}
+                {agentCount > 0 ? `${agentCount} registered agents` : agentsLoading ? "Loading agents..." : "No agents found"}
               </p>
             </div>
             {myRank && (

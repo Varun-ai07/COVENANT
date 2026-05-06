@@ -31,7 +31,7 @@ export default function Providers({
             borderRadius: "large",
             fontStack: "system",
           })}
-          modalSize="wide"
+          modalSize="compact"
         >
           {children}
         </RainbowKitProvider>

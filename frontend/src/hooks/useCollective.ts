@@ -3,7 +3,7 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useChainId } from "wagmi";
 import AgentCollectiveABI from "@/contracts/AgentCollective.json";
-import { getContractAddresses } from "@/config/contracts";
+import { getContractAddresses, isDeployed } from "@/config/contracts";
 import type { Address } from "viem";
 import { useEffect, useState } from "react";
 
@@ -31,7 +31,7 @@ export function useCollective(collectiveId?: string | number) {
     functionName: "getCollective",
     args: collectiveId !== undefined ? [BigInt(collectiveId)] : undefined,
     query: {
-      enabled: collectiveId !== undefined,
+      enabled: collectiveId !== undefined && isDeployed(contracts.AgentCollective),
     },
   });
 
@@ -67,6 +67,7 @@ export function useMyCollectives(address?: Address) {
     address: contracts.AgentCollective as Address,
     abi: AgentCollectiveABI.abi as any,
     functionName: "collectiveCounter",
+    query: { enabled: isDeployed(contracts.AgentCollective) },
   });
 
   useEffect(() => {

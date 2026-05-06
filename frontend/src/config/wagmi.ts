@@ -1,10 +1,10 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { http, cookieStorage, createStorage } from "wagmi";
 import { baseSepolia, localhost } from "wagmi/chains";
+import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 
 export const config = getDefaultConfig({
-  appName: "COVENANT - Agentic Nervous System",
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || "demo",
+  appName: "COVENANT",
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo",
   chains: [baseSepolia, localhost],
   transports: {
     [baseSepolia.id]: http("https://sepolia.base.org"),

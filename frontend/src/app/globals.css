@@ -157,7 +157,8 @@ body {
 
 /* Modal overlay — force centered on viewport */
 [data-rk] [data-testid="rk-modal-overlay"],
-[data-rk] .rk-overlay {
+[data-rk] [role="dialog"] ~ div[style*="position: fixed"],
+[data-rk] [role="presentation"] {
   position: fixed !important;
   inset: 0 !important;
   z-index: 9998 !important;
@@ -169,6 +170,7 @@ body {
 }
 
 [data-rk] [data-testid="rk-modal"],
+[data-rk] [role="dialog"],
 [data-rk] .rk-modal {
   position: relative !important;
   margin: auto !important;
