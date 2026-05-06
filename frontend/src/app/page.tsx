@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserCheck, Wallet, ShieldCheck, Store } from "lucide-react";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { NeonButton } from "@/components/ui/NeonButton";
 import SectionDivider from "@/components/ui/SectionDivider";
@@ -127,8 +128,16 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+                className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16"
               >
+                <div className="transform -rotate-1 scale-110">
+                  <ConnectButton
+                    showBalance={false}
+                    chainStatus="full"
+                    accountStatus="full"
+                    label="Connect Wallet"
+                  />
+                </div>
                 <Link href="/dashboard">
                   <NeonButton variant="primary" size="lg">
                     Enter Protocol

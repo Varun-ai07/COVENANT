@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Disable static prerendering for pages using wagmi hooks
-  // which access localStorage and can't run during SSG
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
