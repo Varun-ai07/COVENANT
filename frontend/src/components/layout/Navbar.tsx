@@ -21,6 +21,7 @@ import {
   Home,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { FiatOnRamp } from "@/components/onramp/FiatOnRamp";
 
 const AsymmetricBox = dynamic(() => import("@/components/ui/AsymmetricBox"), {
   ssr: false,
@@ -91,6 +92,7 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
+          <FiatOnRamp />
           <div className="transform rotate-1">
             <ConnectButton
               showBalance={false}
