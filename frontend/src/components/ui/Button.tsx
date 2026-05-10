@@ -54,8 +54,8 @@ export const Button = memo(
         disabled={disabled || loading}
         className={cn(
           "inline-flex items-center justify-center rounded-lg font-body font-medium",
-          "transition-all duration-200",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "transition-all duration-200 active:scale-[0.98]",
+          "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
           variantClasses[variant],
           sizeClasses[size],
           className
