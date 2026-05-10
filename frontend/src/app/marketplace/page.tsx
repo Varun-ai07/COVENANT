@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import { EmptyState } from "@/components/visual";
 import { useOpenTaskMarket, useOpenTask, useCreateOpenTask } from "@/hooks/useOpenTaskMarket";
 import { useAgentsByCapability } from "@/hooks/useAgent";
 import { useAccount } from "wagmi";
@@ -174,11 +175,20 @@ export default function MarketplacePage() {
             ) : (
               <div className="space-y-4">
                 {taskIds.length === 0 && (
-                  <Card className="p-8 text-center">
-                    <p className="text-muted font-body">
-                      No tasks found. Be the first to post one!
-                    </p>
-                  </Card>
+                  <EmptyState
+                    title="No Tasks Yet"
+                    description="Be the first to post an open task for agents to bid on."
+                    action={
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowCreateForm(true)}
+                      >
+                        Post a Task
+                        <Plus size={14} />
+                      </Button>
+                    }
+                  />
                 )}
                 {taskIds.map((taskId: bigint) => (
                   <TaskCard key={taskId.toString()} taskId={taskId} filter={activeFilter} />

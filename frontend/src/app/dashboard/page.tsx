@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { EmptyState, NodeConnection } from "@/components/visual";
 import { useAgent, useAgentByAddress } from "@/hooks/useAgent";
 import { useClientTasks, useWorkerTasks } from "@/hooks/useTask";
 import { useInsuranceMemberInfo } from "@/hooks/useAgentInsurance";
@@ -93,22 +94,29 @@ export default function DashboardPage() {
 
           {/* Protocol overview */}
           <Card className="p-6 mb-8">
-            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Activity size={20} className="text-accent" />
-              What You Can Do
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="p-4 bg-surface/30 rounded-xl border border-border">
-                <p className="font-heading font-semibold text-foreground mb-1">Post & Accept Tasks</p>
-                <p className="text-muted font-body">Create tasks with escrowed payments or accept open marketplace tasks.</p>
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1">
+                <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Activity size={20} className="text-accent" />
+                  What You Can Do
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                    <p className="font-heading font-semibold text-foreground mb-1">Post & Accept Tasks</p>
+                    <p className="text-muted font-body">Create tasks with escrowed payments or accept open marketplace tasks.</p>
+                  </div>
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                    <p className="font-heading font-semibold text-foreground mb-1">Build Reputation</p>
+                    <p className="text-muted font-body">Every completed task earns an ERC-8004 receipt and increases your on-chain reputation.</p>
+                  </div>
+                  <div className="p-4 bg-surface/30 rounded-xl border border-border">
+                    <p className="font-heading font-semibold text-foreground mb-1">Join Insurance</p>
+                    <p className="text-muted font-body">Protect yourself against failed tasks by joining the community insurance pool.</p>
+                  </div>
+                </div>
               </div>
-              <div className="p-4 bg-surface/30 rounded-xl border border-border">
-                <p className="font-heading font-semibold text-foreground mb-1">Build Reputation</p>
-                <p className="text-muted font-body">Every completed task earns an ERC-8004 receipt and increases your on-chain reputation.</p>
-              </div>
-              <div className="p-4 bg-surface/30 rounded-xl border border-border">
-                <p className="font-heading font-semibold text-foreground mb-1">Join Insurance</p>
-                <p className="text-muted font-body">Protect yourself against failed tasks by joining the community insurance pool.</p>
+              <div className="hidden md:block flex-shrink-0">
+                <NodeConnection nodeCount={5} />
               </div>
             </div>
           </Card>
@@ -322,18 +330,18 @@ export default function DashboardPage() {
             {clientTasksLoading && workerTasksLoading && receiptsLoading ? (
               <LoadingPulse lines={5} />
             ) : clientTaskList.length === 0 && workerTaskList.length === 0 && receiptList.length === 0 ? (
-              <div className="text-center py-12">
-                <Activity size={32} className="text-muted mx-auto mb-3" />
-                <p className="text-muted font-body">
-                  No activity yet. Browse the marketplace to find or post tasks.
-                </p>
-                <Link href="/marketplace">
-                  <Button variant="ghost" size="sm" className="mt-4">
-                    Go to Marketplace
-                    <ArrowRight size={14} />
-                  </Button>
-                </Link>
-              </div>
+              <EmptyState
+                title="No Activity Yet"
+                description="Browse the marketplace to find or post tasks, build reputation, and start earning."
+                action={
+                  <Link href="/marketplace">
+                    <Button variant="secondary" size="sm">
+                      Go to Marketplace
+                      <ArrowRight size={14} />
+                    </Button>
+                  </Link>
+                }
+              />
             ) : (
               <div className="space-y-3">
                 {/* Client tasks */}

@@ -7,6 +7,7 @@ import { ArrowRight, Terminal, Zap, ShieldCheck, Globe } from "lucide-react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HeroPattern, FlowingDots } from "@/components/visual";
 import {
   useAgentCount,
   useTaskCounter,
@@ -259,14 +260,8 @@ export default function HomePage() {
       {/* 01 — HERO                                                       */}
       {/* ─────────────────────────────────────────────────────────────── */}
       <section className="relative flex flex-col items-center justify-center text-center px-4 pt-32 pb-24 md:pt-44 md:pb-36">
-        {/* Subtle radial glow */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse, rgba(87,87,87,0.06) 0%, transparent 70%)",
-          }}
-        />
+        {/* Hero visual pattern */}
+        <HeroPattern />
 
         <motion.div
           {...fadeUp}
@@ -346,7 +341,7 @@ export default function HomePage() {
 
       {/* Divider */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-border" />
+        <FlowingDots />
       </div>
 
       {/* ─────────────────────────────────────────────────────────────── */}
@@ -391,7 +386,7 @@ export default function HomePage() {
 
       {/* Divider */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-border" />
+        <FlowingDots />
       </div>
 
       {/* ─────────────────────────────────────────────────────────────── */}
@@ -424,7 +419,7 @@ export default function HomePage() {
 
       {/* Divider */}
       <div className="max-w-7xl mx-auto px-4">
-        <hr className="border-border" />
+        <FlowingDots />
       </div>
 
       {/* ─────────────────────────────────────────────────────────────── */}

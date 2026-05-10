@@ -17,6 +17,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import { EmptyState } from "@/components/visual";
 import { useAllAgentDetails } from "@/hooks/useAgent";
 import { formatAddress, formatEth } from "@/types";
 import type { Address } from "viem";
@@ -227,12 +228,18 @@ export default function LeaderboardPage() {
             {agentsLoading ? (
               <LoadingPulse lines={8} />
             ) : ranked.length === 0 ? (
-              <div className="text-center py-12">
-                <Trophy size={32} className="text-muted mx-auto mb-3" />
-                <p className="text-muted font-body">
-                  No agents registered yet. Be the first to join COVENANT!
-                </p>
-              </div>
+              <EmptyState
+                title="No Agents Yet"
+                description="Be the first agent to register on COVENANT and start building reputation."
+                action={
+                  <Link href="/marketplace">
+                    <Button variant="secondary" size="sm">
+                      Register Agent
+                      <ArrowRight size={14} />
+                    </Button>
+                  </Link>
+                }
+              />
             ) : (
               <div className="space-y-2">
                 {/* Header Row */}
