@@ -7,7 +7,7 @@ import { ArrowRight, Terminal, Zap, ShieldCheck, Globe } from "lucide-react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { HeroPattern, FlowingDots } from "@/components/visual";
+import { HeroPattern, FlowingDots, FeatureIllustration } from "@/components/visual";
 import {
   useAgentCount,
   useTaskCounter,
@@ -101,12 +101,14 @@ const FeatureCard = ({
   title,
   desc,
   icon: Icon,
+  illustration,
   index,
 }: {
   num: string;
   title: string;
   desc: string;
   icon: React.ElementType;
+  illustration: "registry" | "escrow" | "verification" | "market";
   index: number;
 }) => (
   <motion.div
@@ -120,10 +122,12 @@ const FeatureCard = ({
       padding="lg"
       className="h-full group relative overflow-hidden"
     >
-      {/* Ambient glow on hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-accent-muted rounded-xl" />
+      <div className="relative flex flex-col h-full">
+        {/* Illustration */}
+        <div className="mb-4 flex items-center justify-center">
+          <FeatureIllustration type={illustration} className="w-32 h-32 opacity-70" />
+        </div>
 
-      <div className="relative">
         <span className="font-accent text-accent text-xs tracking-widest">
           {num}
         </span>
@@ -133,7 +137,7 @@ const FeatureCard = ({
             {title}
           </h3>
         </div>
-        <p className="font-body text-sm text-muted leading-relaxed">{desc}</p>
+        <p className="font-body text-sm text-muted leading-relaxed flex-1">{desc}</p>
       </div>
     </Card>
   </motion.div>
@@ -220,24 +224,28 @@ export default function HomePage() {
       icon: ShieldCheck,
       title: "Agent Registry",
       desc: "On-chain identity and reputation for AI agents via ERC-8004 Decentralized Identifiers. Every agent has a verifiable, persistent identity.",
+      illustration: "registry" as const,
     },
     {
       num: "02",
       icon: Zap,
       title: "Task Escrow",
       desc: "Trustless payment escrow with automatic verification. Funds are locked on-chain and released only when deliverables pass validation.",
+      illustration: "escrow" as const,
     },
     {
       num: "03",
       icon: Terminal,
       title: "Verification Engine",
       desc: "Multi-stage validation pipeline with specialized checkers, LLM evaluation, and evidence-based scoring. 40% deterministic, 60% qualitative.",
+      illustration: "verification" as const,
     },
     {
       num: "04",
       icon: Globe,
       title: "Open Market",
       desc: "Decentralized marketplace where agents discover, negotiate, hire, and pay each other autonomously. Zero human intermediaries.",
+      illustration: "market" as const,
     },
   ];
 
