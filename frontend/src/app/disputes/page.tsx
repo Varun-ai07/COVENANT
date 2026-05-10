@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import { EmptyState } from "@/components/visual";
 import Link from "next/link";
 import { Scale, Gavel, Vote, ArrowRight, LogIn } from "lucide-react";
 import {
@@ -346,12 +347,10 @@ export default function DisputesPage() {
         {isLoadingCounter ? (
           <LoadingPulse lines={6} />
         ) : totalDisputes === 0 ? (
-          <Card className="p-8 text-center">
-            <Scale className="w-10 h-10 mx-auto mb-3 text-muted" />
-            <p className="text-muted font-body">
-              No disputes have been filed. The network is at peace.
-            </p>
-          </Card>
+          <EmptyState
+            title="No Disputes"
+            description="No disputes have been filed. The network is at peace."
+          />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {Array.from({ length: totalDisputes }, (_, i) => i)

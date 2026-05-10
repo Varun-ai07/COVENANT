@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import { EmptyState } from "@/components/visual";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   useInsurancePoolBalance,
@@ -479,11 +480,10 @@ export default function InsurancePage() {
             <LoadingPulse lines={5} />
           </div>
         ) : claimIds.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted font-body">
-              No claims have been filed yet. File one above if you need coverage!
-            </p>
-          </Card>
+          <EmptyState
+            title="No Claims Yet"
+            description="No claims have been filed yet. File one above if you need coverage!"
+          />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {claimIds.map((id) => (

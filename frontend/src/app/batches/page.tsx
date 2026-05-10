@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import { EmptyState } from "@/components/visual";
 import {
   Layers,
   Plus,
@@ -373,11 +374,10 @@ export default function BatchesPage() {
             <LoadingPulse />
           </div>
         ) : batchIds.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted">
-              No batches have been created yet. Use the form above to create your first parallel task batch!
-            </p>
-          </Card>
+          <EmptyState
+            title="No Batches Yet"
+            description="No batches have been created yet. Use the form above to create your first parallel task batch!"
+          />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {batchIds.map((id) => (

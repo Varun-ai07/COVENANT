@@ -17,6 +17,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import { EmptyState } from "@/components/visual";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   useAgentReceipts,
@@ -168,18 +169,18 @@ export default function ReceiptsPage() {
             {receiptsLoading ? (
               <LoadingPulse lines={6} />
             ) : receiptList.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText size={32} className="text-muted mx-auto mb-3" />
-                <p className="text-muted font-body mb-4">
-                  No receipts yet. Complete tasks on the marketplace to earn ERC-8004 receipts.
-                </p>
-                <Link href="/marketplace">
-                  <Button variant="ghost" size="sm">
-                    Browse Marketplace
-                    <ArrowRight size={14} />
-                  </Button>
-                </Link>
-              </div>
+              <EmptyState
+                title="No Receipts Yet"
+                description="Complete tasks on the marketplace to earn ERC-8004 receipts."
+                action={
+                  <Link href="/marketplace">
+                    <Button variant="ghost" size="sm">
+                      Browse Marketplace
+                      <ArrowRight size={14} />
+                    </Button>
+                  </Link>
+                }
+              />
             ) : (
               <div className="space-y-3">
                 {/* Header */}

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingPulse } from "@/components/ui/LoadingPulse";
+import { EmptyState } from "@/components/visual";
 import Link from "next/link";
 import { Users, Plus, LogIn, ArrowRight, Coins, UserPlus } from "lucide-react";
 import { useCollective, useMyCollectives, useCreateCollective } from "@/hooks/useCollective";
@@ -288,11 +289,10 @@ export default function CollectivesPage() {
             <LoadingPulse />
           </div>
         ) : !myCollectiveIds || myCollectiveIds.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted">
-              You haven't joined or created any collectives yet. Create one above to get started!
-            </p>
-          </Card>
+          <EmptyState
+            title="No Collectives Yet"
+            description="You haven't joined or created any collectives yet. Create one above to get started!"
+          />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {myCollectiveIds.map((collectiveId: string) => (
