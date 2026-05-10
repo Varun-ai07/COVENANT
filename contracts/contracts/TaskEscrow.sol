@@ -1136,4 +1136,156 @@ contract TaskEscrow is Ownable {
         uint256 score,
         string feedback
     );
+
+    // ==========================================================
+    // QUERY RESOLUTION SYSTEM
+    // ==========================================================
+
+    enum QueryType {
+        SpecificationClarification,
+        ResourceIssue,
+        FeasibilityConcern
+    }
+
+    struct Query {
+        address sender;
+        string queryText;
+        QueryType queryType;
+        string response;
+        bool responded;
+        uint256 createdAt;
+        uint256 respondedAt;
+    }
+
+    mapping(uint256 => uint256) public taskQueryCounter;
+    mapping(uint256 => mapping(uint256 => Query)) public taskQueries;
+
+    event QuerySubmitted(
+        uint256 indexed taskId,
+        uint256 indexed queryId,
+        address indexed sender,
+        QueryType queryType,
+        string queryText
+    );
+
+    event QueryResponded(
+        uint256 indexed taskId,
+        uint256 indexed queryId,
+        address indexed responder,
+        string response
+    );
+
+    /**
+     * @notice Submit a query about a task (worker or client can query)
+     * @param taskId The task ID
+     * @param queryText The query text (IPFS hash recommended for long queries)
+     * @param queryType Type of query (0=spec, 1=resource, 2=feasibility)
+     */
+    function submitQuery(
+        uint256 taskId,
+        string calldata queryText,
+        QueryType queryType
+    ) external onlyParticipant(taskId) returns (uint256) {
+        Task storage task = tasks[taskId];
+        require(
+            task.status == TaskStatus.InProgress,
+            "Task not in progress"
+        );
+        require(bytes(queryText).length > 0, "Query text required");
+
+        uint256 queryId = taskQueryCounter[taskId];
+        taskQueryCounter[taskId]++;
+
+        taskQueries[taskId][queryId] = Query({
+            sender: msg.sender,
+            queryText: queryText,
+            queryType: queryType,
+            response: "",
+            responded: false,
+            createdAt: block.timestamp,
+            respondedAt: 0
+        });
+
+        emit QuerySubmitted(taskId, queryId, msg.sender, queryType, queryText);
+
+        return queryId;
+    }
+
+    /**
+     * @notice Respond to a query (only the counterparty can respond)
+     * @param taskId The task ID
+     * @param responseText The response text
+     */
+    function respondToQuery(
+        uint256 taskId,
+        string calldata responseText
+    ) external onlyParticipant(taskId) returns (uint256) {
+        Task storage task = tasks[taskId];
+        require(
+            task.status == TaskStatus.InProgress,
+            "Task not in progress"
+        );
+
+        uint256 queryId = taskQueryCounter[taskId];
+        require(queryId > 0, "No queries exist");
+        queryId--; // Get the latest query
+
+        Query storage query = taskQueries[taskId][queryId];
+        require(!query.responded, "Query already responded");
+        require(query.sender != msg.sender, "Cannot respond to own query");
+        require(bytes(responseText).length > 0, "Response text required");
+
+        query.response = responseText;
+        query.responded = true;
+        query.respondedAt = block.timestamp;
+
+        emit QueryResponded(taskId, queryId, msg.sender, responseText);
+
+        return queryId;
+    }
+
+    /**
+     * @notice Get a specific query
+     * @param taskId The task ID
+     * @param queryId The query ID
+     */
+    function getQuery(
+        uint256 taskId,
+        uint256 queryId
+    ) external view returns (
+        address sender,
+        string memory queryText,
+        QueryType queryType,
+        string memory response,
+        bool responded,
+        uint256 createdAt,
+        uint256 respondedAt
+    ) {
+        Query storage q = taskQueries[taskId][queryId];
+        return (
+            q.sender,
+            q.queryText,
+            q.queryType,
+            q.response,
+            q.responded,
+            q.createdAt,
+            q.respondedAt
+        );
+    }
+
+    /**
+     * @notice Get the number of queries for a task
+     */
+    function getQueryCount(uint256 taskId) external view returns (uint256) {
+        return taskQueryCounter[taskId];
+    }
+
+    /**
+     * @notice Check if the latest query has been responded to
+     */
+    function isLatestQueryResponded(uint256 taskId) external view returns (bool) {
+        uint256 count = taskQueryCounter[taskId];
+        if (count == 0) return true; // No queries = nothing pending
+        return taskQueries[taskId][count - 1].responded;
+    }
 }
