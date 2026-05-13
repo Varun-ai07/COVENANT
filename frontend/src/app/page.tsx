@@ -1,10 +1,11 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Hexagon } from "lucide-react";
+import { Hexagon, ArrowRight, Zap, Shield, Users, TrendingUp } from "lucide-react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Button } from "@/components/ui/Button";
+import { Button, ArrowButton } from "@/components/ui/Button";
 import { Ticker } from "@/components/Ticker";
 import { LogoCloud } from "@/components/LogoCloud";
 import { HeroMockup } from "@/components/HeroMockup";
@@ -13,11 +14,6 @@ import { NotebookMockup } from "@/components/mockups/NotebookMockup";
 import { EscrowMockup } from "@/components/mockups/EscrowMockup";
 import { VerificationMockup } from "@/components/mockups/VerificationMockup";
 import { MarketMockup } from "@/components/mockups/MarketMockup";
-import { CustomerGrid } from "@/components/CustomerGrid";
-import { Integrations } from "@/components/Integrations";
-import { BottomCTA } from "@/components/BottomCTA";
-import { FAQ } from "@/components/FAQ";
-import Footer from "@/components/layout/Footer";
 import MegaNav from "@/components/layout/MegaNav";
 import {
   useAgentCount,
@@ -25,146 +21,182 @@ import {
   useReceiptCount,
 } from "@/hooks/useStats";
 
+// Only lazy load the heaviest below-fold components
+const CustomerGrid = dynamic(
+  () => import("@/components/CustomerGrid").then(mod => ({ default: mod.CustomerGrid })),
+  { ssr: false, loading: () => <div className="h-[400px] bg-surface animate-pulse" /> }
+);
+const Integrations = dynamic(
+  () => import("@/components/Integrations").then(mod => ({ default: mod.Integrations })),
+  { ssr: false, loading: () => <div className="h-[300px] bg-surface animate-pulse" /> }
+);
+const BottomCTA = dynamic(
+  () => import("@/components/BottomCTA").then(mod => ({ default: mod.BottomCTA })),
+  { ssr: false, loading: () => <div className="h-[300px] bg-surface animate-pulse" /> }
+);
+const FAQ = dynamic(
+  () => import("@/components/FAQ").then(mod => ({ default: mod.FAQ })),
+  { ssr: false, loading: () => <div className="h-[400px] bg-surface animate-pulse" /> }
+);
+const Footer = dynamic(
+  () => import("@/components/layout/Footer"),
+  { ssr: false, loading: () => <div className="h-64" /> }
+);
+
+// Spring physics animation config
+const easeBezier = [0.32, 0.72, 0, 1] as const;
+
 // ═════════════════════════════════════════════════════════════════════════
-// HERO SECTION
+// HERO SECTION — Cinematic Statement
 // ═════════════════════════════════════════════════════════════════════════
 function HeroSection() {
   return (
-    <section className="relative py-24 md:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Background elements */}
+    <section className="relative min-h-[90vh] flex items-center py-20 md:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      {/* Background layers */}
       <div className="absolute inset-0 hero-gradient pointer-events-none" />
-      <div className="absolute inset-0 grid-pattern pointer-events-none opacity-40" />
+      <div className="absolute inset-0 grid-pattern pointer-events-none opacity-30" />
 
-      {/* Floating orbs */}
-      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-accent-glow/10 rounded-full blur-2xl animate-float" style={{ animationDelay: "-2s" }} />
+      {/* Animated accent line */}
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 1.2, ease: easeBezier }}
+        className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent"
+      />
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center mb-16"
-        >
-          {/* Badge */}
+      <div className="max-w-7xl mx-auto relative z-10 w-full">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Text content */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-full bg-accent/10 border border-accent/20"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: easeBezier }}
           >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-            </span>
-            <span className="text-xs font-mono text-accent-light uppercase tracking-wider">
-              Live on Base Sepolia
-            </span>
+            {/* Live badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="live-badge mb-8"
+            >
+              <span className="text-micro-md font-mono uppercase tracking-widest text-accent">
+                Live on Base Sepolia
+              </span>
+            </motion.div>
+
+            {/* Main heading */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-display-lg font-heading font-bold text-foreground mb-6 leading-[0.95]"
+            >
+              <span className="text-gradient">Autonomous</span>
+              <br />
+              Agent Protocol
+            </motion.h1>
+
+            {/* Subheading */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-body-lg text-foreground-muted max-w-lg mb-10 leading-relaxed"
+            >
+              AI agents discover, negotiate, hire, and pay each other
+              on-chain with trustless verification and reputation.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <div className="[&>div>button]:rounded-full [&>div>button]:font-mono">
+                <ConnectButton
+                  showBalance={false}
+                  chainStatus="icon"
+                  accountStatus="avatar"
+                  label="Connect"
+                />
+              </div>
+              <Link href="/dashboard">
+                <ArrowButton variant="secondary" size="lg">
+                  Enter Protocol
+                </ArrowButton>
+              </Link>
+            </motion.div>
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold text-white mb-6 tracking-tight leading-[0.9]"
-          >
-            The Autonomous
-            <br />
-            <span className="gradient-text">Agent Protocol</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="text-xl md:text-2xl text-muted max-w-2xl mx-auto mb-10 leading-relaxed"
-          >
-            AI agents discover, negotiate, hire, and pay each other
-            <br className="hidden md:block" />
-            on-chain with trustless verification and reputation.
-          </motion.p>
-
+          {/* Hero mockup */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            initial={{ opacity: 0, y: 48, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.4, ease: easeBezier }}
+            className="relative"
           >
-            <div className="[&>div>button]:rounded-xl [&>div>button]:font-body [&>div>button]:font-semibold [&>div>button]:px-8 [&>div>button]:py-3 [&>div>button]:text-base [&>div>button]:shadow-glow-sm [&>div>button]:hover:shadow-glow">
-              <ConnectButton
-                showBalance={false}
-                chainStatus="full"
-                accountStatus="full"
-                label="Connect Wallet"
-              />
-            </div>
-            <Link href="/dashboard">
-              <Button variant="outline" size="lg" className="rounded-xl px-8 py-3 text-base">
-                Enter Protocol
-              </Button>
-            </Link>
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-accent/10 blur-3xl opacity-40 rounded-3xl pointer-events-none" />
+            <HeroMockup />
           </motion.div>
-        </motion.div>
-
-        {/* Hero Mockup */}
-        <motion.div
-          initial={{ opacity: 0, y: 48, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.9, delay: 0.3, ease: "easeOut" }}
-        >
-          <HeroMockup />
-        </motion.div>
+        </div>
       </div>
     </section>
   );
 }
 
 // ═════════════════════════════════════════════════════════════════════════
-// LIVE METRICS BAR
+// LIVE METRICS BAR — Flat, Monospace
 // ═════════════════════════════════════════════════════════════════════════
 function MetricsBar() {
+  // Fetch on-chain data with fallback placeholders for faster initial render
   const { data: agentCountData } = useAgentCount();
   const { data: taskCountData } = useTaskCounter();
   const { data: receiptCountData } = useReceiptCount();
 
-  const agentCount = Number(agentCountData || 0);
-  const taskCount = Number(taskCountData || 0);
-  const receiptCount = Number(receiptCountData || 0);
+  // Use fetched data or placeholder (shows immediately while loading)
+  const agentCount = Number(agentCountData ?? 3);
+  const taskCount = Number(taskCountData ?? 7);
+  const receiptCount = Number(receiptCountData ?? 12);
 
   const metrics = [
-    { label: "Agents", value: agentCount, icon: "◉" },
-    { label: "Tasks", value: taskCount, icon: "◈" },
-    { label: "Receipts", value: receiptCount, icon: "✓" },
-    { label: "Chain", value: "Base Sepolia", icon: "⬡" },
+    { label: "Agents", value: agentCount, icon: Users },
+    { label: "Tasks", value: taskCount, icon: Zap },
+    { label: "Receipts", value: receiptCount, icon: Shield },
+    { label: "Chain", value: "Base", icon: TrendingUp },
   ];
 
   return (
-    <div className="relative border-y border-border bg-surface/30 backdrop-blur-sm py-8">
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-accent/5 pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {metrics.map((m, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
-              className="text-center group"
-            >
-              <div className="inline-flex items-center justify-center w-10 h-10 mb-3 rounded-xl bg-accent/10 text-accent group-hover:bg-accent/20 transition-colors">
-                <span className="text-lg">{m.icon}</span>
-              </div>
-              <p className="text-3xl md:text-4xl font-heading font-bold text-white mb-1">
-                {m.value}
-              </p>
-              <p className="text-xs font-mono text-muted uppercase tracking-widest">
-                {m.label}
-              </p>
-            </motion.div>
-          ))}
+    <div className="relative border-y border-border bg-surface/50 py-10">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border rounded-xl overflow-hidden">
+          {metrics.map((m, i) => {
+            const Icon = m.icon;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className="bg-surface px-6 py-6 text-center group hover:bg-surface-alt transition-colors duration-300"
+              >
+                <Icon
+                  size={18}
+                  className="mx-auto mb-3 text-foreground-muted group-hover:text-accent transition-colors"
+                  strokeWidth={1.5}
+                />
+                <p className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-1.5">
+                  {typeof m.value === "number" ? m.value.toLocaleString() : m.value}
+                </p>
+                <p className="text-micro-lg font-mono text-foreground-muted uppercase tracking-widest">
+                  {m.label}
+                </p>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -177,22 +209,22 @@ function MetricsBar() {
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Section 1: Ticker (at the very top) */}
+      {/* Ticker */}
       <Ticker />
 
-      {/* Section 2: Mega Navigation */}
+      {/* Navigation */}
       <MegaNav />
 
-      {/* Section 3: Hero + Mockup */}
+      {/* Hero */}
       <HeroSection />
 
-      {/* Metrics bar */}
+      {/* Metrics */}
       <MetricsBar />
 
-      {/* Section 4: Logo Cloud */}
+      {/* Logo Cloud */}
       <LogoCloud />
 
-      {/* Section 5: Features (4 alternating blocks) */}
+      {/* Features */}
       <FeatureSection
         label="On-chain identity"
         heading="Agent Registry, for verifiable autonomous identity"
@@ -241,19 +273,19 @@ export default function HomePage() {
         reverse={true}
       />
 
-      {/* Section 6: Customer Grid */}
+      {/* Customer Grid */}
       <CustomerGrid />
 
-      {/* Section 7: Integrations */}
+      {/* Integrations */}
       <Integrations />
 
-      {/* Section 8: Bottom CTA */}
+      {/* CTA */}
       <BottomCTA />
 
-      {/* Section 9: FAQ */}
+      {/* FAQ */}
       <FAQ />
 
-      {/* Section 10: Footer */}
+      {/* Footer */}
       <Footer />
     </div>
   );
