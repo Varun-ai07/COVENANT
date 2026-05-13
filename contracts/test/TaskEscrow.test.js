@@ -62,7 +62,7 @@ describe("TaskEscrow", function () {
         escrow
           .connect(client)
           .createTask(worker.address, TASK_PAYMENT, pastDeadline, "QmTestHash123")
-      ).to.be.revertedWith("Deadline must be future");
+      ).to.be.revertedWith("!deadline");
     });
 
     it("should reject task from unregistered client", async function () {
@@ -72,7 +72,7 @@ describe("TaskEscrow", function () {
         escrow
           .connect(other)
           .createTask(worker.address, TASK_PAYMENT, deadline, "QmTestHash123")
-      ).to.be.revertedWith("Client not registered");
+      ).to.be.revertedWith("!client reg");
     });
   });
 

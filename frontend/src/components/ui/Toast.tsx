@@ -121,8 +121,8 @@ const ToastItem = memo(function ToastItem({
       exit={{ opacity: 0, y: -8, scale: 0.95 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-lg",
-        "bg-surface border shadow-sm",
+        "flex items-center gap-3 px-4 py-3 rounded-xl",
+        "bg-surface border shadow-glow-sm",
         colors[toast.type]
       )}
     >

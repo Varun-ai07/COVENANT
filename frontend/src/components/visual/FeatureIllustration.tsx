@@ -10,7 +10,7 @@ interface FeatureIllustrationProps {
 /**
  * FeatureIllustration — Minimalist SVG illustrations for feature cards
  * Each illustration represents a core protocol component
- * Uses warm stone palette (charcoal #575757) with low opacity fills
+ * Uses dark theme palette with violet accent (#7c3aed)
  */
 export function FeatureIllustration({
   type,
@@ -49,7 +49,7 @@ function RegistryIllustration() {
         cy="90"
         r="85"
         fill="none"
-        stroke="#575757"
+        stroke="#7c3aed"
         strokeWidth="1"
         opacity="0.15"
         initial={{ scale: 0.9, opacity: 0 }}
@@ -65,9 +65,9 @@ function RegistryIllustration() {
           y1={90}
           x2={90 + Math.cos((angle * Math.PI) / 180) * 55}
           y2={90 + Math.sin((angle * Math.PI) / 180) * 55}
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
-          opacity="0.2"
+          opacity="0.3"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
           transition={{ duration: 1, delay: 0.1 * i }}
@@ -80,7 +80,7 @@ function RegistryIllustration() {
         cy="90"
         r="25"
         fill="none"
-        stroke="#575757"
+        stroke="#7c3aed"
         strokeWidth="1.5"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -94,7 +94,7 @@ function RegistryIllustration() {
         textAnchor="middle"
         fontSize="14"
         fontFamily="Space Mono, monospace"
-        fill="#575757"
+        fill="#7c3aed"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
@@ -107,7 +107,7 @@ function RegistryIllustration() {
         cx="90"
         cy="90"
         r="4"
-        fill="#575757"
+        fill="#7c3aed"
         initial={{ opacity: 0 }}
         animate={{
           opacity: [0.4, 0.8, 0.4],
@@ -137,7 +137,7 @@ function EscrowIllustration() {
         height="70"
         rx="8"
         fill="none"
-        stroke="#575757"
+        stroke="#7c3aed"
         strokeWidth="1.5"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -148,7 +148,7 @@ function EscrowIllustration() {
       <motion.path
         d="M 70 60 L 70 40 A 20 20 0 0 1 110 40 L 110 60"
         fill="none"
-        stroke="#575757"
+        stroke="#7c3aed"
         strokeWidth="1.5"
         initial={{ pathLength: 0 }}
         animate={{ pathLength: 1 }}
@@ -163,7 +163,7 @@ function EscrowIllustration() {
             cy="100"
             r="12"
             fill="none"
-            stroke="#575757"
+            stroke="#7c3aed"
             strokeWidth="1"
             opacity="0.6"
             initial={{ y: -30, opacity: 0 }}
@@ -176,10 +176,10 @@ function EscrowIllustration() {
             textAnchor="middle"
             fontSize="10"
             fontFamily="Space Mono, monospace"
-            fill="#575757"
-            opacity="0.6"
+            fill="#7c3aed"
+            opacity="0.8"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
+            animate={{ opacity: 0.8 }}
             transition={{ delay: 0.7 + i * 0.15 }}
           >
             ETH
@@ -192,7 +192,7 @@ function EscrowIllustration() {
         cx="90"
         cy="145"
         r="5"
-        fill="#16a34a"
+        fill="#10b981"
         initial={{ scale: 0 }}
         animate={{ scale: [0, 1.2, 1] }}
         transition={{ duration: 0.5, delay: 1 }}
@@ -219,7 +219,7 @@ function VerificationIllustration() {
             height="35"
             rx="4"
             fill="none"
-            stroke="#575757"
+            stroke="#7c3aed"
             strokeWidth="1"
             opacity="0.5"
             initial={{ scale: 0, opacity: 0 }}
@@ -230,7 +230,7 @@ function VerificationIllustration() {
           <motion.path
             d={`M ${38 + stage * 45} 78 L ${44 + stage * 45} 85 L ${56 + stage * 45} 70}`}
             fill="none"
-            stroke="#16a34a"
+            stroke="#10b981"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -249,11 +249,11 @@ function VerificationIllustration() {
           y1="77"
           x2={80 + i * 45}
           y2="77"
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
-          opacity="0.3"
+          opacity="0.4"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.3 }}
+          animate={{ opacity: 0.4 }}
           transition={{ delay: 0.8 + i * 0.1 }}
         />
       ))}
@@ -265,7 +265,7 @@ function VerificationIllustration() {
         width="120"
         height="8"
         rx="4"
-        fill="#e5dcc9"
+        fill="rgba(124, 58, 237, 0.2)"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
@@ -276,8 +276,8 @@ function VerificationIllustration() {
         width="96"
         height="8"
         rx="4"
-        fill="#575757"
-        opacity="0.6"
+        fill="#7c3aed"
+        opacity="0.8"
         initial={{ width: 0 }}
         animate={{ width: 96 }}
         transition={{ duration: 1, delay: 1.2 }}
@@ -290,7 +290,7 @@ function VerificationIllustration() {
         textAnchor="middle"
         fontSize="12"
         fontFamily="Space Mono, monospace"
-        fill="#575757"
+        fill="#7c3aed"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
@@ -326,10 +326,10 @@ function MarketIllustration() {
           y1={centerNodes[from].y}
           x2={centerNodes[to].x}
           y2={centerNodes[to].y}
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
           strokeDasharray="4 2"
-          opacity="0.3"
+          opacity="0.4"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
           transition={{ duration: 0.8, delay: 0.2 * i }}
@@ -346,8 +346,8 @@ function MarketIllustration() {
             cx={x}
             cy={y}
             r="4"
-            fill="#575757"
-            opacity="0.25"
+            fill="#7c3aed"
+            opacity="0.35"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.5 + i * 0.1 }}
@@ -363,7 +363,7 @@ function MarketIllustration() {
             cy={node.y}
             r="18"
             fill="none"
-            stroke="#575757"
+            stroke="#7c3aed"
             strokeWidth="1.5"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -375,7 +375,7 @@ function MarketIllustration() {
             textAnchor="middle"
             fontSize="14"
             fontFamily="Space Mono, monospace"
-            fill="#575757"
+            fill="#7c3aed"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 + i * 0.1 }}
@@ -390,8 +390,8 @@ function MarketIllustration() {
         cx="90"
         cy="90"
         r="3"
-        fill="#575757"
-        opacity="0.5"
+        fill="#7c3aed"
+        opacity="0.7"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.8 }}
@@ -423,7 +423,7 @@ export function EmptyState({
       <svg
         viewBox="0 0 120 100"
         className="w-32 h-auto mb-6 opacity-40"
-        style={{ color: "#575757" }}
+        style={{ color: "#7c3aed" }}
       >
         {/* Empty container */}
         <rect

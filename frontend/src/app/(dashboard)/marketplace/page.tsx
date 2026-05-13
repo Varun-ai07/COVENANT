@@ -35,8 +35,10 @@ export default function MarketplacePage() {
   const [capabilitySearch, setCapabilitySearch] = useState("");
 
   const { taskCount, allTaskIds, isLoading } = useOpenTaskMarket();
-  const { createOpenTask, isPending, isConfirming, isConfirmed, error } = useCreateOpenTask();
-  const { data: agentsByCapability, isLoading: isAgentsLoading } = useAgentsByCapability(capabilitySearch);
+  const { createOpenTask, isPending, isConfirming, isConfirmed, error } =
+    useCreateOpenTask();
+  const { data: agentsByCapability, isLoading: isAgentsLoading } =
+    useAgentsByCapability(capabilitySearch);
 
   const handleCreateTask = () => {
     if (!maxPayment || !deadlineHours || !descriptionHash) return;
@@ -51,16 +53,26 @@ export default function MarketplacePage() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-7xl mx-auto">
+        {/* Decorative accent line */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="w-24 h-[2px] bg-gradient-to-r from-accent to-transparent mb-6"
+        />
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2">
-            Task <span className="text-accent">Marketplace</span>
+          <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-2 leading-tight">
+            Task{" "}
+            <span className="bg-gradient-to-r from-accent via-purple-400 to-info bg-clip-text text-transparent">
+              Marketplace
+            </span>
           </h1>
-          <p className="text-muted font-body">
+          <p className="text-lg text-muted max-w-2xl mb-12 font-body leading-relaxed">
             Discover open tasks or post your own for agents to bid on.
           </p>
         </motion.div>
@@ -72,8 +84,10 @@ export default function MarketplacePage() {
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div className="flex flex-wrap gap-2">
                 {FILTERS.map((filter) => (
-                  <button
+                  <motion.button
                     key={filter}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setActiveFilter(filter)}
                     className={`px-4 py-1.5 rounded-full border text-sm font-mono transition-all duration-300 ${
                       activeFilter === filter
@@ -83,7 +97,7 @@ export default function MarketplacePage() {
                   >
                     <Filter size={14} className="inline mr-1.5 -mt-0.5" />
                     {filter}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
               <Button
@@ -103,8 +117,8 @@ export default function MarketplacePage() {
                 exit={{ opacity: 0, height: 0 }}
                 className="mb-6 overflow-hidden"
               >
-                <Card className="p-6">
-                  <h2 className="text-xl font-heading font-semibold text-foreground mb-4">
+                <Card className="p-6 backdrop-blur-sm bg-surface/70 border-border/50">
+                  <h2 className="text-xl font-heading font-semibold text-white mb-4">
                     Create Open Task
                   </h2>
                   <div className="space-y-4">
@@ -113,7 +127,10 @@ export default function MarketplacePage() {
                         Max Payment (ETH)
                       </label>
                       <div className="relative">
-                        <Coins size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                        <Coins
+                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+                        />
                         <input
                           type="number"
                           step="0.01"
@@ -129,7 +146,10 @@ export default function MarketplacePage() {
                         Deadline (hours from now)
                       </label>
                       <div className="relative">
-                        <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                        <Clock
+                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+                        />
                         <input
                           type="number"
                           value={deadlineHours}
@@ -191,7 +211,11 @@ export default function MarketplacePage() {
                   />
                 )}
                 {taskIds.map((taskId: bigint) => (
-                  <TaskCard key={taskId.toString()} taskId={taskId} filter={activeFilter} />
+                  <TaskCard
+                    key={taskId.toString()}
+                    taskId={taskId}
+                    filter={activeFilter}
+                  />
                 ))}
               </div>
             )}
@@ -199,8 +223,8 @@ export default function MarketplacePage() {
 
           {/* Agent Discovery Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="p-5 sticky top-8">
-              <h3 className="text-lg font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Card className="p-5 sticky top-8 backdrop-blur-sm bg-surface/70 border-border/50">
+              <h3 className="text-lg font-heading font-semibold text-white mb-4 flex items-center gap-2">
                 <Search size={18} className="text-info" />
                 Agent Discovery
               </h3>
@@ -217,24 +241,32 @@ export default function MarketplacePage() {
                 <LoadingPulse lines={3} />
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {(agentsByCapability as any[] | undefined)?.map((agent: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="p-3 bg-surface-alt/50 border border-border rounded-xl hover:border-info/50 transition-colors"
-                    >
-                      <p className="text-foreground font-mono text-sm font-semibold">
-                        {agent.name || `Agent ${idx + 1}`}
-                      </p>
-                      <p className="text-muted font-mono text-xs mt-0.5">
-                        {formatAddress(agent.did || agent)}
-                      </p>
-                    </div>
-                  ))}
-                  {Array.isArray(agentsByCapability) && agentsByCapability.length === 0 && (
-                    <p className="text-muted font-mono text-sm text-center py-4">
-                      No agents found for this capability.
-                    </p>
+                  {(agentsByCapability as any[] | undefined)?.map(
+                    (agent: any, idx: number) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="p-3 bg-surface-alt/50 border border-border/50 rounded-xl hover:border-info/50 hover:bg-surface-alt/70 transition-all duration-300">
+                          <p className="text-white font-mono text-sm font-semibold">
+                            {agent.name || `Agent ${idx + 1}`}
+                          </p>
+                          <p className="text-muted font-mono text-xs mt-0.5">
+                            {formatAddress(agent.did || agent)}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )
                   )}
+                  {Array.isArray(agentsByCapability) &&
+                    agentsByCapability.length === 0 && (
+                      <p className="text-muted font-mono text-sm text-center py-4">
+                        No agents found for this capability.
+                      </p>
+                    )}
                 </div>
               )}
             </Card>
@@ -256,7 +288,7 @@ function TaskCard({
 
   if (isLoading) {
     return (
-      <Card className="p-5">
+      <Card className="p-5 backdrop-blur-sm bg-surface/70">
         <LoadingPulse lines={3} />
       </Card>
     );
@@ -266,12 +298,18 @@ function TaskCard({
   if (!taskData) return null;
 
   const statusNum = Number(taskData.status) as TaskStatus;
-  const statusLabels: Record<number, string> = { 0: "open", 1: "in_progress", 2: "completed", 3: "cancelled" };
+  const statusLabels: Record<number, string> = {
+    0: "open",
+    1: "in_progress",
+    2: "completed",
+    3: "cancelled",
+  };
   const statusLabel = statusLabels[statusNum] || "open";
 
   // Filter logic
   if (filter !== "All") {
-    const filterStatusNum = statusToNumber[filter as Exclude<MarketTaskStatus, "All">];
+    const filterStatusNum =
+      statusToNumber[filter as Exclude<MarketTaskStatus, "All">];
     if (statusNum !== filterStatusNum) return null;
   }
 
@@ -282,10 +320,11 @@ function TaskCard({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ scale: 1.01 }}
     >
       <Link href={`/tasks/${taskId.toString()}`}>
-        <Card className="p-5 hover:border-accent/50 transition-all duration-300">
+        <Card className="p-5 hover:border-accent/50 transition-all duration-300 backdrop-blur-sm bg-surface/70 hover:shadow-glow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
@@ -295,7 +334,7 @@ function TaskCard({
                 </span>
               </div>
               <div className="space-y-1.5">
-                <p className="text-foreground font-mono text-sm flex items-center gap-2">
+                <p className="text-white font-mono text-sm flex items-center gap-2">
                   <Coins size={14} className="text-warning" />
                   {maxPaymentEth.toFixed(4)} ETH
                 </p>
@@ -308,7 +347,10 @@ function TaskCard({
                 </p>
               </div>
             </div>
-            <ArrowRight size={20} className="text-muted group-hover:text-accent transition-colors mt-2" />
+            <ArrowRight
+              size={20}
+              className="text-muted group-hover:text-accent transition-colors duration-200 mt-2"
+            />
           </div>
         </Card>
       </Link>

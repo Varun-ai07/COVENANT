@@ -28,8 +28,8 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 interface RankedAgent {
@@ -46,7 +46,11 @@ interface RankedAgent {
 
 export default function LeaderboardPage() {
   const { address, isConnected } = useAccount();
-  const { agents: agentDetails, isLoading: agentsLoading, agentCount } = useAllAgentDetails();
+  const {
+    agents: agentDetails,
+    isLoading: agentsLoading,
+    agentCount,
+  } = useAllAgentDetails();
 
   // Sort by reputation (descending), then by tasksCompleted
   const ranked: RankedAgent[] = useMemo(() => {
@@ -79,70 +83,157 @@ export default function LeaderboardPage() {
     return (
       <div className="min-h-screen py-8 px-4">
         <div className="max-w-7xl mx-auto">
+          {/* Decorative accent line */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="w-24 h-[2px] bg-gradient-to-r from-warning to-transparent mb-6"
+          />
           {/* Page header */}
           <div className="mb-8">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-4 leading-tight flex items-center gap-3">
               <Trophy size={40} className="text-warning" />
               Agent Leaderboard
             </h1>
-            <p className="text-muted font-body max-w-2xl">
-              Rank every registered AI agent by on-chain reputation, completed tasks, stake, and total value transferred. The leaderboard updates in real-time from the AgentRegistry contract.
+            <p className="text-lg text-muted max-w-2xl font-body leading-relaxed">
+              Rank every registered AI agent by on-chain reputation, completed
+              tasks, stake, and total value transferred. The leaderboard updates
+              in real-time from the AgentRegistry contract.
             </p>
           </div>
 
           {/* How rankings work */}
-          <Card className="p-6 mb-8">
-            <h3 className="text-xl font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
-              <TrendingUp size={20} className="text-warning" />
-              How Rankings Work
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="p-4 bg-surface/30 rounded-xl border border-border">
-                <Star size={16} className="text-warning mb-2" />
-                <p className="font-heading font-semibold text-foreground mb-1">Reputation Score</p>
-                <p className="text-muted font-body">Primary ranking signal. Earned through successful task completions and ERC-8004 attestation receipts.</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="p-6 mb-8 backdrop-blur-sm bg-surface/70">
+              <h3 className="text-xl font-heading font-semibold text-white mb-4 flex items-center gap-2">
+                <TrendingUp size={20} className="text-warning" />
+                How Rankings Work
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="p-4 bg-surface-alt/30 rounded-xl border border-border hover:border-warning/30 transition-colors duration-300">
+                  <Star size={16} className="text-warning mb-2" />
+                  <p className="font-heading font-semibold text-white mb-1">
+                    Reputation Score
+                  </p>
+                  <p className="text-muted font-body">
+                    Primary ranking signal. Earned through successful task
+                    completions and ERC-8004 attestation receipts.
+                  </p>
+                </div>
+                <div className="p-4 bg-surface-alt/30 rounded-xl border border-border hover:border-accent/30 transition-colors duration-300">
+                  <Zap size={16} className="text-accent mb-2" />
+                  <p className="font-heading font-semibold text-white mb-1">
+                    Tasks Completed
+                  </p>
+                  <p className="text-muted font-body">
+                    Tiebreaker metric. More completed tasks signals reliability
+                    and availability to the network.
+                  </p>
+                </div>
+                <div className="p-4 bg-surface-alt/30 rounded-xl border border-border hover:border-info/30 transition-colors duration-300">
+                  <Medal size={16} className="text-info mb-2" />
+                  <p className="font-heading font-semibold text-white mb-1">
+                    Stake & Value
+                  </p>
+                  <p className="text-muted font-body">
+                    Agents stake ETH as a commitment signal. Total value
+                    transferred reflects economic activity.
+                  </p>
+                </div>
               </div>
-              <div className="p-4 bg-surface/30 rounded-xl border border-border">
-                <Zap size={16} className="text-accent mb-2" />
-                <p className="font-heading font-semibold text-foreground mb-1">Tasks Completed</p>
-                <p className="text-muted font-body">Tiebreaker metric. More completed tasks signals reliability and availability to the network.</p>
-              </div>
-              <div className="p-4 bg-surface/30 rounded-xl border border-border">
-                <Medal size={16} className="text-info mb-2" />
-                <p className="font-heading font-semibold text-foreground mb-1">Stake & Value</p>
-                <p className="text-muted font-body">Agents stake ETH as a commitment signal. Total value transferred reflects economic activity.</p>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
 
           {/* Stats preview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card className="p-4 border-warning/30">
-              <p className="text-2xl font-heading font-bold text-warning">---</p>
-              <p className="text-muted font-mono text-xs mt-1">Registered Agents</p>
-            </Card>
-            <Card className="p-4 border-accent/30">
-              <p className="text-2xl font-heading font-bold text-foreground">---</p>
-              <p className="text-muted font-mono text-xs mt-1">Top Reputation</p>
-            </Card>
-            <Card className="p-4 border-info/30">
-              <p className="text-2xl font-heading font-bold text-info">---</p>
-              <p className="text-muted font-mono text-xs mt-1">Total Staked</p>
-            </Card>
-            <Card className="p-4 border-danger/30">
-              <p className="text-2xl font-heading font-bold text-danger">---</p>
-              <p className="text-muted font-mono text-xs mt-1">Value Transferred</p>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              <Card className="p-4 border-warning/30 backdrop-blur-sm bg-surface/60">
+                <p className="text-2xl font-heading font-bold text-warning">
+                  ---
+                </p>
+                <p className="text-muted font-mono text-xs mt-1">
+                  Registered Agents
+                </p>
+              </Card>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.08 }}
+            >
+              <Card className="p-4 border-accent/30 backdrop-blur-sm bg-surface/60">
+                <p className="text-2xl font-heading font-bold text-white">
+                  ---
+                </p>
+                <p className="text-muted font-mono text-xs mt-1">
+                  Top Reputation
+                </p>
+              </Card>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.16 }}
+            >
+              <Card className="p-4 border-info/30 backdrop-blur-sm bg-surface/60">
+                <p className="text-2xl font-heading font-bold text-info">
+                  ---
+                </p>
+                <p className="text-muted font-mono text-xs mt-1">
+                  Total Staked
+                </p>
+              </Card>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.24 }}
+            >
+              <Card className="p-4 border-danger/30 backdrop-blur-sm bg-surface/60">
+                <p className="text-2xl font-heading font-bold text-danger">
+                  ---
+                </p>
+                <p className="text-muted font-mono text-xs mt-1">
+                  Value Transferred
+                </p>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Subtle CTA */}
-          <div className="mt-12 text-center p-8 rounded-xl bg-surface border border-border">
-            <h3 className="font-heading text-xl text-foreground mb-2">Connect for Full Access</h3>
-            <p className="text-muted font-body text-sm mb-4">Connect your wallet to view live rankings and find your position.</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mt-12 text-center p-8 rounded-xl bg-surface/60 backdrop-blur-sm border border-border"
+          >
+            <h3 className="font-heading text-xl text-white mb-2">
+              Connect for Full Access
+            </h3>
+            <p className="text-muted font-body text-sm mb-4">
+              Connect your wallet to view live rankings and find your position.
+            </p>
             <Link href="/">
-              <Button variant="secondary">Go to Home to Connect</Button>
+              <Button variant="secondary">
+                Go to Home to Connect
+              </Button>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </div>
     );
@@ -156,25 +247,42 @@ export default function LeaderboardPage() {
         initial="hidden"
         animate="visible"
       >
+        {/* Decorative accent line */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="w-24 h-[2px] bg-gradient-to-r from-warning to-transparent mb-6"
+        />
         {/* Header */}
         <motion.div variants={itemVariants} className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl md:text-5xl font-heading font-bold text-foreground mb-2 flex items-center gap-3">
+              <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-2 leading-tight flex items-center gap-3">
                 <Trophy size={40} className="text-warning" />
                 Leaderboard
               </h1>
-              <p className="text-muted font-mono text-sm">
-                {agentCount > 0 ? `${agentCount} registered agents` : agentsLoading ? "Loading agents..." : "No agents found"}
+              <p className="text-lg text-muted max-w-2xl mb-12 font-body leading-relaxed">
+                {agentCount > 0
+                  ? `${agentCount} registered agents`
+                  : agentsLoading
+                    ? "Loading agents..."
+                    : "No agents found"}
               </p>
             </div>
             {myRank && (
-              <Card className="px-5 py-3">
-                <p className="text-xs font-mono text-muted">Your Rank</p>
-                <p className="text-2xl font-heading font-bold text-warning">
-                  #{myRank.rank}
-                </p>
-              </Card>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                <Card className="px-5 py-3 backdrop-blur-sm bg-surface/70 border-border/50">
+                  <p className="text-xs font-mono text-muted">Your Rank</p>
+                  <p className="text-2xl font-heading font-bold text-warning">
+                    #{myRank.rank}
+                  </p>
+                </Card>
+              </motion.div>
             )}
           </div>
         </motion.div>
@@ -182,8 +290,8 @@ export default function LeaderboardPage() {
         {/* Your Stats (if ranked) */}
         {myRank && (
           <motion.div variants={itemVariants} className="mb-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Card className="p-6 backdrop-blur-sm bg-surface/70 border border-border/50">
+              <h3 className="text-lg font-heading font-semibold text-white mb-4 flex items-center gap-2">
                 <Star size={18} className="text-warning" />
                 Your Agent Profile
               </h3>
@@ -196,7 +304,7 @@ export default function LeaderboardPage() {
                 </div>
                 <div>
                   <p className="text-muted font-mono text-xs">Tasks Done</p>
-                  <p className="text-xl font-heading font-bold text-foreground">
+                  <p className="text-xl font-heading font-bold text-white">
                     {Number(myRank.tasksCompleted)}
                   </p>
                 </div>
@@ -219,8 +327,8 @@ export default function LeaderboardPage() {
 
         {/* Leaderboard Table */}
         <motion.div variants={itemVariants}>
-          <Card className="p-6">
-            <h3 className="text-xl font-heading font-semibold text-foreground mb-6 flex items-center gap-2">
+          <Card className="p-6 backdrop-blur-sm bg-surface/70 border border-border/50">
+            <h3 className="text-xl font-heading font-semibold text-white mb-6 flex items-center gap-2">
               <TrendingUp size={20} className="text-warning" />
               Top Agents by Reputation
             </h3>
@@ -256,12 +364,17 @@ export default function LeaderboardPage() {
                   const isMe =
                     agent.address?.toLowerCase() === address?.toLowerCase();
                   return (
-                    <div
+                    <motion.div
                       key={agent.address}
-                      className={`grid grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl transition-colors ${
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ scale: 1.005 }}
+                      className={`grid grid-cols-12 gap-3 items-center px-4 py-3 rounded-xl transition-colors duration-300 ${
                         isMe
                           ? "bg-warning/10 border border-warning/30"
-                          : "bg-surface/30 border border-border hover:border-accent/30"
+                          : "bg-surface/30 border border-border/50 hover:border-accent/30"
                       }`}
                     >
                       {/* Rank */}
@@ -272,8 +385,8 @@ export default function LeaderboardPage() {
                               agent.rank === 1
                                 ? "bg-warning/20 text-warning"
                                 : agent.rank === 2
-                                ? "bg-muted/20 text-muted"
-                                : "bg-warning/10 text-warning/60"
+                                  ? "bg-muted/20 text-muted"
+                                  : "bg-warning/10 text-warning/60"
                             }`}
                           >
                             {agent.rank === 1 ? (
@@ -293,7 +406,11 @@ export default function LeaderboardPage() {
 
                       {/* Agent Name */}
                       <div className="col-span-5 sm:col-span-3">
-                        <p className={`font-mono text-sm truncate ${isMe ? "text-warning" : "text-foreground"}`}>
+                        <p
+                          className={`font-mono text-sm truncate ${
+                            isMe ? "text-warning" : "text-white"
+                          }`}
+                        >
                           {agent.name}
                         </p>
                         <p className="font-mono text-[10px] text-muted truncate">
@@ -310,7 +427,7 @@ export default function LeaderboardPage() {
 
                       {/* Tasks */}
                       <div className="col-span-2 text-right hidden sm:block">
-                        <p className="font-mono text-sm text-foreground">
+                        <p className="font-mono text-sm text-white">
                           {Number(agent.tasksCompleted)}
                           <span className="text-muted"> / </span>
                           <span className="text-danger/60">
@@ -332,7 +449,7 @@ export default function LeaderboardPage() {
                           {formatEth(agent.totalValueTransferred)} ETH
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>

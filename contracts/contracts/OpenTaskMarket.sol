@@ -201,9 +201,34 @@ contract OpenTaskMarket is Ownable {
         uint256 deadline,
         string calldata descriptionHash
     ) external payable returns (uint256) {
-        uint256 taskId = this.postTask(maxPayment, deadline, descriptionHash);
-        emit TaskPosted(taskId, msg.sender, maxPayment, deadline, descriptionHash);
-        return taskId;
+        // Inline the logic from postTask to avoid external call changing msg.sender
+        if (maxPayment == 0) revert ZeroPayment();
+        if (deadline <= block.timestamp) revert DeadlinePast();
+        if (bytes(descriptionHash).length == 0) revert EmptyDescriptionHash();
+
+        // Verify client is a registered agent
+        AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
+        if (clientAgent.isActive != 1) {
+            revert AgentNotActive();
+        }
+
+        taskCounter++;
+
+        Task storage task = tasks[taskCounter];
+        task.client = msg.sender;
+        task.maxPayment = maxPayment;
+        task.deadline = deadline;
+        task.descriptionHash = descriptionHash;
+        task.status = TaskStatus.Open;
+        task.postedAt = block.timestamp;
+        task.selectedWorker = address(0);
+        task.selectedPrice = 0;
+        task.selectedTimeEstimate = 0;
+        task.selectedProposalHash = "";
+
+        emit TaskPosted(taskCounter, msg.sender, maxPayment, deadline, descriptionHash);
+
+        return taskCounter;
     }
 
     function makeCounterOffer(
@@ -260,7 +285,12 @@ contract OpenTaskMarket is Ownable {
         AgentRegistry.Agent memory bidderAgent = agentRegistry.getAgent(msg.sender);
         require(bidderAgent.isActive == 1, "Bidder not registered");
 
-        // Store or update bid
+        // Check if bidder has already placed a bid
+        if (bids[taskId][msg.sender].price > 0) {
+            revert AlreadyBidded();
+        }
+
+        // Store bid
         Bid storage bid = bids[taskId][msg.sender];
         bid.price = price;
         bid.timeEstimate = timeEstimate;

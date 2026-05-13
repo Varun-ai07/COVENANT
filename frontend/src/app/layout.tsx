@@ -3,11 +3,8 @@ import dynamic from "next/dynamic";
 import "./globals.css";
 
 const Providers = dynamic(() => import("./providers"), { ssr: false });
-const AppShell = dynamic(() => import("@/components/layout/AppShell"), {
-  ssr: false,
-});
 
-const metadata: Metadata = {
+export const metadata: Metadata = {
   title: "COVENANT — Autonomous Agent Enforcement",
   description:
     "What TCP/IP was to computers, COVENANT is to AI agents. An autonomous agent enforcement protocol on Base Sepolia.",
@@ -21,9 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="bg-background text-foreground min-h-screen font-body antialiased overflow-x-hidden grain-overlay">
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

@@ -4,18 +4,17 @@ import { motion } from "framer-motion";
 
 /**
  * HeroPattern — Subtle animated geometric mesh for the hero section
- * Warm stone aesthetic: uses muted charcoal lines with low opacity
- * Respects reduced motion preferences
+ * Dark theme with violet accents and purple glow effects
  */
 export function HeroPattern() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {/* Radial gradient overlay */}
+      {/* Radial gradient overlay - violet */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[800px] rounded-full"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] rounded-full"
         style={{
           background:
-            "radial-gradient(ellipse, rgba(87,87,87,0.04) 0%, transparent 60%)",
+            "radial-gradient(ellipse, rgba(109,40,217,0.12) 0%, transparent 60%)",
         }}
       />
 
@@ -24,7 +23,7 @@ export function HeroPattern() {
         className="absolute inset-0 w-full h-full"
         viewBox="0 0 1440 900"
         preserveAspectRatio="xMidYMid slice"
-        style={{ opacity: 0.15 }}
+        style={{ opacity: 0.2 }}
       >
         <defs>
           <pattern
@@ -35,7 +34,7 @@ export function HeroPattern() {
             height="120"
             patternUnits="userSpaceOnUse"
           >
-            <circle cx="1" cy="1" r="1" fill="#575757" opacity="0.3" />
+            <circle cx="1" cy="1" r="1" fill="#7c3aed" opacity="0.4" />
           </pattern>
         </defs>
 
@@ -47,11 +46,11 @@ export function HeroPattern() {
           y1="200"
           x2="400"
           y2="0"
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
-          opacity="0.2"
+          opacity="0.3"
           initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 0.2 }}
+          animate={{ pathLength: 1, opacity: 0.3 }}
           transition={{ duration: 2, ease: "easeOut" }}
         />
         <motion.line
@@ -59,11 +58,11 @@ export function HeroPattern() {
           y1="900"
           x2="1440"
           y2="700"
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
-          opacity="0.2"
+          opacity="0.3"
           initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 0.2 }}
+          animate={{ pathLength: 1, opacity: 0.3 }}
           transition={{ duration: 2, delay: 0.3, ease: "easeOut" }}
         />
 
@@ -73,11 +72,11 @@ export function HeroPattern() {
           cy="150"
           r="40"
           fill="none"
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
-          opacity="0.15"
+          opacity="0.25"
           initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.15 }}
+          animate={{ scale: 1, opacity: 0.25 }}
           transition={{ duration: 1.5, delay: 0.5 }}
         />
         <motion.circle
@@ -85,11 +84,11 @@ export function HeroPattern() {
           cy="750"
           r="60"
           fill="none"
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
-          opacity="0.12"
+          opacity="0.2"
           initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.12 }}
+          animate={{ scale: 1, opacity: 0.2 }}
           transition={{ duration: 1.5, delay: 0.7 }}
         />
 
@@ -97,20 +96,20 @@ export function HeroPattern() {
         <motion.polygon
           points="1280,300 1320,330 1320,390 1280,420 1240,390 1240,330"
           fill="none"
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
-          opacity="0.1"
+          opacity="0.2"
           initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.1 }}
+          animate={{ scale: 1, opacity: 0.2 }}
           transition={{ duration: 1.5, delay: 0.9 }}
         />
       </svg>
 
-      {/* Animated glow orbs */}
+      {/* Animated glow orbs - violet */}
       <motion.div
         className="absolute w-96 h-96 rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(87,87,87,0.08) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(109,40,217,0.15) 0%, transparent 70%)",
           top: "20%",
           right: "10%",
         }}
@@ -122,7 +121,7 @@ export function HeroPattern() {
       <motion.div
         className="absolute w-64 h-64 rounded-full"
         style={{
-          background: "radial-gradient(circle, rgba(87,87,87,0.06) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%)",
           bottom: "15%",
           left: "5%",
         }}
@@ -168,7 +167,7 @@ export function NodeConnection({ nodeCount = 5 }: { nodeCount?: number }) {
           y1={nodes[from].y}
           x2={nodes[to].x}
           y2={nodes[to].y}
-          stroke="#575757"
+          stroke="#7c3aed"
           strokeWidth="1"
           strokeDasharray="4 4"
           initial={{ pathLength: 0 }}
@@ -191,7 +190,7 @@ export function NodeConnection({ nodeCount = 5 }: { nodeCount?: number }) {
             cy={node.y}
             r="12"
             fill="none"
-            stroke="#575757"
+            stroke="#7c3aed"
             strokeWidth="1.5"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -206,7 +205,7 @@ export function NodeConnection({ nodeCount = 5 }: { nodeCount?: number }) {
             cx={node.x}
             cy={node.y}
             r="4"
-            fill="#575757"
+            fill="#7c3aed"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{
@@ -229,7 +228,7 @@ export function FlowingDots() {
       {[0, 1, 2, 3, 4].map((i) => (
         <motion.div
           key={i}
-          className="w-1.5 h-1.5 rounded-full bg-charcoal"
+          className="w-1.5 h-1.5 rounded-full bg-accent"
           animate={{
             opacity: [0.3, 0.7, 0.3],
             scale: [1, 1.2, 1],

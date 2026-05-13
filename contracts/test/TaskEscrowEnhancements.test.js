@@ -41,19 +41,19 @@ describe("TaskEscrow Enhancements", function () {
 
   describe("Priority System", function () {
     it("should return correct BPS for Low priority", async function () {
-      expect(await escrow.getPriorityFeeBps(0)).to.equal(50);
+      expect(await escrow.PRIORITY_FEE_BPS_LOW()).to.equal(50);
     });
 
     it("should return correct BPS for Medium priority", async function () {
-      expect(await escrow.getPriorityFeeBps(1)).to.equal(100);
+      expect(await escrow.PRIORITY_FEE_BPS_MEDIUM()).to.equal(100);
     });
 
     it("should return correct BPS for High priority", async function () {
-      expect(await escrow.getPriorityFeeBps(2)).to.equal(200);
+      expect(await escrow.PRIORITY_FEE_BPS_HIGH()).to.equal(200);
     });
 
     it("should return correct BPS for Urgent priority", async function () {
-      expect(await escrow.getPriorityFeeBps(3)).to.equal(500);
+      expect(await escrow.PRIORITY_FEE_BPS_URGENT()).to.equal(500);
     });
 
     it("should createAndFundTask use Medium priority by default", async function () {
@@ -129,7 +129,7 @@ describe("TaskEscrow Enhancements", function () {
           worker.address, TASK_PAYMENT, deadline, "QmDesc", 3, // Urgent
           { value: TASK_PAYMENT } // Only payment, no fee
         )
-      ).to.be.revertedWith("Insufficient funding");
+      ).to.be.revertedWith("!funds");
     });
   });
 
@@ -180,7 +180,7 @@ describe("TaskEscrow Enhancements", function () {
           badPayments,
           { value: totalPayment }
         )
-      ).to.be.revertedWith("Milestone payments must sum to total");
+      ).to.be.revertedWith("!sum");
     });
 
     it("should revert if milestone lengths mismatch", async function () {
@@ -193,7 +193,7 @@ describe("TaskEscrow Enhancements", function () {
           [ethers.parseEther("0.05"), ethers.parseEther("0.05")],
           { value: totalPayment }
         )
-      ).to.be.revertedWith("Milestone length mismatch");
+      ).to.be.revertedWith("!len");
     });
 
     it("should worker submit milestones in order", async function () {
@@ -234,7 +234,7 @@ describe("TaskEscrow Enhancements", function () {
       // Skip milestone 0 — try 1 first
       await expect(
         escrow.connect(worker).submitMilestone(1, 1, "QmDeliverable1")
-      ).to.be.revertedWith("Previous milestone not completed");
+      ).to.be.revertedWith("!prev");
     });
 
     it("should revert if submitting a completed milestone", async function () {
@@ -249,7 +249,7 @@ describe("TaskEscrow Enhancements", function () {
       await escrow.connect(worker).submitMilestone(1, 0, "QmDeliverable0");
       await expect(
         escrow.connect(worker).submitMilestone(1, 0, "QmDeliverable0_again")
-      ).to.be.revertedWith("Milestone already completed");
+      ).to.be.revertedWith("!done");
     });
 
     it("should revert if non-worker submits milestone", async function () {
@@ -263,7 +263,7 @@ describe("TaskEscrow Enhancements", function () {
 
       await expect(
         escrow.connect(other).submitMilestone(1, 0, "QmFake")
-      ).to.be.revertedWith("Not task worker");
+      ).to.be.revertedWith("!worker");
     });
 
     it("should client verify milestone and pay worker", async function () {

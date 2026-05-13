@@ -23,7 +23,7 @@ describe("AgentRegistry", function () {
       });
 
       const agent = await registry.getAgent(agent1.address);
-      expect(agent.isActive).to.be.true;
+      expect(agent.isActive).to.equal(1); // 1 = active, 0 = inactive
       expect(agent.name).to.equal("Alpha");
       expect(agent.reputation).to.equal(INITIAL_REPUTATION);
       expect(agent.stakedAmount).to.equal(MIN_STAKE);
@@ -151,7 +151,7 @@ describe("AgentRegistry", function () {
       await registry.connect(agent1).deactivate();
 
       const agent = await registry.getAgent(agent1.address);
-      expect(agent.isActive).to.be.false;
+      expect(agent.isActive).to.equal(0); // 0 = inactive
       expect(agent.stakedAmount).to.equal(0);
     });
   });

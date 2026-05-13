@@ -1,245 +1,372 @@
-import * as LitJsSdk from "@lit-protocol/lit-node-client";
-// Import ethers properly
-import { ethers } from "ethers";
+/**
+ * COVENANT Lit Protocol Integration
+ *
+ * Provides threshold encryption with access control conditions for:
+ * - Reputation-based decryption (agents with min reputation can decrypt)
+ * - Participant-based decryption (only client or worker can decrypt)
+ */
 
-// Initialize Lit client (singleton)
-let litClient: LitJsSdk.LitNodeClient | null = null;
+import { LitNodeClient } from "@lit-protocol/lit-node-client";
+import {
+  encryptString,
+  decryptToString,
+  encryptToJson,
+  decryptFromJson,
+} from "@lit-protocol/encryption";
+import {
+  createSiweMessageWithResources,
+  generateAuthSig,
+  LitAccessControlConditionResource,
+} from "@lit-protocol/auth-helpers";
+import { LIT_ABILITY } from "@lit-protocol/constants";
+import type { SessionSigsMap, AccessControlConditions } from "@lit-protocol/types";
+import { ethers } from "ethers";
+import type { Address } from "viem";
+
+// ============================================================================
+// Configuration
+// ============================================================================
+
+const LIT_NETWORK = "datil-test" as const;
+const CHAIN = "baseSepolia" as const;
+
+// Singleton Lit client
+let litClient: LitNodeClient | null = null;
+
+// ============================================================================
+// Client Initialization
+// ============================================================================
 
 /**
- * Initialize Lit Protocol client
+ * Get or initialize the Lit Protocol client
  */
-export async function initLitClient(): Promise<void> {
+export async function getLitClient(): Promise<LitNodeClient> {
   if (litClient) {
-    return; // Already initialized
+    return litClient;
   }
-  
-  litClient = new LitJsSdk.LitNodeClient({
+
+  litClient = new LitNodeClient({
     alertWhenUnauthorized: false,
-    litNetwork: "datil-test", // Use datil testnet for development
+    litNetwork: LIT_NETWORK,
     debug: false,
   });
-  
+
   await litClient.connect();
+  console.log("✓ Lit Protocol client connected to", LIT_NETWORK);
+  return litClient;
 }
 
 /**
- * Generate a new encryption key pair using Lit Protocol
- * Note: With Lit Protocol, keys are managed by the network, so we return a placeholder
- * for compatibility with existing code that expects a key pair
+ * Disconnect the Lit client (cleanup)
  */
-export async function generateKeyPair(): Promise<{ privateKey: Uint8Array; publicKey: Uint8Array }> {
-  // Best-effort Lit initialization. Worker flow should continue even if Lit is unreachable.
-  try {
-    await initLitClient();
-  } catch (error) {
-    console.warn("[Crypto] Lit initialization unavailable, using local placeholder keys:", error);
+export async function disconnectLitClient(): Promise<void> {
+  if (litClient) {
+    await litClient.disconnect();
+    litClient = null;
   }
-  
-  // With Lit Protocol, we don't generate traditional key pairs locally
-  // Instead, we rely on the network for key management
-  // Returning a placeholder key pair for compatibility
-  const privateKey = new Uint8Array(32); // Placeholder
-  const publicKey = new Uint8Array(32); // Placeholder
-  
-  // Fill with dummy data to avoid undefined issues
-  for (let i = 0; i < 32; i++) {
-    privateKey[i] = i + 1;
-    publicKey[i] = (i + 1) * 2;
-  }
-  
-  // In a real implementation, we would:
-  // 1. Use Lit Protocol to get or create a key pair
-  // 2. Store the private key securely (encrypted, preferably in browser storage)
-  // 3. Use the public key for encryption operations
-  
-  return { privateKey, publicKey };
 }
 
-/**
- * Derive shared secret using Lit Protocol
- * Note: With Lit Protocol, we use the network for encryption/decryption directly
- * This function is kept for compatibility but returns a placeholder
- */
-export async function deriveSharedSecret(
-  myPrivateKey: Uint8Array,
-  theirPublicKey: Uint8Array
-): Promise<Uint8Array> {
-  try {
-    await initLitClient();
-  } catch {
-    // Continue with compatibility placeholder when Lit is unavailable.
-  }
-  
-  // With Lit Protocol, we don't derive shared secrets manually
-  // Encryption/decryption is handled through the Lit Protocol network
-  // Returning a placeholder for compatibility
-  return new Uint8Array(32); // Placeholder
-}
+// ============================================================================
+// Session Signatures
+// ============================================================================
 
 /**
- * Encrypt data using Lit Protocol with access control
- * Encrypts plaintext and returns the encrypted string along with metadata
- * needed for decryption
+ * Get session signatures for a wallet
+ * Required for all encrypt/decrypt operations in Lit Protocol v7
  */
-export async function encrypt(
-  plaintext: string,
-  _sharedSecret: Uint8Array // Kept for compatibility but not used
-): Promise<{ ciphertext: Uint8Array; iv: Uint8Array; ephemeralPublicKey: Uint8Array; }> {
-  // Ensure Lit client is initialized
-  await initLitClient();
-  
-  if (!litClient) {
-    throw new Error("Lit client not initialized");
-  }
-  
-  // For compatibility with existing code, we'll return the same structure
-  // but the actual encryption will be done via Lit Protocol
-  
-  // In a real implementation, we would:
-  // 1. Define access control conditions (e.g., based on agent reputation)
-  // 2. Use Lit Protocol to encrypt the string with those conditions
-  // 3. Return the encrypted string and any necessary metadata
-  
-  // Access control condition: Only allow decryption by agents that can
-  // prove they have a minimum reputation (this would be customized per task)
-  const accessControlConditions = [
+export async function getSessionSigs(
+  wallet: ethers.Wallet
+): Promise<SessionSigsMap> {
+  const client = await getLitClient();
+
+  const sessionSigs = await client.getSessionSigs({
+    chain: CHAIN,
+    resourceAbilityRequests: [
+      {
+        resource: new LitAccessControlConditionResource("*"),
+        ability: LIT_ABILITY.AccessControlConditionDecryption,
+      },
+    ],
+    authNeededCallback: async ({ uri, expiration, resourceAbilityRequests }) => {
+      const toSign = await createSiweMessageWithResources({
+        uri: uri!,
+        expiration: expiration!,
+        resources: resourceAbilityRequests!,
+        walletAddress: wallet.address,
+        nonce: await client.getLatestBlockhash(),
+        litNodeClient: client,
+      });
+
+      return generateAuthSig({ signer: wallet, toSign });
+    },
+  });
+
+  return sessionSigs;
+}
+
+// ============================================================================
+// Access Control Conditions
+// ============================================================================
+
+/**
+ * Create access control conditions for reputation-based decryption
+ * Only agents with reputation >= minReputation can decrypt
+ */
+export function createReputationAccessControl(
+  registryAddress: Address,
+  minReputation: number
+): AccessControlConditions {
+  return [
     {
-      contractAddress: "", // Would be set to AgentRegistry address
-      standardContractType: "",
-      chain: "baseSepolia",
-      method: "",
-      parameters: [],
+      contractAddress: registryAddress,
+      standardContractType: "Custom",
+      chain: CHAIN,
+      method: "getReputation",
+      parameters: [":userAddress"],
       returnValueTest: {
-        key: "",
         comparator: ">=",
-        value: ""
-      }
-    }
+        value: minReputation.toString(),
+      },
+    },
   ];
-  
-  try {
-    // Encrypt the string using Lit Protocol
-    const encryptedString = await litClient.encryptString({
-      stringToEncrypt: plaintext,
-      // In a real implementation, we would add access control conditions here
-      // accessControlConditions,
-    });
-    
-    // For compatibility with existing code structure, we need to return
-    // ciphertext, iv, and ephemeralPublicKey
-    // Since Lit Protocol returns a string, we'll convert it appropriately
-    const ciphertext = new TextEncoder().encode(encryptedString);
-    const iv = new Uint8Array(12); // 96-bit IV for GCM compatibility (placeholder)
-    const ephemeralPublicKey = new Uint8Array(32); // Placeholder
-    
-    return { 
-      ciphertext, 
-      iv,
-      ephemeralPublicKey
-    };
-  } catch (error) {
-    console.error("Error encrypting with Lit Protocol:", error);
-    // Fallback to placeholder implementation for compatibility
-    const iv = new Uint8Array(12); // 96-bit IV for GCM compatibility
-    const ciphertext = new TextEncoder().encode(plaintext); // Not actually encrypted - placeholder
-    
-    return { 
-      ciphertext, 
-      iv,
-      ephemeralPublicKey: new Uint8Array(32) // Placeholder
-    };
-  }
 }
 
 /**
- * Decrypt data using Lit Protocol with access control
- * Takes encrypted data and returns the decrypted plaintext string
+ * Create access control conditions for participant-based decryption
+ * Only the client or worker can decrypt
  */
-export async function decrypt(
-  ciphertext: Uint8Array,
-  _sharedSecret: Uint8Array,
-  iv: Uint8Array
-): Promise<string> {
-  // Ensure Lit client is initialized
-  await initLitClient();
-  
-  if (!litClient) {
-    throw new Error("Lit client not initialized");
-  }
-  
-  try {
-    // Convert ciphertext back to string for Lit Protocol
-    const encryptedString = new TextDecoder().decode(ciphertext);
-    
-    // Decrypt the string using Lit Protocol
-    const decryptedString = await litClient.decryptString({
-      ciphertext: encryptedString,
-      // In a real implementation, we would add access control conditions here
-      // accessControlConditions,
-    });
-    
-    return decryptedString;
-  } catch (error) {
-    console.error("Error decrypting with Lit Protocol:", error);
-    // Fallback to placeholder implementation for compatibility
-    return new TextDecoder().decode(ciphertext); // Not actually decrypted - placeholder
-  }
+export function createParticipantAccessControl(
+  clientAddress: Address,
+  workerAddress: Address
+): AccessControlConditions {
+  return [
+    {
+      contractAddress: "",
+      standardContractType: "",
+      chain: CHAIN,
+      method: "",
+      parameters: [":userAddress"],
+      returnValueTest: {
+        comparator: "=",
+        value: clientAddress,
+      },
+    },
+    { operator: "or" },
+    {
+      contractAddress: "",
+      standardContractType: "",
+      chain: CHAIN,
+      method: "",
+      parameters: [":userAddress"],
+      returnValueTest: {
+        comparator: "=",
+        value: workerAddress,
+      },
+    },
+  ];
 }
 
 /**
- * Encrypt data with specific access control conditions
- * This is the proper way to use Lit Protocol for conditional access
+ * Create access control conditions for NFT ownership
+ * Only holders of a specific NFT can decrypt
+ */
+export function createNFTAccessControl(
+  nftContractAddress: Address,
+  tokenId?: string
+): AccessControlConditions {
+  const condition: any = {
+    contractAddress: nftContractAddress,
+    standardContractType: "ERC721",
+    chain: CHAIN,
+    method: "ownerOf",
+    parameters: tokenId ? [tokenId] : ["1"],
+    returnValueTest: {
+      comparator: "=",
+      value: ":userAddress",
+    },
+  };
+
+  return [condition];
+}
+
+/**
+ * Create access control conditions for ERC20 token balance
+ * Only addresses with balance >= minBalance can decrypt
+ */
+export function createTokenBalanceAccessControl(
+  tokenAddress: Address,
+  minBalance: string
+): AccessControlConditions {
+  return [
+    {
+      contractAddress: tokenAddress,
+      standardContractType: "ERC20",
+      chain: CHAIN,
+      method: "balanceOf",
+      parameters: [":userAddress"],
+      returnValueTest: {
+        comparator: ">=",
+        value: minBalance,
+      },
+    },
+  ];
+}
+
+// ============================================================================
+// Encryption Functions
+// ============================================================================
+
+/**
+ * Encrypt a string with access control conditions
+ * Returns JSON payload containing ciphertext + metadata
  */
 export async function encryptWithAccessControl(
   plaintext: string,
-  accessControlConditions: any[]
+  accessControlConditions: AccessControlConditions
 ): Promise<string> {
-  // Ensure Lit client is initialized
-  await initLitClient();
-  
-  if (!litClient) {
-    throw new Error("Lit client not initialized");
-  }
-  
-  try {
-    const encryptedString = await litClient.encryptString({
-      stringToEncrypt: plaintext,
-      accessControlConditions,
-    });
-    
-    return encryptedString;
-  } catch (error) {
-    console.error("Error encrypting with access control:", error);
-    throw error;
-  }
+  const client = await getLitClient();
+
+  const jsonPayload = await encryptToJson({
+    accessControlConditions,
+    chain: CHAIN,
+    string: plaintext,
+    litNodeClient: client,
+  });
+
+  return jsonPayload;
 }
 
 /**
- * Decrypt data with specific access control conditions
- * This is the proper way to use Lit Protocol for conditional access
+ * Decrypt a JSON payload with session signatures
+ * The wallet must satisfy the access control conditions
  */
 export async function decryptWithAccessControl(
-  ciphertext: string,
-  accessControlConditions: any[]
+  jsonPayload: string,
+  sessionSigs: SessionSigsMap
 ): Promise<string> {
-  // Ensure Lit client is initialized
-  await initLitClient();
-  
-  if (!litClient) {
-    throw new Error("Lit client not initialized");
-  }
-  
-  try {
-    const decryptedString = await litClient.decryptString({
-      ciphertext,
+  const client = await getLitClient();
+
+  const parsedJsonData = JSON.parse(jsonPayload);
+  const plaintext = await decryptFromJson({
+    parsedJsonData,
+    sessionSigs,
+    litNodeClient: client,
+  });
+
+  return plaintext;
+}
+
+/**
+ * Encrypt string (raw API - returns ciphertext + hash)
+ */
+export async function encryptStringRaw(
+  plaintext: string,
+  accessControlConditions: AccessControlConditions
+): Promise<{ ciphertext: string; dataToEncryptHash: string }> {
+  const client = await getLitClient();
+
+  const result = await encryptString(
+    {
       accessControlConditions,
-    });
-    
-    return decryptedString;
-  } catch (error) {
-    console.error("Error decrypting with access control:", error);
-    throw error;
-  }
+      dataToEncrypt: plaintext,
+    },
+    client
+  );
+
+  return {
+    ciphertext: result.ciphertext,
+    dataToEncryptHash: result.dataToEncryptHash,
+  };
+}
+
+/**
+ * Decrypt string (raw API - requires ciphertext + hash)
+ */
+export async function decryptStringRaw(
+  ciphertext: string,
+  dataToEncryptHash: string,
+  accessControlConditions: AccessControlConditions,
+  sessionSigs: SessionSigsMap
+): Promise<string> {
+  const client = await getLitClient();
+
+  const plaintext = await decryptToString(
+    {
+      accessControlConditions,
+      ciphertext,
+      dataToEncryptHash,
+      chain: CHAIN,
+      sessionSigs,
+    },
+    client
+  );
+
+  return plaintext;
+}
+
+// ============================================================================
+// Convenience Functions for COVENANT
+// ============================================================================
+
+/**
+ * Encrypt task description for open market
+ * Only workers with minimum reputation can decrypt
+ */
+export async function encryptTaskDescription(
+  description: string,
+  registryAddress: Address,
+  minReputation: number
+): Promise<string> {
+  const acc = createReputationAccessControl(registryAddress, minReputation);
+  return encryptWithAccessControl(description, acc);
+}
+
+/**
+ * Encrypt task deliverable
+ * Only the client or worker can decrypt
+ */
+export async function encryptTaskDeliverable(
+  deliverable: string,
+  clientAddress: Address,
+  workerAddress: Address
+): Promise<string> {
+  const acc = createParticipantAccessControl(clientAddress, workerAddress);
+  return encryptWithAccessControl(deliverable, acc);
+}
+
+/**
+ * Decrypt task data with the provided wallet
+ */
+export async function decryptTaskData(
+  encryptedPayload: string,
+  wallet: ethers.Wallet
+): Promise<string> {
+  const sessionSigs = await getSessionSigs(wallet);
+  return decryptWithAccessControl(encryptedPayload, sessionSigs);
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Create an ethers wallet from a private key
+ */
+export function createWallet(privateKey: string): ethers.Wallet {
+  return new ethers.Wallet(privateKey);
+}
+
+/**
+ * Check if a wallet can satisfy access control conditions
+ * (Does a pre-check without actually decrypting)
+ */
+export async function checkAccessConditions(
+  walletAddress: Address,
+  accessControlConditions: AccessControlConditions
+): Promise<boolean> {
+  // TODO: Implement using Lit's checkConditions API when available
+  // For now, we just return true and let decrypt fail if conditions aren't met
+  return true;
 }
 
 /**

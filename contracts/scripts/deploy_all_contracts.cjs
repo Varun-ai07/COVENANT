@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const { ethers } = hre;
 
 async function main() {
   const [deployer] = await hre.ethers.getSigners();
@@ -27,6 +28,18 @@ async function main() {
   await taskEscrow.waitForDeployment();
   const taskEscrowAddress = await taskEscrow.getAddress();
   console.log("TaskEscrow deployed to:", taskEscrowAddress);
+
+  // Authorize TaskEscrow to create receipts
+  console.log("\n3b. Authorizing TaskEscrow on ReceiptVerifier...");
+  const authorizeTx = await receiptVerifier.addAuthorizedIssuer(taskEscrowAddress);
+  await authorizeTx.wait();
+  console.log("TaskEscrow authorized as receipt issuer");
+
+  // Authorize TaskEscrow on AgentRegistry for reputation updates
+  console.log("\n3c. Authorizing TaskEscrow on AgentRegistry...");
+  const authorizeAgentTx = await agentRegistry.addAuthorizedContract(taskEscrowAddress);
+  await authorizeAgentTx.wait();
+  console.log("TaskEscrow authorized on AgentRegistry");
 
   // Deploy OpenTaskMarket
   console.log("\n4. Deploying OpenTaskMarket...");
@@ -60,13 +73,14 @@ async function main() {
   const agentInsuranceAddress = await agentInsurance.getAddress();
   console.log("AgentInsurance deployed to:", agentInsuranceAddress);
 
-  // Deploy DisputeArbitration
-  console.log("\n8. Deploying DisputeArbitration...");
-  const DisputeArbitration = await hre.ethers.getContractFactory("DisputeArbitration");
-  const disputeArbitration = await DisputeArbitration.deploy();
+  // Deploy DisputeArbitrationMock (for local testing)
+  console.log("\n8. Deploying DisputeArbitrationMock...");
+  const DisputeArbitration = await hre.ethers.getContractFactory("DisputeArbitrationMock");
+  // Using zero address for VRF coordinator and empty bytes32 for keyHash for local testing
+  const disputeArbitration = await DisputeArbitration.deploy(agentRegistryAddress, taskEscrowAddress, ethers.ZeroAddress, "0x0000000000000000000000000000000000000000000000000000000000000000");
   await disputeArbitration.waitForDeployment();
   const disputeArbitrationAddress = await disputeArbitration.getAddress();
-  console.log("DisputeArbitration deployed to:", disputeArbitrationAddress);
+  console.log("DisputeArbitrationMock deployed to:", disputeArbitrationAddress);
 
   // Use fully qualified name for Groth16Verifier
   console.log("\n9. Using Groth16Verifier (CapabilityProof.sol)...");

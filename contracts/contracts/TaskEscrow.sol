@@ -39,7 +39,7 @@ contract TaskEscrow is Ownable {
     uint256 public constant PRIORITY_FEE_BPS_HIGH = 200;   // 2%
     uint256 public constant PRIORITY_FEE_BPS_URGENT = 500; // 5%
 
-    function getPriorityFeeBps(Priority priority) public pure returns (uint256) {
+    function getPriorityFeeBps(Priority priority) internal pure returns (uint256) {
         if (priority == Priority.Low) return PRIORITY_FEE_BPS_LOW;
         if (priority == Priority.Medium) return PRIORITY_FEE_BPS_MEDIUM;
         if (priority == Priority.High) return PRIORITY_FEE_BPS_HIGH;
@@ -126,30 +126,25 @@ contract TaskEscrow is Ownable {
     // Protocol fee accumulator
     uint256 public accumulatedFees;
 
-    // Verifier tracking (for economic incentives)
-    mapping(address => uint256) public verifierStakes; // address => stake amount in wei
-    mapping(address => bool) public isRegisteredVerifier;
-    uint256 public totalVerifierStake;
-
     constructor(address _agentRegistry, address _receiptVerifier) Ownable(msg.sender) {
         agentRegistry = AgentRegistry(_agentRegistry);
         receiptVerifier = ReceiptVerifier(_receiptVerifier);
     }
 
     modifier onlyClient(uint256 taskId) {
-        require(tasks[taskId].client == msg.sender, "Not task client");
+        require(tasks[taskId].client == msg.sender, "!client");
         _;
     }
 
     modifier onlyWorker(uint256 taskId) {
-        require(tasks[taskId].worker == msg.sender, "Not task worker");
+        require(tasks[taskId].worker == msg.sender, "!worker");
         _;
     }
 
     modifier onlyParticipant(uint256 taskId) {
         require(
             tasks[taskId].client == msg.sender || tasks[taskId].worker == msg.sender,
-            "Not a participant"
+            "!participant"
         );
         _;
     }
@@ -176,22 +171,22 @@ contract TaskEscrow is Ownable {
         string calldata descriptionHash,
         Priority priority
     ) public payable returns (uint256) {
-        require(payment > 0, "Payment must be positive");
-        require(deadline > block.timestamp, "Deadline must be future");
-        require(bytes(descriptionHash).length > 0, "Description required");
+        require(payment > 0, "!payment");
+        require(deadline > block.timestamp, "!deadline");
+        require(bytes(descriptionHash).length > 0, "!desc");
 
         // Calculate priority fee
         uint256 priorityFee = (payment * getPriorityFeeBps(priority)) / BPS_DENOMINATOR;
         uint256 requiredTotal = payment + priorityFee;
-        require(msg.value >= requiredTotal, "Insufficient funding");
+        require(msg.value >= requiredTotal, "!funds");
 
         // Verify both client and worker are registered agents
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        require(clientAgent.isActive == 1, "Client not registered");
+        require(clientAgent.isActive == 1, "!client reg");
 
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive == 1, "Worker not registered");
-        require(workerAgent.reputation > 0, "Worker has no reputation");
+        require(workerAgent.isActive == 1, "!worker reg");
+        require(workerAgent.reputation > 0, "!rep");
 
         taskCounter++;
 
@@ -242,19 +237,19 @@ contract TaskEscrow is Ownable {
         string calldata descriptionHash,
         Priority priority
     ) public payable returns (uint256) {
-        require(payment > 0, "Payment must be positive");
-        require(deadline > block.timestamp, "Deadline must be future");
-        require(bytes(descriptionHash).length > 0, "Description required");
-        require(client != address(0), "Invalid client address");
+        require(payment > 0, "!payment");
+        require(deadline > block.timestamp, "!deadline");
+        require(bytes(descriptionHash).length > 0, "!desc");
+        require(client != address(0), "!client addr");
 
         uint256 priorityFee = (payment * getPriorityFeeBps(priority)) / BPS_DENOMINATOR;
         uint256 requiredTotal = payment + priorityFee;
-        require(msg.value >= requiredTotal, "Insufficient funding");
+        require(msg.value >= requiredTotal, "!funds");
 
         // Only verify the worker is a registered agent (skip client check for collectives)
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive == 1, "Worker not registered");
-        require(workerAgent.reputation > 0, "Worker has no reputation");
+        require(workerAgent.isActive == 1, "!worker reg");
+        require(workerAgent.reputation > 0, "!rep");
 
         taskCounter++;
 
@@ -290,17 +285,17 @@ contract TaskEscrow is Ownable {
         uint256 deadline,
         string calldata descriptionHash
     ) external returns (uint256) {
-        require(payment > 0, "Payment must be positive");
-        require(deadline > block.timestamp, "Deadline must be future");
-        require(bytes(descriptionHash).length > 0, "Description required");
+        require(payment > 0, "!payment");
+        require(deadline > block.timestamp, "!deadline");
+        require(bytes(descriptionHash).length > 0, "!desc");
 
         // Verify both client and worker are registered agents
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        require(clientAgent.isActive == 1, "Client not registered");
+        require(clientAgent.isActive == 1, "!client reg");
 
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive == 1, "Worker not registered");
-        require(workerAgent.reputation > 0, "Worker has no reputation");
+        require(workerAgent.isActive == 1, "!worker reg");
+        require(workerAgent.reputation > 0, "!rep");
 
         taskCounter++;
 
@@ -361,8 +356,8 @@ contract TaskEscrow is Ownable {
         string[] calldata milestoneDescriptions,
         uint256[] calldata milestonePayments
     ) external payable returns (uint256) {
-        require(milestoneDescriptions.length > 0, "At least one milestone required");
-        require(milestoneDescriptions.length == milestonePayments.length, "Milestone length mismatch");
+        require(milestoneDescriptions.length > 0, "!milestones");
+        require(milestoneDescriptions.length == milestonePayments.length, "!len");
         require(totalPayment > 0, "Payment must be positive");
         require(deadline > block.timestamp, "Deadline must be future");
         require(bytes(descriptionHash).length > 0, "Description required");
@@ -372,17 +367,17 @@ contract TaskEscrow is Ownable {
         for (uint256 i = 0; i < milestonePayments.length; i++) {
             milestoneSum += milestonePayments[i];
         }
-        require(milestoneSum == totalPayment, "Milestone payments must sum to total");
+        require(milestoneSum == totalPayment, "!sum");
 
         // Verify both client and worker are registered agents
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
-        require(clientAgent.isActive == 1, "Client not registered");
+        require(clientAgent.isActive == 1, "!client reg");
 
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive == 1, "Worker not registered");
-        require(workerAgent.reputation > 0, "Worker has no reputation");
+        require(workerAgent.isActive == 1, "!worker reg");
+        require(workerAgent.reputation > 0, "!rep");
 
-        require(msg.value >= totalPayment, "Insufficient funding");
+        require(msg.value >= totalPayment, "!funds");
 
         taskCounter++;
 
@@ -431,15 +426,15 @@ contract TaskEscrow is Ownable {
         string calldata deliverableHash
     ) external onlyWorker(taskId) {
         Task storage task = tasks[taskId];
-        require(task.usesMilestones, "Task does not use milestones");
-        require(milestoneIndex < task.milestones.length, "Invalid milestone index");
-        require(task.status == TaskStatus.InProgress, "Not in progress");
-        require(!task.milestones[milestoneIndex].completed, "Milestone already completed");
-        require(block.timestamp <= task.deadline, "Deadline passed");
+        require(task.usesMilestones, "!milestones");
+        require(milestoneIndex < task.milestones.length, "!idx");
+        require(task.status == TaskStatus.InProgress, "!progress");
+        require(!task.milestones[milestoneIndex].completed, "!done");
+        require(block.timestamp <= task.deadline, "!deadline");
 
         // Auto-complete previous milestones if not already submitted
         for (uint256 i = 0; i < milestoneIndex; i++) {
-            require(task.milestones[i].completed, "Previous milestone not completed");
+            require(task.milestones[i].completed, "!prev");
         }
 
         task.milestones[milestoneIndex].deliverableHash = deliverableHash;
@@ -464,8 +459,8 @@ contract TaskEscrow is Ownable {
         Task storage task = tasks[taskId];
         require(task.usesMilestones, "Task does not use milestones");
         require(milestoneIndex < task.milestones.length, "Invalid milestone index");
-        require(task.milestones[milestoneIndex].completed, "Milestone not completed");
-        require(!task.milestones[milestoneIndex].paid, "Milestone already paid");
+        require(task.milestones[milestoneIndex].completed, "!done");
+        require(!task.milestones[milestoneIndex].paid, "!paid");
 
         Milestone storage ms = task.milestones[milestoneIndex];
 
@@ -475,7 +470,7 @@ contract TaskEscrow is Ownable {
             accumulatedFees += fee;
 
             (bool sent, ) = payable(task.worker).call{value: milestonePayment}("");
-            require(sent, "Payment failed");
+            require(sent, "!pay");
 
             ms.paid = true;
 
@@ -522,7 +517,7 @@ contract TaskEscrow is Ownable {
                 uint256 refund = refundTotal - fee;
                 accumulatedFees += fee;
                 (bool sent, ) = payable(task.client).call{value: refund}("");
-                require(sent, "Refund failed");
+                require(sent, "!refund");
             }
 
             agentRegistry.updateReputation(task.worker, REPUTATION_FAILURE);
@@ -569,19 +564,19 @@ contract TaskEscrow is Ownable {
         );
 
         // Subtask payment must be positive
-        require(payment > 0, "Payment must be positive");
-        require(deadline > block.timestamp, "Deadline must be future");
-        require(bytes(descriptionHash).length > 0, "Description required");
+        require(payment > 0, "!payment");
+        require(deadline > block.timestamp, "!deadline");
+        require(bytes(descriptionHash).length > 0, "!desc");
 
         // Verify worker is a registered agent
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
-        require(workerAgent.isActive == 1, "Worker not registered");
-        require(workerAgent.reputation > 0, "Worker has no reputation");
+        require(workerAgent.isActive == 1, "!worker reg");
+        require(workerAgent.reputation > 0, "!rep");
 
         // Medium priority fee for subtask
         uint256 priorityFee = (payment * getPriorityFeeBps(Priority.Medium)) / BPS_DENOMINATOR;
         uint256 requiredTotal = payment + priorityFee;
-        require(msg.value >= requiredTotal, "Insufficient funding");
+        require(msg.value >= requiredTotal, "!funds");
 
         taskCounter++;
 
@@ -768,7 +763,7 @@ contract TaskEscrow is Ownable {
                         uint256 milestonePayment = task.milestones[i].paymentAmount - fee;
                         accumulatedFees += fee;
                         (bool sent, ) = payable(task.worker).call{value: milestonePayment}("");
-                        require(sent, "Payment failed");
+                        require(sent, "!pay");
                         task.milestones[i].paid = true;
                         totalPaid += milestonePayment;
                     }
@@ -785,7 +780,7 @@ contract TaskEscrow is Ownable {
                 task.completedAt = block.timestamp;
 
                 (bool sent, ) = payable(task.worker).call{value: workerPayment}("");
-                require(sent, "Payment failed");
+                require(sent, "!pay");
 
                 emit TaskResolved(taskId, true, workerPayment);
             }
@@ -811,7 +806,7 @@ contract TaskEscrow is Ownable {
             task.completedAt = block.timestamp;
 
             (bool sent, ) = payable(task.client).call{value: refundAmount}("");
-            require(sent, "Refund failed");
+            require(sent, "!refund");
 
             // Penalize worker
             agentRegistry.updateReputation(task.worker, REPUTATION_FAILURE);
@@ -909,7 +904,7 @@ contract TaskEscrow is Ownable {
         accumulatedFees = 0;
 
         (bool sent, ) = owner().call{value: fees}("");
-        require(sent, "Fee withdrawal failed");
+        require(sent, "!withdraw");
     }
 
     // Internal functions
@@ -927,7 +922,7 @@ contract TaskEscrow is Ownable {
 
         // Pay worker
         (bool sent, ) = payable(task.worker).call{value: workerPayment}("");
-        require(sent, "Payment failed");
+        require(sent, "!pay");
 
         // Update reputation (+10 for success)
         agentRegistry.updateReputation(task.worker, REPUTATION_SUCCESS);
@@ -957,7 +952,7 @@ contract TaskEscrow is Ownable {
 
         // Refund client
         (bool sent, ) = payable(task.client).call{value: refundAmount}("");
-        require(sent, "Refund failed");
+        require(sent, "!refund");
 
         // Penalize worker reputation (-50 for failure)
         agentRegistry.updateReputation(task.worker, REPUTATION_FAILURE);
@@ -974,168 +969,6 @@ contract TaskEscrow is Ownable {
 
         emit TaskFailed(taskId, refundAmount);
     }
-
-    // ==========================================================
-    // VERIFIER ENHANCEMENTS (Optimistic Verification)
-    // ==========================================================
-
-    /**
-     * @notice Get all tasks in Submitted status (ready for verification)
-     * @return taskIds Array of task IDs that are submitted and awaiting verification
-     */
-    function getSubmittedTasks() external view returns (uint256[] memory) {
-        uint256 count = 0;
-        for (uint256 i = 1; i <= taskCounter; i++) {
-            if (tasks[i].status == TaskStatus.Submitted) {
-                count++;
-            }
-        }
-
-        uint256[] memory result = new uint256[](count);
-        uint256 idx = 0;
-        for (uint256 i = 1; i <= taskCounter; i++) {
-            if (tasks[i].status == TaskStatus.Submitted) {
-                result[idx] = i;
-                idx++;
-            }
-        }
-        return result;
-    }
-
-    /**
-     * @notice Register as a verifier by staking ETH as a bond
-     * Verifiers can lose their stake if they submit false verifications that are successfully challenged
-     */
-    function registerVerifier() external payable {
-        require(msg.value >= 0.01 ether, "Minimum stake of 0.01 ETH required");
-        verifierStakes[msg.sender] += msg.value;
-        isRegisteredVerifier[msg.sender] = true;
-        totalVerifierStake += msg.value;
-    }
-
-    /**
-     * @notice Create a verification receipt for record-keeping and dispute resolution
-     * @param taskId The ID of the task that was verified
-     * @param success Whether the verification determined the work was successful
-     * @param score Numerical score from 0-100 indicating work quality
-     * @param feedback Textual feedback about the work
-     */
-    function createVerificationReceipt(
-        uint256 taskId,
-        bool success,
-        uint256 score,
-        string calldata feedback
-    ) external {
-        require(tasks[taskId].status == TaskStatus.Completed || tasks[taskId].status == TaskStatus.Failed, 
-                "Task must be completed or failed to create verification receipt");
-        require(msg.sender == tasks[taskId].client || msg.sender == tasks[taskId].worker,
-                "Only task participants can create verification receipts");
-        
-        // In a full implementation, we would store this receipt on-chain or in IPFS
-        // For now, we emit an event for off-chain indexing
-        emit VerificationReceiptCreated(taskId, msg.sender, success, score, feedback);
-    }
-
-    // ==========================================================
-    // VERIFIER CHALLENGE SYSTEM (Optimistic Verification)
-    // ==========================================================
-
-    /**
-     * @notice Stake ETH on a verification decision to earn rewards or risk slashing
-     * @param taskId The ID of the task being verified
-     * @param verifierDecision The verifier's decision (true = work acceptable, false = work unacceptable)
-     */
-    function stakeOnVerification(
-        uint256 taskId,
-        bool verifierDecision
-    ) external payable {
-        require(tasks[taskId].status == TaskStatus.Completed || tasks[taskId].status == TaskStatus.Failed, 
-                "Can only stake on completed or failed tasks");
-        require(msg.value >= 0.001 ether, "Minimum stake of 0.001 ETH required");
-        
-        // Record the verifier's stake and decision
-        // In a full implementation, we would have a more complex tracking system
-        // For now, we rely on the challenge mechanism and social consensus
-        
-        emit VerifierStaked(taskId, msg.sender, msg.value, verifierDecision);
-    }
-
-    /**
-     * @notice Challenge a verifier's decision on a task
-     * @param taskId The ID of the task being challenged
-     * @param evidence Evidence supporting the challenge (IPFS hash or similar)
-     */
-    function challengeVerification(
-        uint256 taskId,
-        string calldata evidence
-    ) external {
-        require(tasks[taskId].status == TaskStatus.Completed || tasks[taskId].status == TaskStatus.Failed, 
-                "Can only challenge completed or failed tasks");
-        require(bytes(evidence).length > 0, "Evidence required");
-        
-        // In a full implementation, we would:
-        // 1. Review the evidence
-        // 2. If challenge is valid, slash the verifier's stake and reward the challenger
-        // 3. If challenge is invalid, slash the challenger's stake (if any) and reward the verifier
-        // For now, we emit an event for off-chain resolution
-        
-        emit VerificationChallenged(taskId, msg.sender, evidence);
-    }
-
-    /**
-     * @notice Resolve a verification challenge (called by administrator or via social consensus)
-     * @param taskId The ID of the task being resolved
-     * @param challengerWins Whether the challenge was successful (true) or not (false)
-     * @param challenger The address of the challenger
-     * @param verifier The address of the verifier whose decision was challenged
-     */
-    function resolveVerificationChallenge(
-        uint256 taskId,
-        bool challengerWins,
-        address challenger,
-        address verifier
-    ) external onlyOwner {
-        require(tasks[taskId].status == TaskStatus.Completed || tasks[taskId].status == TaskStatus.Failed, 
-                "Can only resolve challenges on completed or failed tasks");
-        
-        // In a full implementation, we would:
-        // 1. Transfer stakes appropriately
-        // 2. If challenger wins: slash verifier, reward challenger
-        // 3. If verifier wins: slash challenger (if they staked), reward verifier
-        // For now, we emit an event for off-chain resolution
-        
-        emit VerificationChallengeResolved(taskId, challenger, verifier, challengerWins);
-    }
-
-    // Events for verifier staking and challenges
-    event VerifierStaked(
-        uint256 indexed taskId,
-        address indexed verifier,
-        uint256 amountStaked,
-        bool verifierDecision
-    );
-
-    event VerificationChallenged(
-        uint256 indexed taskId,
-        address indexed challenger,
-        string evidence
-    );
-
-    event VerificationChallengeResolved(
-        uint256 indexed taskId,
-        address indexed challenger,
-        address indexed verifier,
-        bool challengerWins
-    );
-
-    // Event for verification receipts
-    event VerificationReceiptCreated(
-        uint256 indexed taskId,
-        address indexed verifier,
-        bool success,
-        uint256 score,
-        string feedback
-    );
 
     // ==========================================================
     // QUERY RESOLUTION SYSTEM
@@ -1232,7 +1065,7 @@ contract TaskEscrow is Ownable {
 
         Query storage query = taskQueries[taskId][queryId];
         require(!query.responded, "Query already responded");
-        require(query.sender != msg.sender, "Cannot respond to own query");
+        require(query.sender != msg.sender, "!own query");
         require(bytes(responseText).length > 0, "Response text required");
 
         query.response = responseText;

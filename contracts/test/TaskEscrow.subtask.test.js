@@ -204,7 +204,7 @@ describe("TaskEscrow - Hierarchical Subtasking", function () {
         escrow
           .connect(client)
           .createSubtask(parentTaskId, worker.address, 0, subDeadline, "QmSubtaskHash")
-      ).to.be.revertedWith("Payment must be positive");
+      ).to.be.revertedWith("!payment");
 
       // Past deadline
       const pastDeadline = (await time.latest()) - 100;
@@ -212,14 +212,14 @@ describe("TaskEscrow - Hierarchical Subtasking", function () {
         escrow
           .connect(client)
           .createSubtask(parentTaskId, worker.address, SUBTASK_PAYMENT, pastDeadline, "QmSubtaskHash")
-      ).to.be.revertedWith("Deadline must be future");
+      ).to.be.revertedWith("!deadline");
 
       // Empty description
       await expect(
         escrow
           .connect(client)
           .createSubtask(parentTaskId, worker.address, SUBTASK_PAYMENT, subDeadline, "")
-      ).to.be.revertedWith("Description required");
+      ).to.be.revertedWith("!desc");
     });
 
     it("should collect priority fee for subtask", async function () {
@@ -251,7 +251,7 @@ describe("TaskEscrow - Hierarchical Subtasking", function () {
           .createSubtask(parentTaskId, unregistered.address, SUBTASK_PAYMENT, subDeadline, "QmSubtaskHash", {
             value: total
           })
-      ).to.be.revertedWith("Worker not registered");
+      ).to.be.revertedWith("!worker reg");
     });
 
     it("should require positive worker reputation", async function () {

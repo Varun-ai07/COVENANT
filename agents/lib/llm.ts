@@ -10,7 +10,7 @@ const openai = new OpenAI({
 });
 
 // Default model - you can change this to any model available on OpenRouter
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.1-8b-instruct:free";
+const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || "openrouter/free";
 
 /**
  * Generate a completion using OpenRouter

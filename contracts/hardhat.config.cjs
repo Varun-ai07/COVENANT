@@ -8,7 +8,7 @@ const config = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1,  // Maximize bytecode size optimization for large contracts
       },
       viaIR: true,
     },

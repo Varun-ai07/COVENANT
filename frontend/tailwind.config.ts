@@ -5,22 +5,34 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#D8C9AE",
-        surface: "#f0e8d8",
-        "surface-alt": "#e5dcc9",
-        foreground: "#1a1917",
-        muted: "#7a7168",
-        border: "rgba(26, 25, 23, 0.1)",
-        "border-hover": "rgba(26, 25, 23, 0.2)",
-        accent: "#575757",
-        "accent-hover": "#3d3d3d",
-        "accent-muted": "rgba(87, 87, 87, 0.1)",
-        charcoal: "#575757",
-        "charcoal-light": "#6b6b6b",
-        success: "#16a34a",
+        // Dark theme base
+        background: "#01011b",
+        "background-alt": "#080818",
+        surface: "#0a0a2e",
+        "surface-alt": "#0d0d35",
+        foreground: "#ffffff",
+        muted: "#9ca3af",
+        "muted-dark": "#6b7280",
+        border: "rgba(255, 255, 255, 0.08)",
+        "border-light": "rgba(255, 255, 255, 0.12)",
+
+        // Violet accent system
+        accent: "#7c3aed",
+        "accent-light": "#a78bfa",
+        "accent-glow": "#6d28d9",
+        "accent-muted": "rgba(124, 58, 237, 0.1)",
+
+        // Semantic colors
+        success: "#10b981",
         warning: "#d97706",
         danger: "#dc2626",
         info: "#0891b2",
+
+        // Chart colors
+        violet: "#7c3aed",
+        teal: "#14b8a6",
+        pink: "#ec4899",
+        blue: "#3b82f6",
       },
       fontFamily: {
         heading: ["Orbitron", "system-ui", "sans-serif"],
@@ -33,8 +45,12 @@ const config: Config = {
         "fade-in-up": "fadeInUp 0.3s ease-out forwards",
         "slide-up": "slideUp 0.2s ease-out",
         shimmer: "shimmer 1.5s ease-in-out infinite",
-        "pulse-sand": "pulseSand 2s ease-in-out infinite",
-        grain: "grain 0.5s steps(1) infinite",
+        scroll: "scroll 30s linear infinite",
+        float: "float 4s ease-in-out infinite",
+        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
+        "gradient-shift": "gradientShift 8s ease infinite",
+        "border-dance": "borderDance 3s linear infinite",
+        "text-shimmer": "textShimmer 3s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -53,22 +69,36 @@ const config: Config = {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
         },
-        pulseSand: {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(87, 87, 87, 0.15)" },
-          "50%": { boxShadow: "0 0 0 8px rgba(87, 87, 87, 0)" },
+        scroll: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
         },
-        grain: {
-          "0%, 100%": { transform: "translate(0, 0)" },
-          "10%": { transform: "translate(-2%, -2%)" },
-          "20%": { transform: "translate(2%, 2%)" },
-          "30%": { transform: "translate(-1%, 1%)" },
-          "40%": { transform: "translate(1%, -1%)" },
-          "50%": { transform: "translate(-2%, 2%)" },
-          "60%": { transform: "translate(2%, -2%)" },
-          "70%": { transform: "translate(-1%, -1%)" },
-          "80%": { transform: "translate(1%, 1%)" },
-          "90%": { transform: "translate(-2%, -2%)" },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-8px)" },
         },
+        pulseGlow: {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(109, 40, 217, 0.2)" },
+          "50%": { boxShadow: "0 0 40px rgba(109, 40, 217, 0.4)" },
+        },
+        gradientShift: {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        borderDance: {
+          "0%": { backgroundPosition: "0% 0%" },
+          "100%": { backgroundPosition: "300% 0%" },
+        },
+        textShimmer: {
+          "0%, 100%": { opacity: "0.8" },
+          "50%": { opacity: "1" },
+        },
+      },
+      boxShadow: {
+        glow: "0 0 60px rgba(109, 40, 217, 0.2)",
+        "glow-lg": "0 0 80px rgba(109, 40, 217, 0.25)",
+        "glow-sm": "0 0 30px rgba(109, 40, 217, 0.15)",
+        "elevated": "0 8px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 16px -4px rgba(0, 0, 0, 0.3)",
       },
     },
   },

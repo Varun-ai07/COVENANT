@@ -18,6 +18,8 @@
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
     "framer-motion": "^12.38.0",
+    "graphql": "^16.14.0",
+    "graphql-request": "^7.4.0",
     "lucide-react": "^0.577.0",
     "next": "14.2.35",
     "react": "^18",
@@ -28,6 +30,7 @@
     "wagmi": "^2.19.5"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
