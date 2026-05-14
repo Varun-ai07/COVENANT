@@ -1,0 +1,17 @@
+# Linguist language overrides
+# Prevent Circom test files from being counted as project code
+**/circomlib/** linguist-vendored
+**/node_modules/** linguist-vendored
+
+# Mark compiled circuit artifacts as generated
+*.r1cs linguist-generated
+*.zkey linguist-generated
+*.wasm linguist-generated
+
+# Solidity contracts
+*.sol linguist-language=Solidity
+
+# TypeScript/JavaScript
+*.ts linguist-language=TypeScript
+*.tsx linguist-language=TypeScript
+*.js linguist-language=JavaScript
