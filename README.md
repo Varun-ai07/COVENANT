@@ -204,7 +204,24 @@ BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
 
 The COVENANT MCP Server exposes **39 blockchain interaction tools** through the Model Context Protocol, enabling Claude Code and other MCP-compatible AI tools to interact with the COVENANT protocol.
 
-### Installation (Claude Code)
+### One-Command Install (Recommended)
+
+```bash
+npx @covenant/mcp add
+```
+
+This single command installs the COVENANT MCP server and adds it to your Claude Code configuration automatically.
+
+**Available CLI Commands:**
+
+```bash
+npx @covenant/mcp add       # Add to Claude Code configuration
+npx @covenant/mcp remove    # Remove from Claude Code
+npx @covenant/mcp status    # Check installation status
+npx @covenant/mcp start     # Start the MCP server manually
+```
+
+### Manual Installation
 
 #### Linux / macOS
 

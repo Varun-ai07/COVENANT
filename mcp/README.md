@@ -24,6 +24,30 @@ The COVENANT MCP Server exposes all COVENANT smart contract functionality throug
 
 ---
 
+## Quick Install (One Command)
+
+The fastest way to add COVENANT to Claude Code:
+
+```bash
+npx @covenant/mcp add
+```
+
+This command:
+1. Installs the COVENANT MCP server
+2. Adds it to your Claude Code configuration automatically
+3. Shows next steps for environment setup
+
+### Available CLI Commands
+
+```bash
+npx @covenant/mcp add       # Add to Claude Code configuration
+npx @covenant/mcp remove    # Remove from Claude Code
+npx @covenant/mcp status    # Check installation status
+npx @covenant/mcp start     # Start the MCP server manually
+```
+
+---
+
 ## Installation
 
 ### Prerequisites
@@ -70,7 +94,15 @@ MCP_HTTP_PORT=3001
 
 ## Claude Code Integration
 
-### Linux / macOS
+### One-Command Install (Recommended)
+
+```bash
+npx @covenant/mcp add
+```
+
+### Manual Configuration
+
+#### Linux / macOS
 
 Edit `~/.claude/claude_desktop_config.json`:
 
@@ -85,7 +117,7 @@ Edit `~/.claude/claude_desktop_config.json`:
 }
 ```
 
-### Windows
+#### Windows
 
 Edit `%APPDATA%\Claude\claude_desktop_config.json`:
 

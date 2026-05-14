@@ -1,11 +1,12 @@
 {
-  "name": "covenant-mcp",
+  "name": "@covenant/mcp",
   "version": "1.0.0",
   "description": "COVENANT Protocol MCP Server — AI agent access to on-chain task marketplace",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "covenant-mcp": "dist/index.js"
+    "covenant-mcp": "dist/index.js",
+    "covenant": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -13,7 +14,8 @@
     "start:stdio": "node dist/index.js --stdio",
     "start:http": "node dist/index.js --http",
     "dev": "tsx src/index.ts --stdio",
-    "dev:http": "tsx src/index.ts --http"
+    "dev:http": "tsx src/index.ts --http",
+    "postinstall": "node dist/postinstall.js || echo 'COVENANT MCP Server installed. Run: npx covenant add'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -28,5 +30,41 @@
     "@types/node": "^25.6.0",
     "tsx": "^4.19.0",
     "typescript": "^6.0.2"
+  },
+  "keywords": [
+    "covenant",
+    "mcp",
+    "model-context-protocol",
+    "ai-agent",
+    "blockchain",
+    "base",
+    "sepolia",
+    "erc-8004",
+    "autonomous-agents",
+    "smart-contracts",
+    "task-escrow",
+    "agent-registry"
+  ],
+  "author": "COVENANT Protocol",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Varun-ai07/COVENANT.git",
+    "directory": "mcp"
+  },
+  "homepage": "https://github.com/Varun-ai07/COVENANT#readme",
+  "bugs": {
+    "url": "https://github.com/Varun-ai07/COVENANT/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }
