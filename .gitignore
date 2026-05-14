@@ -40,3 +40,21 @@ coverage.json
 # Graphify
 graphify-out/
 .graphify_version
+
+# Frontend (development only)
+frontend/
+
+# Plans (local only)
+plans/
+
+# Subgraph (development only)
+subgraph/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Databases
+*.db
+ruvector.db
