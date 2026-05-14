@@ -17,14 +17,14 @@ ${green}✓ Installation complete${reset}
 
 ${yellow}Quick Start:${reset}
 
-  ${cyan}npx @covenant/mcp add${reset}      Add to Claude Code
+  ${cyan}npx @varun-ai07/covenant-mcp add${reset}      Add to Claude Code
 
 ${yellow}Available Commands:${reset}
 
-  npx @covenant/mcp add       Add to Claude Code configuration
-  npx @covenant/mcp remove    Remove from Claude Code
-  npx @covenant/mcp status    Check installation status
-  npx @covenant/mcp start     Start the MCP server manually
+  npx @varun-ai07/covenant-mcp add       Add to Claude Code configuration
+  npx @varun-ai07/covenant-mcp remove    Remove from Claude Code
+  npx @varun-ai07/covenant-mcp status    Check installation status
+  npx @varun-ai07/covenant-mcp start     Start the MCP server manually
 
 ${yellow}Configure Environment (mcp/.env):${reset}
 

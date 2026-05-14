@@ -5,10 +5,10 @@
  * One-command installation for Claude Code and MCP-compatible tools.
  *
  * Usage:
- *   npx @covenant/mcp add          - Add to Claude Code config
- *   npx @covenant/mcp remove       - Remove from Claude Code config
- *   npx @covenant/mcp status       - Check installation status
- *   npx @covenant/mcp start        - Start the MCP server
+ *   npx @varun-ai07/covenant-mcp add          - Add to Claude Code config
+ *   npx @varun-ai07/covenant-mcp remove       - Remove from Claude Code config
+ *   npx @varun-ai07/covenant-mcp status       - Check installation status
+ *   npx @varun-ai07/covenant-mcp start        - Start the MCP server
  */
 import { spawn, execSync } from "child_process";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
@@ -178,10 +178,10 @@ function helpCommand(): void {
   ${colors.bold}COVENANT MCP CLI${colors.reset}
 
   ${colors.cyan}Usage:${colors.reset}
-    npx @covenant/mcp add       Add to Claude Code configuration
-    npx @covenant/mcp remove    Remove from Claude Code configuration
-    npx @covenant/mcp status    Check installation status
-    npx @covenant/mcp start     Start the MCP server manually
+    npx @varun-ai07/covenant-mcp add       Add to Claude Code configuration
+    npx @varun-ai07/covenant-mcp remove    Remove from Claude Code configuration
+    npx @varun-ai07/covenant-mcp status    Check installation status
+    npx @varun-ai07/covenant-mcp start     Start the MCP server manually
 
   ${colors.cyan}Environment Variables (mcp/.env):${colors.reset}
     PRIVATE_KEY           Wallet private key for signing transactions

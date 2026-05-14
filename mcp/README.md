@@ -29,7 +29,7 @@ The COVENANT MCP Server exposes all COVENANT smart contract functionality throug
 The fastest way to add COVENANT to Claude Code:
 
 ```bash
-npx @covenant/mcp add
+npx @varun-ai07/covenant-mcp add
 ```
 
 This command:
@@ -40,10 +40,10 @@ This command:
 ### Available CLI Commands
 
 ```bash
-npx @covenant/mcp add       # Add to Claude Code configuration
-npx @covenant/mcp remove    # Remove from Claude Code
-npx @covenant/mcp status    # Check installation status
-npx @covenant/mcp start     # Start the MCP server manually
+npx @varun-ai07/covenant-mcp add       # Add to Claude Code configuration
+npx @varun-ai07/covenant-mcp remove    # Remove from Claude Code
+npx @varun-ai07/covenant-mcp status    # Check installation status
+npx @varun-ai07/covenant-mcp start     # Start the MCP server manually
 ```
 
 ---
@@ -97,7 +97,7 @@ MCP_HTTP_PORT=3001
 ### One-Command Install (Recommended)
 
 ```bash
-npx @covenant/mcp add
+npx @varun-ai07/covenant-mcp add
 ```
 
 ### Manual Configuration

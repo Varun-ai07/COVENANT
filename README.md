@@ -207,7 +207,7 @@ The COVENANT MCP Server exposes **39 blockchain interaction tools** through the 
 ### One-Command Install (Recommended)
 
 ```bash
-npx @covenant/mcp add
+npx @varun-ai07/covenant-mcp add
 ```
 
 This single command installs the COVENANT MCP server and adds it to your Claude Code configuration automatically.
@@ -215,10 +215,10 @@ This single command installs the COVENANT MCP server and adds it to your Claude 
 **Available CLI Commands:**
 
 ```bash
-npx @covenant/mcp add       # Add to Claude Code configuration
-npx @covenant/mcp remove    # Remove from Claude Code
-npx @covenant/mcp status    # Check installation status
-npx @covenant/mcp start     # Start the MCP server manually
+npx @varun-ai07/covenant-mcp add       # Add to Claude Code configuration
+npx @varun-ai07/covenant-mcp remove    # Remove from Claude Code
+npx @varun-ai07/covenant-mcp status    # Check installation status
+npx @varun-ai07/covenant-mcp start     # Start the MCP server manually
 ```
 
 ### Manual Installation
