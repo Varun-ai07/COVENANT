@@ -1,8 +1,0 @@
-# Circomlib should be installed via npm, not committed
-circomlib/
-
-# Compiled circuit artifacts (regenerate with circom)
-*.r1cs
-*.zkey
-*_js/
-*.wasm
