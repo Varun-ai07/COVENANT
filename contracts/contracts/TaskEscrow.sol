@@ -126,9 +126,26 @@ contract TaskEscrow is Ownable {
     // Protocol fee accumulator
     uint256 public accumulatedFees;
 
+    // Fee recipient - receives protocol fees (can be updated by owner only)
+    address public feeRecipient;
+
+    // Event emitted when fee recipient is updated
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+
     constructor(address _agentRegistry, address _receiptVerifier) Ownable(msg.sender) {
         agentRegistry = AgentRegistry(_agentRegistry);
         receiptVerifier = ReceiptVerifier(_receiptVerifier);
+        feeRecipient = msg.sender; // Default to owner
+    }
+
+    /**
+     * @notice Update the fee recipient address (only owner)
+     * @param newRecipient The new address to receive protocol fees
+     */
+    function setFeeRecipient(address newRecipient) external onlyOwner {
+        require(newRecipient != address(0), "!zero addr");
+        emit FeeRecipientUpdated(feeRecipient, newRecipient);
+        feeRecipient = newRecipient;
     }
 
     modifier onlyClient(uint256 taskId) {
@@ -897,13 +914,14 @@ contract TaskEscrow is Ownable {
     }
 
     /**
-     * @notice Withdraw accumulated protocol fees
+     * @notice Withdraw accumulated protocol fees to feeRecipient
      */
-    function withdrawFees() external onlyOwner {
+    function withdrawFees() external {
+        require(msg.sender == feeRecipient || msg.sender == owner(), "!authorized");
         uint256 fees = accumulatedFees;
         accumulatedFees = 0;
 
-        (bool sent, ) = owner().call{value: fees}("");
+        (bool sent, ) = feeRecipient.call{value: fees}("");
         require(sent, "!withdraw");
     }
 

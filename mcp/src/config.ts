@@ -158,60 +158,36 @@ export function getAccount(): any {
 }
 
 // ============================================================
-// Contract ABIs (loaded lazily from agents/abis/)
+// Contract ABIs (embedded for npm distribution)
 // ============================================================
 
-import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import AgentRegistryAbi from "./abis/AgentRegistry.json" with { type: "json" };
+import TaskEscrowAbi from "./abis/TaskEscrow.json" with { type: "json" };
+import ReceiptVerifierAbi from "./abis/ReceiptVerifier.json" with { type: "json" };
+import OpenTaskMarketAbi from "./abis/OpenTaskMarket.json" with { type: "json" };
+import ParallelTaskBatchAbi from "./abis/ParallelTaskBatch.json" with { type: "json" };
+import AgentCollectiveAbi from "./abis/AgentCollective.json" with { type: "json" };
+import AgentInsuranceAbi from "./abis/AgentInsurance.json" with { type: "json" };
+import DisputeArbitrationAbi from "./abis/DisputeArbitration.json" with { type: "json" };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const ABIS: Record<string, any> = {
+  AgentRegistry: AgentRegistryAbi.abi,
+  TaskEscrow: TaskEscrowAbi.abi,
+  ReceiptVerifier: ReceiptVerifierAbi.abi,
+  OpenTaskMarket: OpenTaskMarketAbi.abi,
+  ParallelTaskBatch: ParallelTaskBatchAbi.abi,
+  AgentCollective: AgentCollectiveAbi.abi,
+  AgentInsurance: AgentInsuranceAbi.abi,
+  DisputeArbitration: DisputeArbitrationAbi.abi,
+};
 
-// Look for abis in ../agents/abis/ relative to mcp/
-const ABIS_DIR = resolve(__dirname, "../../agents/abis");
-
-// Allowlist of known contracts to prevent path traversal
-const ALLOWED_CONTRACTS = [
-  "AgentRegistry",
-  "TaskEscrow",
-  "ReceiptVerifier",
-  "OpenTaskMarket",
-  "ParallelTaskBatch",
-  "AgentCollective",
-  "AgentInsurance",
-  "DisputeArbitration",
-];
-
-const abiCache: Record<string, any> = {};
+const ALLOWED_CONTRACTS = Object.keys(ABIS);
 
 export function loadAbi(contractName: string): any {
-  if (abiCache[contractName]) return abiCache[contractName];
-
-  // Security: validate against allowlist
   if (!ALLOWED_CONTRACTS.includes(contractName)) {
-    throw new Error(`Unknown contract: ${contractName}`);
+    throw new Error(`Unknown contract: ${contractName}. Allowed: ${ALLOWED_CONTRACTS.join(", ")}`);
   }
-
-  // Security: prevent path traversal characters
-  if (
-    contractName.includes("/") ||
-    contractName.includes("\\") ||
-    contractName.includes("..")
-  ) {
-    throw new Error(`Invalid contract name: ${contractName}`);
-  }
-
-  const abiPath = resolve(ABIS_DIR, `${contractName}.json`);
-  if (!existsSync(abiPath)) {
-    throw new Error(
-      `ABI not found for ${contractName}. Run 'npx hardhat compile' in contracts/ first.`
-    );
-  }
-
-  const artifact = JSON.parse(readFileSync(abiPath, "utf-8"));
-  abiCache[contractName] = artifact.abi;
-  return artifact.abi;
+  return ABIS[contractName];
 }
 
 // ============================================================

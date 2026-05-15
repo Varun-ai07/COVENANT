@@ -98,6 +98,7 @@ Open → Funded → InProgress → Submitted → Completed
 - Automatic refund on timeout
 - Dispute resolution with jury
 - Protocol fee: 1%
+- Owner-controlled fee recipient
 
 ---
 
