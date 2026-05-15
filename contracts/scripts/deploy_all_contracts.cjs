@@ -73,22 +73,21 @@ async function main() {
   const agentInsuranceAddress = await agentInsurance.getAddress();
   console.log("AgentInsurance deployed to:", agentInsuranceAddress);
 
-  // Deploy DisputeArbitrationMock (for local testing)
-  console.log("\n8. Deploying DisputeArbitrationMock...");
-  const DisputeArbitration = await hre.ethers.getContractFactory("DisputeArbitrationMock");
-  // Using zero address for VRF coordinator and empty bytes32 for keyHash for local testing
-  const disputeArbitration = await DisputeArbitration.deploy(agentRegistryAddress, taskEscrowAddress, ethers.ZeroAddress, "0x0000000000000000000000000000000000000000000000000000000000000000");
-  await disputeArbitration.waitForDeployment();
-  const disputeArbitrationAddress = await disputeArbitration.getAddress();
-  console.log("DisputeArbitrationMock deployed to:", disputeArbitrationAddress);
+  // Skip DisputeArbitrationMock for production deployment
+  let disputeArbitrationAddress = ethers.ZeroAddress;
+  let groth16VerifierAddress = ethers.ZeroAddress;
 
-  // Use fully qualified name for Groth16Verifier
-  console.log("\n9. Using Groth16Verifier (CapabilityProof.sol)...");
-  const Groth16Verifier = await hre.ethers.getContractFactory("contracts/CapabilityVerifier.sol:Groth16Verifier");
-  const groth16Verifier = await Groth16Verifier.deploy();
-  await groth16Verifier.waitForDeployment();
-  const groth16VerifierAddress = await groth16Verifier.getAddress();
-  console.log("Groth16Verifier deployed to:", groth16VerifierAddress);
+  // Try to deploy Groth16Verifier if available
+  try {
+    console.log("\n8. Deploying Groth16Verifier...");
+    const Groth16Verifier = await hre.ethers.getContractFactory("contracts/CapabilityVerifier.sol:Groth16Verifier");
+    const groth16Verifier = await Groth16Verifier.deploy();
+    await groth16Verifier.waitForDeployment();
+    groth16VerifierAddress = await groth16Verifier.getAddress();
+    console.log("Groth16Verifier deployed to:", groth16VerifierAddress);
+  } catch (e) {
+    console.log("Groth16Verifier not found, skipping...");
+  }
 
   // Get network info
   const provider = new hre.ethers.JsonRpcProvider(process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org");
@@ -104,10 +103,10 @@ async function main() {
     ParallelTaskBatch: parallelTaskBatchAddress,
     AgentCollective: agentCollectiveAddress,
     AgentInsurance: agentInsuranceAddress,
-    DisputeArbitration: disputeArbitrationAddress,
-    Groth16Verifier: groth16VerifierAddress,
     network: "baseSepolia",
     chainId: chainId.toString(),
+    owner: deployer.address,
+    feeRecipient: deployer.address,
     deployedAt: new Date().toISOString()
   };
   console.log('Network: baseSepolia, ChainId:', chainId);

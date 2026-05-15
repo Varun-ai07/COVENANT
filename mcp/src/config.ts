@@ -43,14 +43,14 @@ export const ZERO_ADDRESS =
   "0x0000000000000000000000000000000000000000" as Address;
 
 export const CONTRACTS: ContractConfig = {
-  AgentRegistry: (process.env.REGISTRY_ADDRESS || "0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103") as Address,
-  TaskEscrow: (process.env.ESCROW_ADDRESS || "0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504") as Address,
-  ReceiptVerifier: (process.env.VERIFIER_ADDRESS || "0x3BE6849F40230b1433D4FA166E23B1789a5469Fa") as Address,
-  OpenTaskMarket: (process.env.MARKET_ADDRESS || "0xf930b3060020a931dccabC9BfA1e6C2a8EB6D5d5") as Address,
-  ParallelTaskBatch: (process.env.BATCH_ADDRESS || "0xfD9314cA51374aDc879AB794844f6be3CA85a645") as Address,
-  AgentCollective: (process.env.COLLECTIVE_ADDRESS || "0x378B0Fb03d8B2CE34Da90D1e587CEBb7b22dA856") as Address,
-  AgentInsurance: (process.env.INSURANCE_ADDRESS || "0x87933103cA13e1969b24d40eFe2C7c9C008Fc1Dc") as Address,
-  DisputeArbitration: (process.env.DISPUTE_ADDRESS || "0xC98ebfAE496e297a84a960085418C8240891E6CD") as Address,
+  AgentRegistry: (process.env.REGISTRY_ADDRESS || "0xB215589dA259A98eEE8BF39739F6255131ac33A1") as Address,
+  TaskEscrow: (process.env.ESCROW_ADDRESS || "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3") as Address,
+  ReceiptVerifier: (process.env.VERIFIER_ADDRESS || "0xa47D15099be6aC516B53a6859D468E9004eEf76b") as Address,
+  OpenTaskMarket: (process.env.MARKET_ADDRESS || "0x5ccF09469222E5046b0830c6d71ed6B912bE70e6") as Address,
+  ParallelTaskBatch: (process.env.BATCH_ADDRESS || "0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc") as Address,
+  AgentCollective: (process.env.COLLECTIVE_ADDRESS || "0x0CDE9560D2E95338922c40A52A2c81cdd20613d1") as Address,
+  AgentInsurance: (process.env.INSURANCE_ADDRESS || "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55") as Address,
+  DisputeArbitration: (process.env.DISPUTE_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
 };
 
 // ============================================================

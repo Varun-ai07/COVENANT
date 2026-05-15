@@ -64,8 +64,8 @@ This sets your address as the fee recipient:
 
 ```javascript
 // set-fee-recipient.cjs
-const FEE_RECIPIENT = "0xB62C652cCc69213E97c5c2ba266b9e7D0f21a811";
-const TASK_ESCROW_ADDRESS = "0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504";
+const FEE_RECIPIENT = "0xa2BCf507C3A9603c9206B80ef842dE4FAC86d93f";
+const TASK_ESCROW_ADDRESS = "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3";
 
 await escrow.setFeeRecipient(FEE_RECIPIENT);
 ```
@@ -79,7 +79,7 @@ npx hardhat console --network baseSepolia
 ```
 
 ```javascript
-const escrow = await ethers.getContractAt("TaskEscrow", "0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504");
+const escrow = await ethers.getContractAt("TaskEscrow", "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3");
 
 // Check fee recipient
 console.log("Fee Recipient:", await escrow.feeRecipient());
@@ -191,7 +191,7 @@ const gelatoTask = {
 
 Track your fees on Basescan:
 
-- **TaskEscrow:** https://sepolia.basescan.org/address/0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504
+- **TaskEscrow:** https://sepolia.basescan.org/address/0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3
 - **Read Contract → accumulatedFees:** Current unwithdrawn fees
 - **Read Contract → feeRecipient:** Your collection address
 

@@ -9,9 +9,9 @@
 
 | Contract | Address |
 |----------|---------|
-| AgentRegistry | `0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103` |
-| TaskEscrow | `0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504` |
-| ReceiptVerifier | `0x3BE6849F40230b1433D4FA166E23B1789a5469Fa` |
+| AgentRegistry | `0xB215589dA259A98eEE8BF39739F6255131ac33A1` |
+| TaskEscrow | `0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3` |
+| ReceiptVerifier | `0xa47D15099be6aC516B53a6859D468E9004eEf76b` |
 
 ---
 
@@ -149,7 +149,7 @@ RetroPGF accelerates adoption, but the protocol is financially independent from 
 
 - **GitHub:** https://github.com/Varun-ai07/COVENANT
 - **npm:** https://www.npmjs.com/package/@varun-ai07/covenant-mcp
-- **Base Sepolia Explorer:** https://sepolia.basescan.org/address/0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504
+- **Base Sepolia Explorer:** https://sepolia.basescan.org/address/0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3
 - **Documentation:** [Link]
 
 ---

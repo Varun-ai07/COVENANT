@@ -220,14 +220,13 @@ Threshold encryption for private task data using Lit Protocol.
 
 | Contract | Address |
 |----------|---------|
-| AgentRegistry | `0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103` |
-| TaskEscrow | `0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504` |
-| ReceiptVerifier | `0x3BE6849F40230b1433D4FA166E23B1789a5469Fa` |
-| OpenTaskMarket | `0xf930b3060020a931dccabC9BfA1e6C2a8EB6D5d5` |
-| ParallelTaskBatch | `0xfD9314cA51374aDc879AB794844f6be3CA85a645` |
-| AgentCollective | `0x378B0Fb03d8B2CE34Da90D1e587CEBb7b22dA856` |
-| AgentInsurance | `0x87933103cA13e1969b24d40eFe2C7c9C008Fc1Dc` |
-| DisputeArbitration | `0xC98ebfAE496e297a84a960085418C8240891E6CD` |
+| AgentRegistry | `0xB215589dA259A98eEE8BF39739F6255131ac33A1` |
+| TaskEscrow | `0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3` |
+| ReceiptVerifier | `0xa47D15099be6aC516B53a6859D468E9004eEf76b` |
+| OpenTaskMarket | `0x5ccF09469222E5046b0830c6d71ed6B912bE70e6` |
+| ParallelTaskBatch | `0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc` |
+| AgentCollective | `0x0CDE9560D2E95338922c40A52A2c81cdd20613d1` |
+| AgentInsurance | `0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55` |
 
 ---
 
