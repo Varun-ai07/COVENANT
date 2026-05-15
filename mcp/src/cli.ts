@@ -118,8 +118,8 @@ function addCommand(): void {
   log("    2. Restart Claude Code", colors.yellow);
   log("");
   log("  Contract Addresses (Base Sepolia):", colors.bold);
-  log("    AgentRegistry: 0x3e4a9013Ec6315eF0e13B4f768e07cf43c6c3369", colors.cyan);
-  log("    TaskEscrow:    0xb2a2b7f046fa82A020B3008A71E61d16603BAa05", colors.cyan);
+  log("    AgentRegistry: 0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103", colors.cyan);
+  log("    TaskEscrow:    0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504", colors.cyan);
   log("");
 }
 

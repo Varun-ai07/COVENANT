@@ -1,19 +1,66 @@
-# COVENANT ABIs
+# COVENANT Agents
 
 <p align="center">
   <img src="https://img.shields.io/badge/JSON-ABI-green" alt="ABI">
   <img src="https://img.shields.io/badge/Contracts-11-blue" alt="Contracts">
+  <img src="https://img.shields.io/badge/VerifierBot-Premium-purple" alt="VerifierBot">
 </p>
 
 <p align="center">
-  <strong>Contract ABIs for COVENANT Protocol Integration</strong>
+  <strong>Agent Infrastructure for COVENANT Protocol</strong>
 </p>
 
 ---
 
 ## Overview
 
-The `agents/abis/` directory contains JSON ABI files for all COVENANT smart contracts. These ABIs are required for:
+The `agents/` directory contains infrastructure for autonomous agents interacting with COVENANT:
+
+| Directory/File | Purpose |
+|----------------|---------|
+| `abis/` | Contract ABIs for blockchain interaction |
+| `scripts/verifier-bot.ts` | Premium verification infrastructure |
+
+---
+
+## VerifierBot Infrastructure
+
+COVENANT provides two tiers of task verification:
+
+### Public Tier (Free)
+- Standard verification queue
+- 24-hour SLA
+- Public verification results
+- Permissionless (anyone can verify)
+
+### Premium Tier (Paid)
+- Priority verification queue
+- <1-hour SLA guarantee
+- Private verification results
+- Enterprise support
+
+**Premium Pricing:**
+| Plan | Price | Features |
+|------|-------|----------|
+| Developer | $200/month | Priority queue, 1hr SLA |
+| Enterprise | $2,000/month | Private results, dedicated infrastructure |
+
+**Usage:**
+```typescript
+// Public verifier
+const bot = new VerifierBot();
+const result = await bot.verifyTask(taskId, deliverableHash);
+
+// Premium verifier
+const premiumBot = new PremiumVerifierBot(privateKey, premiumClients);
+const result = await premiumBot.priorityVerify(taskId, deliverableHash);
+```
+
+---
+
+## ABIs
+
+The `abis/` directory contains JSON ABI files for all COVENANT smart contracts. These ABIs are required for:
 
 - MCP Server blockchain interactions
 - TypeScript SDK contract calls
@@ -50,7 +97,7 @@ import TaskEscrowABI from "./abis/TaskEscrow.json";
 
 // With viem
 const { result } = await client.readContract({
-  address: "0x3e4a9013Ec6315eF0e13B4f768e07cf43c6c3369",
+  address: "0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103",
   abi: AgentRegistryABI,
   functionName: "getAgent",
   args: ["0xAgentAddress..."]
@@ -58,7 +105,7 @@ const { result } = await client.readContract({
 
 // With ethers
 const registry = new ethers.Contract(
-  "0x3e4a9013Ec6315eF0e13B4f768e07cf43c6c3369",
+  "0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103",
   AgentRegistryABI,
   signer
 );
@@ -109,9 +156,9 @@ Each ABI file contains:
 
 | Contract | Address |
 |----------|---------|
-| AgentRegistry | `0x3e4a9013Ec6315eF0e13B4f768e07cf43c6c3369` |
-| TaskEscrow | `0xb2a2b7f046fa82A020B3008A71E61d16603BAa05` |
-| ReceiptVerifier | `0xabd07d380FBC7807bF25e8d969E7FF5192117Ec5` |
+| AgentRegistry | `0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103` |
+| TaskEscrow | `0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504` |
+| ReceiptVerifier | `0x3BE6849F40230b1433D4FA166E23B1789a5469Fa` |
 | OpenTaskMarket | `0xf930b3060020a931dccabC9BfA1e6C2a8EB6D5d5` |
 | ParallelTaskBatch | `0xfD9314cA51374aDc879AB794844f6be3CA85a645` |
 | AgentCollective | `0x378B0Fb03d8B2CE34Da90D1e587CEBb7b22dA856` |

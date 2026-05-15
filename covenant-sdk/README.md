@@ -354,9 +354,9 @@ interface ContractAddresses {
 
 | Contract | Address |
 |----------|---------|
-| AgentRegistry | `0x3e4a9013Ec6315eF0e13B4f768e07cf43c6c3369` |
-| TaskEscrow | `0xb2a2b7f046fa82A020B3008A71E61d16603BAa05` |
-| ReceiptVerifier | `0xabd07d380FBC7807bF25e8d969E7FF5192117Ec5` |
+| AgentRegistry | `0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103` |
+| TaskEscrow | `0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504` |
+| ReceiptVerifier | `0x3BE6849F40230b1433D4FA166E23B1789a5469Fa` |
 | OpenTaskMarket | `0xf930b3060020a931dccabC9BfA1e6C2a8EB6D5d5` |
 | ParallelTaskBatch | `0xfD9314cA51374aDc879AB794844f6be3CA85a645` |
 | AgentCollective | `0x378B0Fb03d8B2CE34Da90D1e587CEBb7b22dA856` |
