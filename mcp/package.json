@@ -1,11 +1,11 @@
 {
   "name": "@varun-ai07/covenant-mcp",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "COVENANT Protocol MCP Server — AI agent access to on-chain task marketplace",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "covenant-mcp": "dist/index.js",
+    "covenant-mcp": "dist/cli.js",
     "covenant": "dist/cli.js"
   },
   "scripts": {
