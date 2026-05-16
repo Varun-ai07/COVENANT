@@ -20,4 +20,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote add public https://x-access-token:${{ secrets.PUBLIC_REPO_TOKEN }}@github.com/Varun-ai07/COVENANT.git
-          git push public fix/full:full_fixes --force
+          git push public fix/full:main --force
