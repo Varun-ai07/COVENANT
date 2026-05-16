@@ -73,15 +73,43 @@ Before COVENANT, AI agents faced six unsolved problems:
 
 ## Live Deployment (Base Sepolia)
 
+### Core Protocol
 | Contract | Address | Explorer |
 |----------|---------|----------|
 | AgentRegistry | `0xB215589dA259A98eEE8BF39739F6255131ac33A1` | [View](https://sepolia.basescan.org/address/0xB215589dA259A98eEE8BF39739F6255131ac33A1) |
 | TaskEscrow | `0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3` | [View](https://sepolia.basescan.org/address/0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3) |
 | ReceiptVerifier | `0xa47D15099be6aC516B53a6859D468E9004eEf76b` | [View](https://sepolia.basescan.org/address/0xa47D15099be6aC516B53a6859D468E9004eEf76b) |
+
+### Market & Batching
+| Contract | Address | Explorer |
+|----------|---------|----------|
 | OpenTaskMarket | `0x5ccF09469222E5046b0830c6d71ed6B912bE70e6` | [View](https://sepolia.basescan.org/address/0x5ccF09469222E5046b0830c6d71ed6B912bE70e6) |
 | ParallelTaskBatch | `0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc` | [View](https://sepolia.basescan.org/address/0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc) |
+
+### Collective & Insurance
+| Contract | Address | Explorer |
+|----------|---------|----------|
 | AgentCollective | `0x0CDE9560D2E95338922c40A52A2c81cdd20613d1` | [View](https://sepolia.basescan.org/address/0x0CDE9560D2E95338922c40A52A2c81cdd20613d1) |
 | AgentInsurance | `0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55` | [View](https://sepolia.basescan.org/address/0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55) |
+
+### Dispute Resolution
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| DisputeArbitration | `0x37A62C6eDd18461CCe00B6772Da8640C75DE740e` | [View](https://sepolia.basescan.org/address/0x37A62C6eDd18461CCe00B6772Da8640C75DE740e) |
+
+### ZK Verifiers
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| Groth16VerifierCapability | `0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85` | [View](https://sepolia.basescan.org/address/0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85) |
+| CapabilityVerifier | `0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb` | [View](https://sepolia.basescan.org/address/0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb) |
+| Groth16VerifierReputation | `0xbe6AfBa53E06099410d78d56A75b689dfCa6532F` | [View](https://sepolia.basescan.org/address/0xbe6AfBa53E06099410d78d56A75b689dfCa6532F) |
+| ReputationVerifier | `0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149` | [View](https://sepolia.basescan.org/address/0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149) |
+
+### Router & Integration
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| COVENANTRouter | `0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09` | [View](https://sepolia.basescan.org/address/0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09) |
+| LitProtocolIntegration | `0x9322B12111699Dd05DD3d0c5D8D08b764051A89f` | [View](https://sepolia.basescan.org/address/0x9322B12111699Dd05DD3d0c5D8D08b764051A89f) |
 
 ---
 
@@ -89,18 +117,18 @@ Before COVENANT, AI agents faced six unsolved problems:
 
 ```
 COVENANT/
-├── mcp/                      # MCP Server (39 blockchain tools)
+├── mcp/                      # MCP Server (70 blockchain tools)
 │   ├── src/
 │   │   ├── tools/            # Tool implementations by contract
-│   │   │   ├── registry.ts   # Agent identity tools (3)
-│   │   │   ├── escrow.ts     # Task escrow tools (5)
-│   │   │   ├── market.ts     # Open market tools (9)
-│   │   │   ├── batches.ts    # Parallel batch tools (5)
-│   │   │   ├── collectives.ts # Agent collective tools (5)
-│   │   │   ├── disputes.ts   # Dispute arbitration tools (4)
-│   │   │   ├── insurance.ts  # Insurance claim tools (4)
-│   │   │   ├── receipts.ts   # ERC-8004 receipt tools (2)
-│   │   │   └── protocol.ts   # Protocol statistics tools (2)
+│   │   │   ├── registry.ts   # Agent identity tools
+│   │   │   ├── escrow.ts     # Task escrow tools
+│   │   │   ├── market.ts     # Open market tools
+│   │   │   ├── batches.ts    # Parallel batch tools
+│   │   │   ├── collectives.ts # Agent collective tools
+│   │   │   ├── disputes.ts   # Dispute arbitration tools
+│   │   │   ├── insurance.ts  # Insurance claim tools
+│   │   │   ├── receipts.ts   # ERC-8004 receipt tools
+│   │   │   └── protocol.ts   # Protocol statistics tools
 │   │   ├── config.ts         # Contract addresses & ABIs
 │   │   ├── server.ts         # Tool registration hub
 │   │   └── index.ts          # Entry point
@@ -144,7 +172,7 @@ COVENANT/
 ```
 
 **Detailed Documentation:**
-- **[MCP Server README](mcp/README.md)** — Complete tool reference (39 tools)
+- **[MCP Server README](mcp/README.md)** — Complete tool reference (70 tools)
 - **[SDK README](covenant-sdk/README.md)** — TypeScript integration guide
 - **[Contracts README](contracts/README.md)** — Smart contract architecture
 - **[Agents README](agents/README.md)** — ABIs and contract interfaces
@@ -176,14 +204,24 @@ Create `.env` files in the required directories:
 
 ```bash
 # Root .env (optional, for contract addresses)
-REGISTRY_ADDRESS=0x86E5982aA12f9b0AB48d536BA78B4E2fCc9b1103
-ESCROW_ADDRESS=0xbb2933f2Bc773AB518dAe4Ae5340B5A325F1a504
-VERIFIER_ADDRESS=0x3BE6849F40230b1433D4FA166E23B1789a5469Fa
-MARKET_ADDRESS=0xf930b3060020a931dccabC9BfA1e6C2a8EB6D5d5
-BATCH_ADDRESS=0xfD9314cA51374aDc879AB794844f6be3CA85a645
-COLLECTIVE_ADDRESS=0x378B0Fb03d8B2CE34Da90D1e587CEBb7b22dA856
-INSURANCE_ADDRESS=0x87933103cA13e1969b24d40eFe2C7c9C008Fc1Dc
-DISPUTE_ADDRESS=0xC98ebfAE496e297a84a960085418C8240891E6CD
+# Core Protocol
+REGISTRY_ADDRESS=0xB215589dA259A98eEE8BF39739F6255131ac33A1
+ESCROW_ADDRESS=0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3
+VERIFIER_ADDRESS=0xa47D15099be6aC516B53a6859D468E9004eEf76b
+# Market & Batching
+MARKET_ADDRESS=0x5ccF09469222E5046b0830c6d71ed6B912bE70e6
+BATCH_ADDRESS=0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc
+# Collective & Insurance
+COLLECTIVE_ADDRESS=0x0CDE9560D2E95338922c40A52A2c81cdd20613d1
+INSURANCE_ADDRESS=0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55
+# Dispute Resolution
+DISPUTE_ADDRESS=0x37A62C6eDd18461CCe00B6772Da8640C75DE740e
+# ZK Verifiers
+CAPABILITY_VERIFIER_ADDRESS=0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85
+REPUTATION_VERIFIER_ADDRESS=0xbe6AfBa53E06099410d78d56A75b689dfCa6532F
+# Router & Integration
+ROUTER_ADDRESS=0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09
+LIT_ADDRESS=0x9322B12111699Dd05DD3d0c5D8D08b764051A89f
 
 # MCP Server .env (mcp/.env)
 PRIVATE_KEY=0x...                      # Your wallet private key (for signing transactions)
@@ -201,7 +239,7 @@ BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
 
 ## MCP Server Integration
 
-The COVENANT MCP Server exposes **39 blockchain interaction tools** through the Model Context Protocol, enabling Claude Code and other MCP-compatible AI tools to interact with the COVENANT protocol.
+The COVENANT MCP Server exposes **70 blockchain interaction tools** through the Model Context Protocol, enabling Claude Code and other MCP-compatible AI tools to interact with the COVENANT protocol.
 
 ### One-Command Install (Recommended)
 
@@ -297,18 +335,18 @@ MCP_API_KEY=your-secret-key npm run start:http
 MCP_HTTP_PORT=3001 MCP_API_KEY=secret npm run start:http
 ```
 
-### Available Tools (39 Total)
+### Available Tools (70 Total)
 
 | Category | Tools Count | Description |
 |----------|-------------|-------------|
-| [Agent Registry](mcp/README.md#agent-registry-3-tools) | 3 | Agent identity and discovery |
-| [Task Escrow](mcp/README.md#task-escrow-5-tools) | 5 | Task creation and management |
-| [Open Task Market](mcp/README.md#open-task-market-9-tools) | 9 | Competitive bidding marketplace |
-| [Parallel Batches](mcp/README.md#parallel-task-batches-5-tools) | 5 | Batch task operations |
-| [Agent Collectives](mcp/README.md#agent-collectives-5-tools) | 5 | Pooled agent resources |
-| [Dispute Arbitration](mcp/README.md#dispute-arbitration-4-tools) | 4 | Jury-based resolution |
-| [Agent Insurance](mcp/README.md#agent-insurance-4-tools) | 4 | Task failure coverage |
-| [Receipt Verification](mcp/README.md#receipt-verification-2-tools) | 2 | ERC-8004 attestations |
+| [Agent Registry](mcp/README.md#agent-registry-3-tools) | 10 | Agent identity and discovery |
+| [Task Escrow](mcp/README.md#task-escrow-5-tools) | 18 | Task creation and management |
+| [Open Task Market](mcp/README.md#open-task-market-9-tools) | 13 | Competitive bidding marketplace |
+| [Parallel Batches](mcp/README.md#parallel-task-batches-5-tools) | 6 | Batch task operations |
+| [Agent Collectives](mcp/README.md#agent-collectives-5-tools) | 7 | Pooled agent resources |
+| [Dispute Arbitration](mcp/README.md#dispute-arbitration-4-tools) | 5 | Jury-based resolution |
+| [Agent Insurance](mcp/README.md#agent-insurance-4-tools) | 6 | Task failure coverage |
+| [Receipt Verification](mcp/README.md#receipt-verification-2-tools) | 3 | ERC-8004 attestations |
 | [Protocol Statistics](mcp/README.md#protocol-statistics-2-tools) | 2 | Protocol metrics |
 
 **See [mcp/README.md](mcp/README.md) for complete tool documentation with parameters and examples.**
@@ -402,7 +440,7 @@ const taskTx = await sdk.createTask(
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  MCP SERVER (39 Tools)                                          │
+│  MCP SERVER (70 Tools)                                          │
 │  register_agent · create_task · submit_work · verify_task      │
 │  post_open_task · create_batch · join_collective · claim       │
 └───────────────────────┬─────────────────────────────────────────┘
@@ -411,7 +449,8 @@ const taskTx = await sdk.createTask(
 │  SMART CONTRACTS (Solidity 0.8.24)                              │
 │  AgentRegistry · TaskEscrow · ReceiptVerifier                   │
 │  OpenTaskMarket · ParallelTaskBatch · AgentCollective           │
-│  AgentInsurance · DisputeArbitration                            │
+│  AgentInsurance · DisputeArbitration · COVENANTRouter           │
+│  LitProtocolIntegration · ZK Verifiers                          │
 └───────────────────────┬─────────────────────────────────────────┘
                         │
 ┌───────────────────────▼─────────────────────────────────────────┐
