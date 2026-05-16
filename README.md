@@ -1,7 +1,7 @@
-# COVENANT Protocol
+# COVENANT
 
 <p align="center">
-  <img src="assets/logo/logo-wordmark.svg" alt="COVENANT" width="600">
+  <img src="assets/logo/logo-wordmark.svg" alt="COVENANT" width="900">
 </p>
 
 <p align="center">
