@@ -1,72 +1,68 @@
 /**
  * ReceiptVerifier MCP Tools
  *
- * get_receipts     — Fetch all receipts for an address
- * verify_receipt   — Verify a specific receipt on-chain
+ * get_receipt_count — Get receipt count for an address
+ * get_receipt       — Verify a specific receipt on-chain by bytes32 ID
+ * create_receipt    — Issue an ERC-8004 attestation receipt
  */
 import { z } from "zod";
-import { type Address, isAddress } from "viem";
+import { type Address, isAddress, type Hex } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
 import { RECEIPT_TYPE } from "../types.js";
+import { stringToBytes32, isBytes32 } from "../utils.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const ABI = loadAbi("ReceiptVerifier");
 
 // Input validation schemas
-const getReceiptsSchema = z.object({
+const getAddressSchema = z.object({
   address: z.string().refine(isAddress, { message: "Invalid Ethereum address" })
 });
 
-const verifyReceiptSchema = z.object({
-  receiptId: z.number().int().positive()
+const getReceiptSchema = z.object({
+  receiptId: z.string().describe("Receipt ID as bytes32 hex string (0x...)")
+});
+
+const createReceiptSchema = z.object({
+  issuer: z.string().refine(isAddress, { message: "Invalid issuer Ethereum address" }),
+  counterparty: z.string().refine(isAddress, { message: "Invalid counterparty Ethereum address" }),
+  interactionType: z.number().int().min(0).max(10).describe("Receipt type (0=TaskCompleted, 1=AgentVerified, etc.)"),
+  dataHash: z.string().describe("Hash of the receipt data (will be converted to bytes32)"),
 });
 
 export function registerReceiptTools(server: McpServer): void {
   // ──────────────────────────────────────────────────────────────
-  // get_receipts
+  // get_receipt_count
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "corven_get_receipts",
+    "corven_get_receipt_count",
     {
-      title: "Get Receipts for Address",
+      title: "Get Receipt Count for Address",
       description:
-        "Retrieve all ERC-8004 attestation receipts issued to or by an address. " +
-        "Returns receipt IDs, issuers, counterparty, type, task reference, and validity.",
+        "Get the total number of ERC-8004 receipts issued for an agent address. " +
+        "Use this to check receipt volume before querying individual receipts.",
       inputSchema: {
-        address: z.string().describe("Ethereum address to look up receipts for"),
+        address: z.string().describe("Agent's Ethereum address"),
       },
     },
     async ({ address }) => {
       try {
-        // Validate input
-        const validationResult = getReceiptsSchema.safeParse({ address });
+        const validationResult = getAddressSchema.safeParse({ address });
         if (!validationResult.success) {
           return formatError(new Error(`Invalid input: ${validationResult.error.issues.map((e: any) => e.message).join(", ")}`));
         }
 
-        // Use validated address
-        const validatedAddress = validationResult.data.address;
-        // Read receipts for this address from the ReceiptVerifier contract
-        const data = await readContract(
+        const count = await readContract(
           CONTRACTS.ReceiptVerifier,
           ABI,
-          "getReceipts",
-          [validatedAddress as Address]
+          "getAgentReceiptCount",
+          [validationResult.data.address as Address]
         );
-
-        // Enrich receipt types with human-readable labels
-        const receipts = Array.isArray(data)
-          ? (data as any[]).map((r) => ({
-              ...r,
-              typeLabel: RECEIPT_TYPE[r.interactionType] ?? `Unknown(${r.interactionType})`,
-            }))
-          : data;
-
         return formatReadResult(
-          { address, count: Array.isArray(data) ? data.length : 0, receipts },
-          `Receipts for ${address}`
+          { address, receiptCount: Number(count) },
+          `Receipt count for ${address}`
         );
       } catch (e) {
         return formatError(e);
@@ -75,34 +71,41 @@ export function registerReceiptTools(server: McpServer): void {
   );
 
   // ──────────────────────────────────────────────────────────────
-  // verify_receipt
+  // get_receipt (was verify_receipt)
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "corven_verify_receipt",
+    "corven_get_receipt",
     {
-      title: "Verify a Receipt",
+      title: "Get Receipt by ID",
       description:
-        "Check whether a specific ERC-8004 receipt is valid on-chain. " +
-        "Returns the receipt details and validity status.",
+        "Retrieve a specific ERC-8004 receipt by its bytes32 ID. " +
+        "Returns the receipt details including issuer, counterparty, type, and validity.",
       inputSchema: {
-        receiptId: z.number().describe("Numeric receipt ID"),
+        receiptId: z.string().describe("Receipt ID as bytes32 hex string (0x...64 hex chars)"),
       },
     },
     async ({ receiptId }) => {
       try {
-        // Validate input
-        const validationResult = verifyReceiptSchema.safeParse({ receiptId });
+        // Validate receiptId format
+        const validationResult = getReceiptSchema.safeParse({ receiptId });
         if (!validationResult.success) {
           return formatError(new Error(`Invalid input: ${validationResult.error.issues.map((e: any) => e.message).join(", ")}`));
         }
 
-        // Use validated receiptId
-        const validatedReceiptId = validationResult.data.receiptId;
+        // Ensure receiptId is valid bytes32
+        let receiptIdBytes32: Hex;
+        if (isBytes32(receiptId)) {
+          receiptIdBytes32 = receiptId as Hex;
+        } else {
+          // Try to convert string to bytes32
+          receiptIdBytes32 = stringToBytes32(receiptId);
+        }
+
         const data = await readContract(
           CONTRACTS.ReceiptVerifier,
           ABI,
           "getReceipt",
-          [BigInt(receiptId)]
+          [receiptIdBytes32]
         );
 
         const enriched = {
@@ -112,7 +115,7 @@ export function registerReceiptTools(server: McpServer): void {
             `Unknown(${(data as any).interactionType})`,
         };
 
-        return formatReadResult(enriched, `Receipt #${receiptId}`);
+        return formatReadResult(enriched, `Receipt ${receiptId}`);
       } catch (e) {
         return formatError(e);
       }
@@ -133,56 +136,31 @@ export function registerReceiptTools(server: McpServer): void {
         issuer: z.string().describe("Issuer's Ethereum address"),
         counterparty: z.string().describe("Counterparty's Ethereum address"),
         interactionType: z.number().describe("Receipt type (0=TaskCompleted, 1=AgentVerified, etc.)"),
-        dataHash: z.string().describe("Hash of the receipt data"),
+        dataHash: z.string().describe("Hash of the receipt data (will be converted to bytes32)"),
       },
     },
     async ({ issuer, counterparty, interactionType, dataHash }) => {
       try {
+        const validationResult = createReceiptSchema.safeParse({ issuer, counterparty, interactionType, dataHash });
+        if (!validationResult.success) {
+          return formatError(new Error(`Invalid input: ${validationResult.error.issues.map((e: any) => e.message).join(", ")}`));
+        }
+
         const account = getAccount();
         if (!account) {
           return formatError(new Error("No private key configured — cannot send transactions"));
         }
+
+        // Convert dataHash to bytes32
+        const dataHashBytes32 = stringToBytes32(dataHash);
+
         const result = await executeOrPrepare(
           CONTRACTS.ReceiptVerifier,
           ABI,
           "createReceipt",
-          [issuer as Address, counterparty as Address, interactionType, dataHash]
+          [issuer as Address, counterparty as Address, interactionType, dataHashBytes32]
         );
         return formatTxResult(result);
-      } catch (e) {
-        return formatError(e);
-      }
-    }
-  );
-
-  // ──────────────────────────────────────────────────────────────
-  // corven_get_receipt_count
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_get_receipt_count",
-    {
-      title: "Get Receipt Count",
-      description: "Get the total number of ERC-8004 receipts issued for an agent.",
-      inputSchema: {
-        address: z.string().describe("Agent's Ethereum address"),
-      },
-    },
-    async ({ address }) => {
-      try {
-        const validationResult = getReceiptsSchema.safeParse({ address });
-        if (!validationResult.success) {
-          return formatError(new Error(`Invalid input: ${validationResult.error.issues.map((e: any) => e.message).join(", ")}`));
-        }
-        const count = await readContract(
-          CONTRACTS.ReceiptVerifier,
-          ABI,
-          "getAgentReceiptCount",
-          [validationResult.data.address as Address]
-        );
-        return formatReadResult(
-          { address, receiptCount: Number(count) },
-          `Receipt count for ${address}`
-        );
       } catch (e) {
         return formatError(e);
       }

@@ -6,7 +6,7 @@
  * get_claim_counter — Get total claims
  */
 import { z } from "zod";
-import { formatEther, type Address, isAddress } from "viem";
+import { parseEther, formatEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
@@ -173,17 +173,21 @@ export function registerInsuranceTools(server: McpServer): void {
     "corven_pay_premium",
     {
       title: "Pay Insurance Premium",
-      description: "Pay insurance premium for a specific task to get coverage.",
+      description: "Pay insurance premium for a specific task to get coverage. Premium is typically a percentage (e.g., 5%) of the task payment.",
       inputSchema: {
         taskId: z.number().describe("Task ID to insure"),
+        premium: z.string().describe("Premium amount in ETH (e.g., '0.0001')"),
       },
     },
-    async ({ taskId }) => {
+    async ({ taskId, premium }) => {
       try {
         const account = getAccount();
         if (!account) return formatError(new Error("No private key configured"));
+
+        const premiumWei = parseEther(premium);
         const result = await executeOrPrepare(
-          CONTRACTS.AgentInsurance, ABI, "payPremium", [BigInt(taskId)]
+          CONTRACTS.AgentInsurance, ABI, "payPremium", [BigInt(taskId)],
+          premiumWei  // Value to send with payable function
         );
         return formatTxResult(result);
       } catch (e) { return formatError(e); }

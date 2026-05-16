@@ -12,6 +12,7 @@ import { parseEther, formatEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
+import { stringToBytes32, stringsToBytes32 } from "../utils.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const ABI = loadAbi("ParallelTaskBatch");
@@ -74,9 +75,9 @@ export function registerBatchTools(server: McpServer): void {
         const paymentsWei = payments.map(p => parseEther(p));
         const totalPayment = paymentsWei.reduce((sum, p) => sum + p, BigInt(0));
 
-        // Convert to bytes32 for description hashes
-        const descriptionHashesBytes32 = descriptionHashes.map(h => h as `0x${string}`);
-        const aggregationSpecBytes32 = aggregationSpec as `0x${string}`;
+        // Convert description hashes and aggregation spec to bytes32
+        const descriptionHashesBytes32 = stringsToBytes32(descriptionHashes);
+        const aggregationSpecBytes32 = stringToBytes32(aggregationSpec);
 
         const result = await executeOrPrepare(
           CONTRACTS.ParallelTaskBatch,

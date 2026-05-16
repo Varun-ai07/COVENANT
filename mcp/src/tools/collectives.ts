@@ -11,6 +11,7 @@ import { parseEther, formatEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
+import { stringToBytes32, stringsToBytes32 } from "../utils.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const ABI = loadAbi("AgentCollective");
@@ -19,6 +20,7 @@ const ABI = loadAbi("AgentCollective");
 const createCollectiveSchema = z.object({
   minContribution: z.string().regex(/^\d+\.?\d*$/, "Invalid ETH amount"),
   maxMembers: z.number().int().min(2).max(100),
+  initialContribution: z.string().regex(/^\d+\.?\d*$/, "Invalid ETH amount").optional(),
 });
 
 const joinCollectiveSchema = z.object({
@@ -44,13 +46,15 @@ export function registerCollectiveTools(server: McpServer): void {
       title: "Create Agent Collective",
       description:
         "Create a new collective of agents that pool resources. " +
-        "Collectives can launch tasks and share proceeds.",
+        "Collectives can launch tasks and share proceeds. " +
+        "You must send at least minContribution ETH as your initial stake.",
       inputSchema: {
         minContribution: z.string().describe("Minimum contribution in ETH to join"),
         maxMembers: z.number().describe("Maximum number of members (2-100)"),
+        initialContribution: z.string().optional().describe("Initial ETH contribution (defaults to minContribution)"),
       },
     },
-    async ({ minContribution, maxMembers }) => {
+    async ({ minContribution, maxMembers, initialContribution }) => {
       try {
         const validation = createCollectiveSchema.safeParse({ minContribution, maxMembers });
         if (!validation.success) {
@@ -63,11 +67,16 @@ export function registerCollectiveTools(server: McpServer): void {
         }
 
         const minContributionWei = parseEther(minContribution);
+        const value = initialContribution
+          ? parseEther(initialContribution)
+          : minContributionWei; // Default to minContribution
+
         const result = await executeOrPrepare(
           CONTRACTS.AgentCollective,
           ABI,
           "createCollective",
-          [minContributionWei, BigInt(maxMembers)]
+          [minContributionWei, BigInt(maxMembers)],
+          value
         );
         return formatTxResult(result);
       } catch (e) {
@@ -149,6 +158,7 @@ export function registerCollectiveTools(server: McpServer): void {
         }
 
         const paymentWei = parseEther(payment);
+        const descriptionHashBytes32 = stringToBytes32(descriptionHash);
         const result = await executeOrPrepare(
           CONTRACTS.AgentCollective,
           ABI,
@@ -158,7 +168,7 @@ export function registerCollectiveTools(server: McpServer): void {
             workerAddress as Address,
             paymentWei,
             BigInt(deadline),
-            descriptionHash as `0x${string}`,
+            descriptionHashBytes32,
           ]
         );
         return formatTxResult(result);
@@ -239,16 +249,17 @@ export function registerCollectiveTools(server: McpServer): void {
       inputSchema: {
         collectiveId: z.number().describe("Collective ID"),
         taskId: z.number().describe("Task ID"),
-        encryptedDeliveryHashes: z.array(z.string()).describe("Array of encrypted delivery hashes (one per member)"),
+        encryptedDeliveryHashes: z.array(z.string()).describe("Array of encrypted delivery hashes (one per member, will be converted to bytes32)"),
       },
     },
     async ({ collectiveId, taskId, encryptedDeliveryHashes }) => {
       try {
         const account = getAccount();
         if (!account) return formatError(new Error("No private key configured"));
+        const hashesBytes32 = stringsToBytes32(encryptedDeliveryHashes);
         const result = await executeOrPrepare(
           CONTRACTS.AgentCollective, ABI, "submitDeliverable",
-          [BigInt(collectiveId), BigInt(taskId), encryptedDeliveryHashes]
+          [BigInt(collectiveId), BigInt(taskId), hashesBytes32]
         );
         return formatTxResult(result);
       } catch (e) { return formatError(e); }

@@ -46,7 +46,8 @@ const submitWorkSchema = z.object({
 });
 
 const verifyTaskSchema = z.object({
-  taskId: z.number().int().positive()
+  taskId: z.number().int().positive(),
+  success: z.boolean() // Whether task passed verification
 });
 
 const disputeTaskSchema = z.object({
@@ -227,18 +228,19 @@ export function registerEscrowTools(server: McpServer): void {
         "Only the task client can call this. Transitions status to Completed.",
       inputSchema: {
         taskId: z.number().describe("Numeric task ID"),
+        success: z.boolean().describe("Whether the task passed verification (true = approved, false = rejected)"),
       },
     },
-    async ({ taskId }) => {
+    async ({ taskId, success }) => {
       try {
         // Validate input
-        const validationResult = verifyTaskSchema.safeParse({ taskId });
+        const validationResult = verifyTaskSchema.safeParse({ taskId, success });
         if (!validationResult.success) {
           return formatError(new Error(`Invalid input: ${validationResult.error.issues.map((e: any) => e.message).join(", ")}`));
         }
 
-        // Use validated taskId
-        const validatedTaskId = validationResult.data.taskId;
+        // Use validated values
+        const { taskId: validatedTaskId, success: validatedSuccess } = validationResult.data;
         const account = getAccount();
         if (!account) {
           return formatError(new Error("No private key configured — cannot send transactions"));
@@ -248,7 +250,7 @@ export function registerEscrowTools(server: McpServer): void {
           CONTRACTS.TaskEscrow,
           ABI,
           "verifyTask",
-          [BigInt(validatedTaskId)],
+          [BigInt(validatedTaskId), validatedSuccess],
           undefined,
           "TaskEscrow"
         );

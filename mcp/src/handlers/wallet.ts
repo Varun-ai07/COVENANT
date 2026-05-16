@@ -27,9 +27,64 @@ import {
   loadAbi,
 } from "../config.js";
 import type { TxResult, TxSuccess, TxPrepared, TxError } from "../types.js";
+import { rpcCache } from "../lib/cache.js";
 
 // Maximum gas limit to prevent DoS via expensive calls
 const GAS_LIMIT_MAX = 10_000_000n; // 10M gas
+
+// ============================================================
+// Cache invalidation for write operations
+// ============================================================
+
+function invalidateCacheForWrite(
+  contractAddress: Address,
+  functionName: string,
+  args: readonly unknown[]
+): void {
+  const addr = contractAddress.toLowerCase();
+
+  // TaskEscrow writes
+  if (addr === CONTRACTS.TaskEscrow?.toLowerCase()) {
+    if (functionName === "createTask" || functionName === "createTaskWithPriority" || functionName === "createMilestoneTask") {
+      rpcCache.invalidate("taskCount");
+      rpcCache.invalidate("clientTasks");
+      rpcCache.invalidate("workerTasks");
+      rpcCache.invalidate("stats");
+    } else if (functionName === "verifyTask" || functionName === "submitWork") {
+      const taskId = args[0];
+      if (typeof taskId === "bigint" || typeof taskId === "number") {
+        rpcCache.invalidateTask(Number(taskId));
+      }
+    }
+  }
+
+  // AgentRegistry writes
+  if (addr === CONTRACTS.AgentRegistry?.toLowerCase()) {
+    rpcCache.invalidate("agentCount");
+    rpcCache.invalidate("leaderboard");
+    rpcCache.invalidate("stats");
+    if (args[0] && typeof args[0] === "string") {
+      rpcCache.invalidateAgent(args[0]);
+    }
+  }
+
+  // OpenTaskMarket writes
+  if (addr === CONTRACTS.OpenTaskMarket?.toLowerCase()) {
+    rpcCache.invalidate("taskCount");
+    rpcCache.invalidate("stats");
+  }
+
+  // Collective writes
+  if (addr === CONTRACTS.AgentCollective?.toLowerCase()) {
+    rpcCache.invalidate("collective");
+  }
+
+  // Batch writes
+  if (addr === CONTRACTS.ParallelTaskBatch?.toLowerCase()) {
+    rpcCache.invalidate("batch");
+    rpcCache.invalidate("taskCount");
+  }
+}
 
 // ============================================================
 // Permission Pre-Checks
@@ -217,6 +272,9 @@ async function executeTx(
       `[TX] Confirmed in block ${receipt.blockNumber} — gas: ${receipt.gasUsed}`
     );
 
+    // Invalidate relevant caches after successful write
+    invalidateCacheForWrite(contractAddress, functionName, args);
+
     return {
       status: "success",
       txHash: hash,
@@ -319,14 +377,52 @@ function parseViemError(error: any): TxError {
 }
 
 // ============================================================
-// Read-only calls (no wallet needed)
+// Read-only calls (no wallet needed) - with caching
 // ============================================================
+
+// Category mapping for cache TTLs
+function getCacheCategory(functionName: string): string {
+  if (functionName.startsWith("getAgent") || functionName === "getAgent" || functionName === "findAgents") return "agent";
+  if (functionName.startsWith("getTask") || functionName === "getTask") return "task";
+  if (functionName.includes("Count") || functionName.includes("counter")) return "taskCount";
+  if (functionName.startsWith("getCollective")) return "collective";
+  if (functionName.includes("Insurance") || functionName.includes("pool")) return "insurance";
+  if (functionName.startsWith("getBatch")) return "batch";
+  if (functionName.startsWith("getDispute")) return "dispute";
+  if (functionName.includes("Stats") || functionName.includes("leaderboard")) return "stats";
+  if (functionName.includes("Receipt")) return "receipt";
+  return "default";
+}
 
 export async function readContract(
   contractAddress: Address,
   abi: Abi,
   functionName: string,
-  args: readonly unknown[] = []
+  args: readonly unknown[] = [],
+  options?: { skipCache?: boolean }
+): Promise<any> {
+  // Skip caching for non-deterministic reads
+  if (options?.skipCache) {
+    return await executeRead(contractAddress, abi, functionName, args);
+  }
+
+  // Generate cache key
+  const argsHash = JSON.stringify(args).slice(0, 100);
+  const cacheKey = `read:${contractAddress}:${functionName}:${argsHash}`;
+  const category = getCacheCategory(functionName);
+
+  return rpcCache.getOrFetch(
+    cacheKey,
+    () => executeRead(contractAddress, abi, functionName, args),
+    category
+  );
+}
+
+async function executeRead(
+  contractAddress: Address,
+  abi: Abi,
+  functionName: string,
+  args: readonly unknown[]
 ): Promise<any> {
   const publicClient = getPublicClient();
 
