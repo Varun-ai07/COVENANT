@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <!-- Primary gradient -->
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6"/>
+      <stop offset="50%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#4F46E5"/>
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Inner glow -->
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#A78BFA;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#4F46E5;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background circle (optional for contrast) -->
+  <circle cx="100" cy="100" r="95" fill="#0F0F1A"/>
+
+  <!-- Outer hexagon -->
+  <polygon
+    points="100,15 172,57.5 172,142.5 100,185 28,142.5 28,57.5"
+    fill="url(#hexGrad)"
+    stroke="#A78BFA"
+    stroke-width="2"
+    filter="url(#glow)"/>
+
+  <!-- Inner hexagon (trust seal) -->
+  <polygon
+    points="100,35 152,67.5 152,132.5 100,165 48,132.5 48,67.5"
+    fill="url(#innerGlow)"
+    stroke="#C4B5FD"
+    stroke-width="1.5"
+    stroke-dasharray="8,4"/>
+
+  <!-- Central interlocking knot (two triangles forming a star) -->
+  <g filter="url(#glow)">
+    <!-- Triangle 1 (pointing up) -->
+    <polygon
+      points="100,55 130,110 70,110"
+      fill="none"
+      stroke="#E0E7FF"
+      stroke-width="3"
+      stroke-linejoin="round"/>
+
+    <!-- Triangle 2 (pointing down, interlocked) -->
+    <polygon
+      points="100,145 130,90 70,90"
+      fill="none"
+      stroke="#C7D2FE"
+      stroke-width="3"
+      stroke-linejoin="round"/>
+
+    <!-- Center node -->
+    <circle cx="100" cy="100" r="8" fill="#8B5CF6" stroke="#E0E7FF" stroke-width="2"/>
+    <circle cx="100" cy="100" r="3" fill="#E0E7FF"/>
+  </g>
+
+  <!-- Three agent nodes at hexagon vertices -->
+  <g fill="#A78BFA" stroke="#E0E7FF" stroke-width="1.5">
+    <circle cx="100" cy="22" r="5"/>
+    <circle cx="164" cy="140" r="5"/>
+    <circle cx="36" cy="140" r="5"/>
+  </g>
+
+  <!-- Connecting lines from nodes to center -->
+  <g stroke="#6366F1" stroke-width="1" stroke-dasharray="3,3" opacity="0.6">
+    <line x1="100" y1="22" x2="100" y2="55"/>
+    <line x1="164" y1="140" x2="130" y2="110"/>
+    <line x1="36" y1="140" x2="70" y2="110"/>
+  </g>
+</svg>

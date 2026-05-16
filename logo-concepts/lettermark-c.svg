@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="cGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#EC4899"/>
+      <stop offset="50%" style="stop-color:#BE185D"/>
+      <stop offset="100%" style="stop-color:#9D174D"/>
+    </linearGradient>
+    <linearGradient id="innerC" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F472B6"/>
+      <stop offset="100%" style="stop-color:#EC4899"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="200" height="200" fill="#0F0F1A" rx="12"/>
+
+  <!-- Outer "C" shape -->
+  <path d="M150 55 C120 30 70 30 45 65 C20 100 30 150 70 175 C90 188 115 190 140 180"
+        fill="none"
+        stroke="url(#cGrad)"
+        stroke-width="18"
+        stroke-linecap="round"/>
+
+  <!-- Inner highlight stroke -->
+  <path d="M145 65 C120 45 80 45 58 75 C35 105 45 150 80 170"
+        fill="none"
+        stroke="url(#innerC)"
+        stroke-width="6"
+        stroke-linecap="round"
+        opacity="0.7"/>
+
+  <!-- Agent connection dots -->
+  <g fill="#F472B6">
+    <circle cx="150" cy="55" r="10"/>
+    <circle cx="140" cy="180" r="10"/>
+    <circle cx="100" cy="40" r="6"/>
+  </g>
+
+  <!-- Inner dot highlights -->
+  <circle cx="150" cy="55" r="4" fill="#FDF2F8"/>
+  <circle cx="140" cy="180" r="4" fill="#FDF2F8"/>
+
+  <!-- Connecting arc suggest covenant handshake -->
+  <path d="M115 95 Q100 110 115 125"
+        fill="none"
+        stroke="#F472B6"
+        stroke-width="3"
+        stroke-linecap="round"
+        opacity="0.6"/>
+</svg>
