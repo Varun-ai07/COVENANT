@@ -14,7 +14,7 @@ import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import type { WalletMode, ContractConfig } from "./types.js";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // ============================================================
 // Network
@@ -43,14 +43,28 @@ export const ZERO_ADDRESS =
   "0x0000000000000000000000000000000000000000" as Address;
 
 export const CONTRACTS: ContractConfig = {
+  // Core Protocol
   AgentRegistry: (process.env.REGISTRY_ADDRESS || "0xB215589dA259A98eEE8BF39739F6255131ac33A1") as Address,
   TaskEscrow: (process.env.ESCROW_ADDRESS || "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3") as Address,
   ReceiptVerifier: (process.env.VERIFIER_ADDRESS || "0xa47D15099be6aC516B53a6859D468E9004eEf76b") as Address,
+  // Market & Batching
   OpenTaskMarket: (process.env.MARKET_ADDRESS || "0x5ccF09469222E5046b0830c6d71ed6B912bE70e6") as Address,
   ParallelTaskBatch: (process.env.BATCH_ADDRESS || "0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc") as Address,
+  // Collective & Insurance
   AgentCollective: (process.env.COLLECTIVE_ADDRESS || "0x0CDE9560D2E95338922c40A52A2c81cdd20613d1") as Address,
   AgentInsurance: (process.env.INSURANCE_ADDRESS || "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55") as Address,
-  DisputeArbitration: (process.env.DISPUTE_ADDRESS || "0x0000000000000000000000000000000000000000") as Address,
+  // Dispute Resolution
+  DisputeArbitration: (process.env.DISPUTE_ADDRESS || "0x37A62C6eDd18461CCe00B6772Da8640C75DE740e") as Address,
+  // ZK Verifiers
+  Groth16VerifierCapability: (process.env.CAPABILITY_VERIFIER_ADDRESS || "0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85") as Address,
+  CapabilityVerifier: (process.env.CAPABILITY_WRAPPER_ADDRESS || "0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb") as Address,
+  Groth16VerifierReputation: (process.env.REPUTATION_VERIFIER_ADDRESS || "0xbe6AfBa53E06099410d78d56A75b689dfCa6532F") as Address,
+  ReputationVerifier: (process.env.REPUTATION_WRAPPER_ADDRESS || "0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149") as Address,
+  // Router & Integration
+  COVENANTRouter: (process.env.ROUTER_ADDRESS || "0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09") as Address,
+  LitProtocolIntegration: (process.env.LIT_ADDRESS || "0x9322B12111699Dd05DD3d0c5D8D08b764051A89f") as Address,
+  // Wallet (sample)
+  AgentWallet: (process.env.WALLET_ADDRESS || "0x70F6d2dBd0471DD0aA6a1A54d492eF1AE4F400A1") as Address,
 };
 
 // ============================================================
@@ -169,16 +183,39 @@ import ParallelTaskBatchAbi from "./abis/ParallelTaskBatch.json" with { type: "j
 import AgentCollectiveAbi from "./abis/AgentCollective.json" with { type: "json" };
 import AgentInsuranceAbi from "./abis/AgentInsurance.json" with { type: "json" };
 import DisputeArbitrationAbi from "./abis/DisputeArbitration.json" with { type: "json" };
+// New contracts
+import COVENANTRouterAbi from "./abis/COVENANTRouter.json" with { type: "json" };
+import LitProtocolIntegrationAbi from "./abis/LitProtocolIntegration.json" with { type: "json" };
+import AgentWalletAbi from "./abis/AgentWallet.json" with { type: "json" };
+// ZK Verifiers
+import Groth16VerifierCapabilityAbi from "./abis/Groth16VerifierCapability.json" with { type: "json" };
+import CapabilityVerifierAbi from "./abis/CapabilityVerifier.json" with { type: "json" };
+import Groth16VerifierReputationAbi from "./abis/Groth16VerifierReputation.json" with { type: "json" };
+import ReputationVerifierAbi from "./abis/ReputationVerifier.json" with { type: "json" };
 
 const ABIS: Record<string, any> = {
+  // Core Protocol
   AgentRegistry: AgentRegistryAbi.abi,
   TaskEscrow: TaskEscrowAbi.abi,
   ReceiptVerifier: ReceiptVerifierAbi.abi,
+  // Market & Batching
   OpenTaskMarket: OpenTaskMarketAbi.abi,
   ParallelTaskBatch: ParallelTaskBatchAbi.abi,
+  // Collective & Insurance
   AgentCollective: AgentCollectiveAbi.abi,
   AgentInsurance: AgentInsuranceAbi.abi,
+  // Dispute Resolution
   DisputeArbitration: DisputeArbitrationAbi.abi,
+  // Router & Integration
+  COVENANTRouter: COVENANTRouterAbi,
+  LitProtocolIntegration: LitProtocolIntegrationAbi,
+  // Wallet
+  AgentWallet: AgentWalletAbi,
+  // ZK Verifiers
+  Groth16VerifierCapability: Groth16VerifierCapabilityAbi,
+  CapabilityVerifier: CapabilityVerifierAbi,
+  Groth16VerifierReputation: Groth16VerifierReputationAbi,
+  ReputationVerifier: ReputationVerifierAbi,
 };
 
 const ALLOWED_CONTRACTS = Object.keys(ABIS);

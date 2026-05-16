@@ -10,11 +10,14 @@ const redact = {
   redact: "*".repeat(8),
 };
 
-// Create logger instance
-export const pinoLogger = pino({
-  level: process.env.LOG_LEVEL || "info",
-  redact,
-});
+// Create logger instance — write to stderr so stdout stays clean for MCP JSON-RPC
+export const pinoLogger = pino(
+  {
+    level: process.env.LOG_LEVEL || "info",
+    redact,
+  },
+  pino.destination(2) // fd 2 = stderr
+);
 
 // Export logger methods
 export const info = (msg: string, obj?: Record<string, unknown>) => {

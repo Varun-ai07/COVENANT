@@ -59,7 +59,7 @@ export function registerEscrowTools(server: McpServer): void {
   // create_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "create_task",
+    "corven_create_task",
     {
       title: "Create & Fund Task",
       description:
@@ -127,7 +127,7 @@ export function registerEscrowTools(server: McpServer): void {
   // get_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_task",
+    "corven_get_task",
     {
       title: "Get Task Details",
       description:
@@ -173,7 +173,7 @@ export function registerEscrowTools(server: McpServer): void {
   // submit_work
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "submit_work",
+    "corven_submit_work",
     {
       title: "Submit Work Deliverable",
       description:
@@ -219,7 +219,7 @@ export function registerEscrowTools(server: McpServer): void {
   // verify_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "verify_task",
+    "corven_verify_task",
     {
       title: "Verify & Approve Task",
       description:
@@ -263,7 +263,7 @@ export function registerEscrowTools(server: McpServer): void {
   // dispute_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "dispute_task",
+    "corven_dispute_task",
     {
       title: "Dispute a Task",
       description:
@@ -305,6 +305,364 @@ export function registerEscrowTools(server: McpServer): void {
       } catch (e) {
         return formatError(e);
       }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_create_task_with_priority
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_create_task_with_priority",
+    {
+      title: "Create Task with Priority",
+      description:
+        "Create a task with a specific priority level (0=Low, 1=Medium, 2=High, 3=Urgent). " +
+        "Higher priority incurs additional protocol fees.",
+      inputSchema: {
+        worker: z.string().describe("Worker agent's Ethereum address"),
+        payment: z.string().describe("Payment amount in ETH"),
+        deadline: z.number().describe("Unix timestamp deadline (seconds)"),
+        descriptionHash: z.string().describe("IPFS CID for task description"),
+        priority: z.number().describe("Priority level: 0=Low, 1=Medium, 2=High, 3=Urgent"),
+      },
+    },
+    async ({ worker, payment, deadline, descriptionHash, priority }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const paymentWei = parseEther(payment);
+        const result = await executeOrPrepare(
+          CONTRACTS.TaskEscrow, ABI, "createAndFundTaskWithPriority",
+          [worker as Address, paymentWei, BigInt(deadline), descriptionHash, priority], paymentWei
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_create_milestone_task
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_create_milestone_task",
+    {
+      title: "Create Milestone Task",
+      description:
+        "Create a task with milestone-based payments. Each milestone has its own description and payment amount. " +
+        "Total payment = sum of all milestone payments.",
+      inputSchema: {
+        worker: z.string().describe("Worker agent's Ethereum address"),
+        totalPayment: z.string().describe("Total payment in ETH (sum of milestones)"),
+        deadline: z.number().describe("Unix timestamp deadline"),
+        descriptionHash: z.string().describe("IPFS CID for task description"),
+        milestoneDescriptions: z.array(z.string()).describe("Array of milestone descriptions"),
+        milestonePayments: z.array(z.string()).describe("Array of milestone payments in ETH"),
+      },
+    },
+    async ({ worker, totalPayment, deadline, descriptionHash, milestoneDescriptions, milestonePayments }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const paymentWei = parseEther(totalPayment);
+        const payments = milestonePayments.map(p => parseEther(p));
+        const result = await executeOrPrepare(
+          CONTRACTS.TaskEscrow, ABI, "createTaskWithMilestones",
+          [worker as Address, paymentWei, BigInt(deadline), descriptionHash, milestoneDescriptions, payments], paymentWei
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_submit_milestone
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_submit_milestone",
+    {
+      title: "Submit Milestone",
+      description: "Submit a deliverable for a specific milestone in a milestone-based task.",
+      inputSchema: {
+        taskId: z.number().describe("Task ID"),
+        milestoneIndex: z.number().describe("Milestone index (0-based)"),
+        deliverableHash: z.string().describe("IPFS CID of milestone deliverable"),
+      },
+    },
+    async ({ taskId, milestoneIndex, deliverableHash }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.TaskEscrow, ABI, "submitMilestone",
+          [BigInt(taskId), BigInt(milestoneIndex), deliverableHash]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_verify_milestone
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_verify_milestone",
+    {
+      title: "Verify Milestone",
+      description: "Verify a submitted milestone and release its payment to the worker.",
+      inputSchema: {
+        taskId: z.number().describe("Task ID"),
+        milestoneIndex: z.number().describe("Milestone index (0-based)"),
+        success: z.boolean().describe("Whether the milestone passes verification"),
+      },
+    },
+    async ({ taskId, milestoneIndex, success }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.TaskEscrow, ABI, "verifyMilestone",
+          [BigInt(taskId), BigInt(milestoneIndex), success], undefined, "TaskEscrow"
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_milestone
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_milestone",
+    {
+      title: "Get Milestone Details",
+      description: "Retrieve details of a specific milestone in a task.",
+      inputSchema: {
+        taskId: z.number().describe("Task ID"),
+        milestoneIndex: z.number().describe("Milestone index (0-based)"),
+      },
+    },
+    async ({ taskId, milestoneIndex }) => {
+      try {
+        const data = await readContract(
+          CONTRACTS.TaskEscrow, ABI, "getMilestone", [BigInt(taskId), BigInt(milestoneIndex)]
+        );
+        return formatReadResult(data, `Milestone ${milestoneIndex} of Task #${taskId}`);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_milestone_count
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_milestone_count",
+    {
+      title: "Get Milestone Count",
+      description: "Get the number of milestones in a task.",
+      inputSchema: { taskId: z.number().describe("Task ID") },
+    },
+    async ({ taskId }) => {
+      try {
+        const count = await readContract(
+          CONTRACTS.TaskEscrow, ABI, "getMilestoneCount", [BigInt(taskId)]
+        );
+        return formatReadResult({ taskId, milestoneCount: Number(count) }, `Milestones for Task #${taskId}`);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_create_subtask
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_create_subtask",
+    {
+      title: "Create Subtask",
+      description: "Create a child task under a parent task. The subtask has its own worker and payment.",
+      inputSchema: {
+        parentTaskId: z.number().describe("Parent task ID"),
+        worker: z.string().describe("Worker address for the subtask"),
+        payment: z.string().describe("Payment in ETH"),
+        deadline: z.number().describe("Unix timestamp deadline"),
+        descriptionHash: z.string().describe("IPFS CID for subtask description"),
+      },
+    },
+    async ({ parentTaskId, worker, payment, deadline, descriptionHash }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const paymentWei = parseEther(payment);
+        const result = await executeOrPrepare(
+          CONTRACTS.TaskEscrow, ABI, "createSubtask",
+          [BigInt(parentTaskId), worker as Address, paymentWei, BigInt(deadline), descriptionHash], paymentWei
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_child_tasks
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_child_tasks",
+    {
+      title: "Get Child Tasks",
+      description: "Get the IDs of all child tasks under a parent task.",
+      inputSchema: { parentTaskId: z.number().describe("Parent task ID") },
+    },
+    async ({ parentTaskId }) => {
+      try {
+        const childIds = await readContract(
+          CONTRACTS.TaskEscrow, ABI, "getChildTasks", [BigInt(parentTaskId)]
+        );
+        return formatReadResult(
+          { parentTaskId, childCount: (childIds as any[]).length, childTaskIds: childIds },
+          `Child tasks of Task #${parentTaskId}`
+        );
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_submit_query
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_submit_query",
+    {
+      title: "Submit Task Query",
+      description: "Submit a query about a task during execution. Allows workers to ask clarifying questions.",
+      inputSchema: {
+        taskId: z.number().describe("Task ID"),
+        queryText: z.string().describe("The query text"),
+        queryType: z.number().describe("Query type: 0=Specification, 1=Resource, 2=Feasibility"),
+      },
+    },
+    async ({ taskId, queryText, queryType }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.TaskEscrow, ABI, "submitQuery",
+          [BigInt(taskId), queryText, queryType]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_respond_to_query
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_respond_to_query",
+    {
+      title: "Respond to Query",
+      description: "Respond to a worker's query about a task. Only the task client can respond.",
+      inputSchema: {
+        taskId: z.number().describe("Task ID"),
+        responseText: z.string().describe("The response text"),
+      },
+    },
+    async ({ taskId, responseText }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.TaskEscrow, ABI, "respondToQuery",
+          [BigInt(taskId), responseText]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_query
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_query",
+    {
+      title: "Get Query Details",
+      description: "Retrieve details of a specific query on a task.",
+      inputSchema: {
+        taskId: z.number().describe("Task ID"),
+        queryId: z.number().describe("Query index (0-based)"),
+      },
+    },
+    async ({ taskId, queryId }) => {
+      try {
+        const data = await readContract(
+          CONTRACTS.TaskEscrow, ABI, "getQuery", [BigInt(taskId), BigInt(queryId)]
+        );
+        return formatReadResult(data, `Query ${queryId} on Task #${taskId}`);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_query_count
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_query_count",
+    {
+      title: "Get Query Count",
+      description: "Get the number of queries submitted on a task.",
+      inputSchema: { taskId: z.number().describe("Task ID") },
+    },
+    async ({ taskId }) => {
+      try {
+        const count = await readContract(
+          CONTRACTS.TaskEscrow, ABI, "getQueryCount", [BigInt(taskId)]
+        );
+        return formatReadResult({ taskId, queryCount: Number(count) }, `Queries on Task #${taskId}`);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_client_tasks
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_client_tasks",
+    {
+      title: "Get Client Tasks",
+      description: "Get all task IDs where the given address is the client.",
+      inputSchema: { client: z.string().describe("Client's Ethereum address") },
+    },
+    async ({ client }) => {
+      try {
+        const taskIds = await readContract(
+          CONTRACTS.TaskEscrow, ABI, "getClientTasks", [client as Address]
+        );
+        return formatReadResult(
+          { client, taskCount: (taskIds as any[]).length, taskIds },
+          `Tasks by client ${client}`
+        );
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_worker_tasks
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_worker_tasks",
+    {
+      title: "Get Worker Tasks",
+      description: "Get all task IDs where the given address is the worker.",
+      inputSchema: { worker: z.string().describe("Worker's Ethereum address") },
+    },
+    async ({ worker }) => {
+      try {
+        const taskIds = await readContract(
+          CONTRACTS.TaskEscrow, ABI, "getWorkerTasks", [worker as Address]
+        );
+        return formatReadResult(
+          { worker, taskCount: (taskIds as any[]).length, taskIds },
+          `Tasks by worker ${worker}`
+        );
+      } catch (e) { return formatError(e); }
     }
   );
 }

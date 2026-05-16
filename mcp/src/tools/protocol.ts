@@ -26,7 +26,7 @@ export function registerProtocolTools(server: McpServer): void {
   // get_stats
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_stats",
+    "corven_get_stats",
     {
       title: "Protocol Statistics",
       description:
@@ -43,25 +43,17 @@ export function registerProtocolTools(server: McpServer): void {
         }
 
         // Fetch stats from both contracts in parallel
-        const [totalAgents, totalTasks, completedTasks, totalVolume, totalFees] =
+        const [totalAgents, totalTasks, accumulatedFees] =
           await Promise.all([
-            readContract(CONTRACTS.AgentRegistry, registryAbi, "totalAgents", []),
-            readContract(CONTRACTS.TaskEscrow, escrowAbi, "totalTasks", []),
-            readContract(CONTRACTS.TaskEscrow, escrowAbi, "completedTasks", []),
-            readContract(CONTRACTS.TaskEscrow, escrowAbi, "totalVolume", []),
-            readContract(CONTRACTS.TaskEscrow, escrowAbi, "totalFees", []),
+            readContract(CONTRACTS.AgentRegistry, registryAbi, "getAgentCount", []),
+            readContract(CONTRACTS.TaskEscrow, escrowAbi, "taskCounter", []),
+            readContract(CONTRACTS.TaskEscrow, escrowAbi, "accumulatedFees", []),
           ]);
 
         const stats = {
           totalAgents: Number(totalAgents),
           totalTasks: Number(totalTasks),
-          completedTasks: Number(completedTasks),
-          totalVolumeEth: formatEther(totalVolume as bigint),
-          totalFeesEth: formatEther(totalFees as bigint),
-          completionRate:
-            Number(totalTasks) > 0
-              ? `${((Number(completedTasks) / Number(totalTasks)) * 100).toFixed(1)}%`
-              : "N/A",
+          totalFeesEth: formatEther(accumulatedFees as bigint),
         };
 
         return formatReadResult(stats, "COVENANT Protocol Statistics");
@@ -75,7 +67,7 @@ export function registerProtocolTools(server: McpServer): void {
   // get_leaderboard
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_leaderboard",
+    "corven_get_leaderboard",
     {
       title: "Agent Leaderboard",
       description:
@@ -101,7 +93,7 @@ export function registerProtocolTools(server: McpServer): void {
 
         // Get total agent count
         const totalAgents = Number(
-          await readContract(CONTRACTS.AgentRegistry, registryAbi, "totalAgents", [])
+          await readContract(CONTRACTS.AgentRegistry, registryAbi, "getAgentCount", [])
         );
 
         if (totalAgents === 0) {

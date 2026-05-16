@@ -126,14 +126,28 @@ export interface ProtocolStats {
 // ============================================================
 
 export interface ContractConfig {
+  // Core Protocol
   AgentRegistry: Address;
   TaskEscrow: Address;
   ReceiptVerifier: Address;
+  // Market & Batching
   OpenTaskMarket: Address;
   ParallelTaskBatch: Address;
+  // Collective & Insurance
   AgentCollective: Address;
   AgentInsurance: Address;
+  // Dispute Resolution
   DisputeArbitration: Address;
+  // ZK Verifiers
+  Groth16VerifierCapability: Address;
+  CapabilityVerifier: Address;
+  Groth16VerifierReputation: Address;
+  ReputationVerifier: Address;
+  // Router & Integration
+  COVENANTRouter: Address;
+  LitProtocolIntegration: Address;
+  // Wallet (sample)
+  AgentWallet: Address;
 }
 
 // ============================================================

@@ -15,6 +15,12 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const ABI = loadAbi("DisputeArbitration");
 
+// Check if DisputeArbitration is deployed (not zero address)
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+function isDisputeDeployed(): boolean {
+  return CONTRACTS.DisputeArbitration.toLowerCase() !== ZERO_ADDRESS;
+}
+
 // Input validation schemas
 const fileDisputeSchema = z.object({
   taskId: z.number().int().positive(),
@@ -32,7 +38,7 @@ export function registerDisputeTools(server: McpServer): void {
   // file_dispute
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "file_dispute",
+    "corven_file_dispute",
     {
       title: "File Dispute",
       description:
@@ -45,6 +51,9 @@ export function registerDisputeTools(server: McpServer): void {
     },
     async ({ taskId, bond }) => {
       try {
+        if (!isDisputeDeployed()) {
+          return formatError(new Error("DisputeArbitration contract is not deployed on this network. Dispute functionality is unavailable."));
+        }
         const validation = fileDisputeSchema.safeParse({ taskId, bond });
         if (!validation.success) {
           return formatError(new Error(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`));
@@ -74,7 +83,7 @@ export function registerDisputeTools(server: McpServer): void {
   // cast_vote
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "cast_vote",
+    "corven_cast_vote",
     {
       title: "Cast Vote",
       description:
@@ -87,6 +96,9 @@ export function registerDisputeTools(server: McpServer): void {
     },
     async ({ disputeId, inFavorOfWorker }) => {
       try {
+        if (!isDisputeDeployed()) {
+          return formatError(new Error("DisputeArbitration contract is not deployed on this network. Dispute functionality is unavailable."));
+        }
         const validation = castVoteSchema.safeParse({ disputeId, inFavorOfWorker });
         if (!validation.success) {
           return formatError(new Error(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`));
@@ -116,7 +128,7 @@ export function registerDisputeTools(server: McpServer): void {
   // get_dispute
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_dispute",
+    "corven_get_dispute",
     {
       title: "Get Dispute Details",
       description: "Retrieve full details of a dispute including votes and resolution status.",
@@ -126,6 +138,9 @@ export function registerDisputeTools(server: McpServer): void {
     },
     async ({ disputeId }) => {
       try {
+        if (!isDisputeDeployed()) {
+          return formatError(new Error("DisputeArbitration contract is not deployed on this network. Dispute functionality is unavailable."));
+        }
         const data = await readContract(
           CONTRACTS.DisputeArbitration,
           ABI,
@@ -155,7 +170,7 @@ export function registerDisputeTools(server: McpServer): void {
   // get_dispute_counter
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_dispute_counter",
+    "corven_get_dispute_counter",
     {
       title: "Get Dispute Counter",
       description: "Get the total number of disputes filed.",
@@ -163,6 +178,9 @@ export function registerDisputeTools(server: McpServer): void {
     },
     async () => {
       try {
+        if (!isDisputeDeployed()) {
+          return formatError(new Error("DisputeArbitration contract is not deployed on this network. Dispute functionality is unavailable."));
+        }
         const count = await readContract(
           CONTRACTS.DisputeArbitration,
           ABI,

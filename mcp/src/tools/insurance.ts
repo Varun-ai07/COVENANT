@@ -24,7 +24,7 @@ export function registerInsuranceTools(server: McpServer): void {
   // claim_insurance
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "claim_insurance",
+    "corven_claim_insurance",
     {
       title: "Claim Insurance",
       description:
@@ -63,7 +63,7 @@ export function registerInsuranceTools(server: McpServer): void {
   // get_claim
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_claim",
+    "corven_get_claim",
     {
       title: "Get Insurance Claim",
       description: "Retrieve details of an insurance claim.",
@@ -95,7 +95,7 @@ export function registerInsuranceTools(server: McpServer): void {
   // get_claim_counter
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_claim_counter",
+    "corven_get_claim_counter",
     {
       title: "Get Claim Counter",
       description: "Get the total number of insurance claims filed.",
@@ -120,7 +120,7 @@ export function registerInsuranceTools(server: McpServer): void {
   // get_coverage_percent
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_coverage_percent",
+    "corven_get_coverage_percent",
     {
       title: "Get Coverage Percentage",
       description: "Get the insurance coverage percentage (e.g., 80% = 80).",
@@ -138,6 +138,149 @@ export function registerInsuranceTools(server: McpServer): void {
       } catch (e) {
         return formatError(e);
       }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_join_insurance_pool
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_join_insurance_pool",
+    {
+      title: "Join Insurance Pool",
+      description: "Join the agent insurance pool by contributing ETH (min 0.01 ETH).",
+      inputSchema: {
+        contribution: z.string().describe("Contribution amount in ETH (min 0.01)"),
+      },
+    },
+    async ({ contribution }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const { parseEther } = await import("viem");
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentInsurance, ABI, "joinPool", [], parseEther(contribution)
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_pay_premium
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_pay_premium",
+    {
+      title: "Pay Insurance Premium",
+      description: "Pay insurance premium for a specific task to get coverage.",
+      inputSchema: {
+        taskId: z.number().describe("Task ID to insure"),
+      },
+    },
+    async ({ taskId }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentInsurance, ABI, "payPremium", [BigInt(taskId)]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_vote_on_claim
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_vote_on_claim",
+    {
+      title: "Vote on Insurance Claim",
+      description: "Governance member votes on an insurance claim.",
+      inputSchema: {
+        claimId: z.number().describe("Claim ID"),
+        inFavor: z.boolean().describe("True to approve, false to reject"),
+      },
+    },
+    async ({ claimId, inFavor }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentInsurance, ABI, "voteOnClaim", [BigInt(claimId), inFavor]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_pay_claim
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_pay_claim",
+    {
+      title: "Pay Insurance Claim",
+      description: "Pay out an approved insurance claim.",
+      inputSchema: {
+        claimId: z.number().describe("Claim ID"),
+      },
+    },
+    async ({ claimId }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentInsurance, ABI, "payClaim", [BigInt(claimId)]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_pool_balance
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_pool_balance",
+    {
+      title: "Get Insurance Pool Balance",
+      description: "Get the current balance of the insurance pool.",
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const balance = await readContract(
+          CONTRACTS.AgentInsurance, ABI, "getPoolBalance", []
+        );
+        return formatReadResult(
+          { poolBalanceEth: formatEther(balance as bigint) },
+          "Insurance Pool Balance"
+        );
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_member_info
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_member_info",
+    {
+      title: "Get Insurance Member Info",
+      description: "Get insurance membership info for an agent.",
+      inputSchema: {
+        agent: z.string().describe("Agent's Ethereum address"),
+      },
+    },
+    async ({ agent }) => {
+      try {
+        const data = await readContract(
+          CONTRACTS.AgentInsurance, ABI, "getMemberInfo", [agent as Address]
+        );
+        return formatReadResult(data, `Insurance info for ${agent}`);
+      } catch (e) { return formatError(e); }
     }
   );
 }

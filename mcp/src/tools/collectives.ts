@@ -39,7 +39,7 @@ export function registerCollectiveTools(server: McpServer): void {
   // create_collective
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "create_collective",
+    "corven_create_collective",
     {
       title: "Create Agent Collective",
       description:
@@ -80,7 +80,7 @@ export function registerCollectiveTools(server: McpServer): void {
   // join_collective
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "join_collective",
+    "corven_join_collective",
     {
       title: "Join Collective",
       description:
@@ -122,7 +122,7 @@ export function registerCollectiveTools(server: McpServer): void {
   // launch_collective_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "launch_collective_task",
+    "corven_launch_collective_task",
     {
       title: "Launch Collective Task",
       description:
@@ -172,7 +172,7 @@ export function registerCollectiveTools(server: McpServer): void {
   // get_collective
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_collective",
+    "corven_get_collective",
     {
       title: "Get Collective Details",
       description: "Retrieve details about a collective including members and treasury.",
@@ -205,7 +205,7 @@ export function registerCollectiveTools(server: McpServer): void {
   // get_collective_counter
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_collective_counter",
+    "corven_get_collective_counter",
     {
       title: "Get Collective Counter",
       description: "Get the total number of collectives created.",
@@ -223,6 +223,60 @@ export function registerCollectiveTools(server: McpServer): void {
       } catch (e) {
         return formatError(e);
       }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_submit_deliverable
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_submit_deliverable",
+    {
+      title: "Submit Collective Deliverable",
+      description:
+        "Worker submits encrypted deliverables to a collective task. " +
+        "Each member receives their own encrypted copy.",
+      inputSchema: {
+        collectiveId: z.number().describe("Collective ID"),
+        taskId: z.number().describe("Task ID"),
+        encryptedDeliveryHashes: z.array(z.string()).describe("Array of encrypted delivery hashes (one per member)"),
+      },
+    },
+    async ({ collectiveId, taskId, encryptedDeliveryHashes }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentCollective, ABI, "submitDeliverable",
+          [BigInt(collectiveId), BigInt(taskId), encryptedDeliveryHashes]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_claim_deliverable
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_claim_deliverable",
+    {
+      title: "Claim Collective Deliverable",
+      description: "Claim your encrypted deliverable from a collective task.",
+      inputSchema: {
+        collectiveId: z.number().describe("Collective ID"),
+      },
+    },
+    async ({ collectiveId }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentCollective, ABI, "claimDeliverable",
+          [BigInt(collectiveId)]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
     }
   );
 }

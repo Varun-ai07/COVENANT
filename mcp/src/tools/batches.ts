@@ -44,7 +44,7 @@ export function registerBatchTools(server: McpServer): void {
   // create_batch
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "create_batch",
+    "corven_create_batch",
     {
       title: "Create Parallel Task Batch",
       description:
@@ -102,7 +102,7 @@ export function registerBatchTools(server: McpServer): void {
   // get_batch
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_batch",
+    "corven_get_batch",
     {
       title: "Get Batch Details",
       description: "Retrieve full details of a task batch including all task IDs.",
@@ -138,7 +138,7 @@ export function registerBatchTools(server: McpServer): void {
   // get_batch_status
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_batch_status",
+    "corven_get_batch_status",
     {
       title: "Get Batch Status",
       description: "Get the current status of a batch (Pending/InProgress/Aggregated/etc).",
@@ -171,7 +171,7 @@ export function registerBatchTools(server: McpServer): void {
   // aggregate_results
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "aggregate_results",
+    "corven_aggregate_results",
     {
       title: "Aggregate Batch Results",
       description:
@@ -205,7 +205,7 @@ export function registerBatchTools(server: McpServer): void {
   // get_batch_counter
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_batch_counter",
+    "corven_get_batch_counter",
     {
       title: "Get Batch Counter",
       description: "Get the total number of batches created on the protocol.",
@@ -223,6 +223,52 @@ export function registerBatchTools(server: McpServer): void {
       } catch (e) {
         return formatError(e);
       }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_check_batch_submitted
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_check_batch_submitted",
+    {
+      title: "Check Batch All Submitted",
+      description: "Check if all subtasks in a batch have been submitted.",
+      inputSchema: { batchId: z.number().describe("Batch ID") },
+    },
+    async ({ batchId }) => {
+      try {
+        const allSubmitted = await readContract(
+          CONTRACTS.ParallelTaskBatch, ABI, "areAllSubtasksSubmitted", [BigInt(batchId)]
+        );
+        return formatReadResult(
+          { batchId, allSubmitted },
+          `Batch #${batchId} submission status`
+        );
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_aggregated_result
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_aggregated_result",
+    {
+      title: "Get Aggregated Result",
+      description: "Get the aggregated result hash after a batch is finalized.",
+      inputSchema: { batchId: z.number().describe("Batch ID") },
+    },
+    async ({ batchId }) => {
+      try {
+        const result = await readContract(
+          CONTRACTS.ParallelTaskBatch, ABI, "getAggregatedResult", [BigInt(batchId)]
+        );
+        return formatReadResult(
+          { batchId, aggregatedResult: result },
+          `Aggregated result for Batch #${batchId}`
+        );
+      } catch (e) { return formatError(e); }
     }
   );
 }

@@ -115,28 +115,52 @@ export interface CovenantConfig {
  * Partial contract addresses - only specify what you want to override
  */
 export interface PartialContractAddresses {
+  // Core Protocol
   AgentRegistry?: Address;
   TaskEscrow?: Address;
   ReceiptVerifier?: Address;
+  // Market & Batching
   OpenTaskMarket?: Address;
   ParallelTaskBatch?: Address;
+  // Collective & Insurance
   AgentCollective?: Address;
   AgentInsurance?: Address;
+  // Dispute Resolution
   DisputeArbitration?: Address;
+  // ZK Verifiers
+  Groth16VerifierCapability?: Address;
+  CapabilityVerifier?: Address;
+  Groth16VerifierReputation?: Address;
+  ReputationVerifier?: Address;
+  // Router & Integration
+  COVENANTRouter?: Address;
+  LitProtocolIntegration?: Address;
 }
 
 /**
  * Full contract addresses
  */
 export interface ContractAddresses {
+  // Core Protocol
   AgentRegistry: Address;
   TaskEscrow: Address;
   ReceiptVerifier: Address;
+  // Market & Batching
   OpenTaskMarket: Address;
   ParallelTaskBatch: Address;
+  // Collective & Insurance
   AgentCollective: Address;
   AgentInsurance: Address;
+  // Dispute Resolution
   DisputeArbitration: Address;
+  // ZK Verifiers
+  Groth16VerifierCapability: Address;
+  CapabilityVerifier: Address;
+  Groth16VerifierReputation: Address;
+  ReputationVerifier: Address;
+  // Router & Integration
+  COVENANTRouter: Address;
+  LitProtocolIntegration: Address;
 }
 
 // ============================================================================

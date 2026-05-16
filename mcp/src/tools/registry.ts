@@ -38,7 +38,7 @@ export function registerAgentTools(server: McpServer): void {
   // register_agent
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "register_agent",
+    "corven_register_agent",
     {
       title: "Register Agent",
       description:
@@ -91,7 +91,7 @@ export function registerAgentTools(server: McpServer): void {
   // get_agent
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_agent",
+    "corven_get_agent",
     {
       title: "Get Agent Profile",
       description:
@@ -128,7 +128,7 @@ export function registerAgentTools(server: McpServer): void {
   // find_workers
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "find_workers",
+    "corven_find_workers",
     {
       title: "Find Workers by Capability",
       description:
@@ -185,6 +185,102 @@ export function registerAgentTools(server: McpServer): void {
         return formatReadResult(
           { capability, count: workers.length, workers },
           `Workers with capability "${capability}"`
+        );
+      } catch (e) {
+        return formatError(e);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_add_stake
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_add_stake",
+    {
+      title: "Add Stake",
+      description:
+        "Add additional ETH stake to an existing agent registration. " +
+        "Higher stake increases trust and priority in the network.",
+      inputSchema: {
+        amount: z.string().describe("Amount of ETH to add as stake, e.g. '0.01'"),
+      },
+    },
+    async ({ amount }) => {
+      try {
+        const account = getAccount();
+        if (!account) {
+          return formatError(new Error("No private key configured — cannot send transactions"));
+        }
+        const stakeAmount = parseEther(amount);
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentRegistry,
+          ABI,
+          "addStake",
+          [],
+          stakeAmount
+        );
+        return formatTxResult(result);
+      } catch (e) {
+        return formatError(e);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_deactivate_agent
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_deactivate_agent",
+    {
+      title: "Deactivate Agent",
+      description:
+        "Deactivate your agent registration and withdraw staked ETH. " +
+        "This action is irreversible — your agent will no longer be discoverable.",
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const account = getAccount();
+        if (!account) {
+          return formatError(new Error("No private key configured — cannot send transactions"));
+        }
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentRegistry,
+          ABI,
+          "deactivate",
+          []
+        );
+        return formatTxResult(result);
+      } catch (e) {
+        return formatError(e);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_all_agents
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_all_agents",
+    {
+      title: "Get All Agents",
+      description:
+        "Retrieve the addresses of all registered agents on the protocol. " +
+        "Use corven_get_agent to get full profiles for each address.",
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        const addresses = await readContract(
+          CONTRACTS.AgentRegistry,
+          ABI,
+          "getAllAgents",
+          []
+        );
+        return formatReadResult(
+          { count: (addresses as any[]).length, agents: addresses },
+          "All Registered Agents"
         );
       } catch (e) {
         return formatError(e);

@@ -6,9 +6,9 @@
  */
 import { z } from "zod";
 import { type Address, isAddress } from "viem";
-import { loadAbi, CONTRACTS } from "../config.js";
-import { readContract } from "../handlers/wallet.js";
-import { formatReadResult, formatError } from "../handlers/transactions.js";
+import { loadAbi, CONTRACTS, getAccount } from "../config.js";
+import { executeOrPrepare, readContract } from "../handlers/wallet.js";
+import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
 import { RECEIPT_TYPE } from "../types.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -28,7 +28,7 @@ export function registerReceiptTools(server: McpServer): void {
   // get_receipts
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_receipts",
+    "corven_get_receipts",
     {
       title: "Get Receipts for Address",
       description:
@@ -78,7 +78,7 @@ export function registerReceiptTools(server: McpServer): void {
   // verify_receipt
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "verify_receipt",
+    "corven_verify_receipt",
     {
       title: "Verify a Receipt",
       description:
@@ -113,6 +113,76 @@ export function registerReceiptTools(server: McpServer): void {
         };
 
         return formatReadResult(enriched, `Receipt #${receiptId}`);
+      } catch (e) {
+        return formatError(e);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_create_receipt
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_create_receipt",
+    {
+      title: "Create Receipt",
+      description:
+        "Issue an ERC-8004 attestation receipt for a completed interaction. " +
+        "Only authorized issuers can create receipts.",
+      inputSchema: {
+        issuer: z.string().describe("Issuer's Ethereum address"),
+        counterparty: z.string().describe("Counterparty's Ethereum address"),
+        interactionType: z.number().describe("Receipt type (0=TaskCompleted, 1=AgentVerified, etc.)"),
+        dataHash: z.string().describe("Hash of the receipt data"),
+      },
+    },
+    async ({ issuer, counterparty, interactionType, dataHash }) => {
+      try {
+        const account = getAccount();
+        if (!account) {
+          return formatError(new Error("No private key configured — cannot send transactions"));
+        }
+        const result = await executeOrPrepare(
+          CONTRACTS.ReceiptVerifier,
+          ABI,
+          "createReceipt",
+          [issuer as Address, counterparty as Address, interactionType, dataHash]
+        );
+        return formatTxResult(result);
+      } catch (e) {
+        return formatError(e);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_get_receipt_count
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_receipt_count",
+    {
+      title: "Get Receipt Count",
+      description: "Get the total number of ERC-8004 receipts issued for an agent.",
+      inputSchema: {
+        address: z.string().describe("Agent's Ethereum address"),
+      },
+    },
+    async ({ address }) => {
+      try {
+        const validationResult = getReceiptsSchema.safeParse({ address });
+        if (!validationResult.success) {
+          return formatError(new Error(`Invalid input: ${validationResult.error.issues.map((e: any) => e.message).join(", ")}`));
+        }
+        const count = await readContract(
+          CONTRACTS.ReceiptVerifier,
+          ABI,
+          "getAgentReceiptCount",
+          [validationResult.data.address as Address]
+        );
+        return formatReadResult(
+          { address, receiptCount: Number(count) },
+          `Receipt count for ${address}`
+        );
       } catch (e) {
         return formatError(e);
       }

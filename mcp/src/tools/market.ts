@@ -71,7 +71,7 @@ export function registerMarketTools(server: McpServer): void {
   // post_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "post_open_task",
+    "corven_post_open_task",
     {
       title: "Post Open Task",
       description:
@@ -114,7 +114,7 @@ export function registerMarketTools(server: McpServer): void {
   // get_open_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_open_task",
+    "corven_get_open_task",
     {
       title: "Get Open Task Details",
       description: "Retrieve details of an open market task including bids and selected worker.",
@@ -131,11 +131,33 @@ export function registerMarketTools(server: McpServer): void {
           [BigInt(taskId)]
         );
 
+        // Contract returns a tuple (array), not an object
+        const d = data as any;
+        const isTuple = Array.isArray(d);
+        const client = isTuple ? d[0] : d.client;
+        const maxPayment = isTuple ? d[1] : d.maxPayment;
+        const deadline = isTuple ? d[2] : d.deadline;
+        const descriptionHash = isTuple ? d[3] : d.descriptionHash;
+        const status = isTuple ? d[4] : d.status;
+        const postedAt = isTuple ? d[5] : d.postedAt;
+        const selectedWorker = isTuple ? d[6] : d.selectedWorker;
+        const selectedPrice = isTuple ? d[7] : d.selectedPrice;
+        const selectedTimeEstimate = isTuple ? d[8] : d.selectedTimeEstimate;
+        const selectedProposalHash = isTuple ? d[9] : d.selectedProposalHash;
+
         const enriched = {
-          ...(data as any),
-          statusLabel: TASK_STATUS[(data as any).status] ?? `Unknown(${(data as any).status})`,
-          maxPaymentEth: formatEther((data as any).maxPayment),
-          selectedPriceEth: (data as any).selectedPrice ? formatEther((data as any).selectedPrice) : "0",
+          client,
+          maxPayment: maxPayment?.toString(),
+          deadline: deadline?.toString(),
+          descriptionHash,
+          status: Number(status),
+          statusLabel: TASK_STATUS[Number(status)] ?? `Unknown(${status})`,
+          postedAt: postedAt?.toString(),
+          selectedWorker,
+          maxPaymentEth: formatEther(maxPayment ?? 0n),
+          selectedPriceEth: selectedPrice ? formatEther(selectedPrice) : "0",
+          selectedTimeEstimate: selectedTimeEstimate?.toString(),
+          selectedProposalHash,
         };
         return formatReadResult(enriched, `Open Task #${taskId}`);
       } catch (e) {
@@ -148,7 +170,7 @@ export function registerMarketTools(server: McpServer): void {
   // submit_bid
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "submit_bid",
+    "corven_submit_bid",
     {
       title: "Submit Bid",
       description:
@@ -190,7 +212,7 @@ export function registerMarketTools(server: McpServer): void {
   // get_bid
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "get_bid",
+    "corven_get_bid",
     {
       title: "Get Bid Details",
       description: "Retrieve a specific bid on an open task by taskId and bidder address.",
@@ -208,16 +230,29 @@ export function registerMarketTools(server: McpServer): void {
           [BigInt(taskId), bidder as Address]
         );
 
+        // Contract returns a tuple (array), not an object
+        const d = data as any;
+        const isTuple = Array.isArray(d);
+        const price = isTuple ? d[0] : d.price;
+        const timeEstimate = isTuple ? d[1] : d.timeEstimate;
+        const proposalHash = isTuple ? d[2] : d.proposalHash;
+        const bidAt = isTuple ? d[3] : d.bidAt;
+        const bidderAddr = isTuple ? d[4] : d.bidderAddr;
+        const hasCounter = isTuple ? d[5] : d.hasCounter;
+        const counterPrice = isTuple ? d[6] : d.counterPrice;
+        const counterTimeEstimate = isTuple ? d[7] : d.counterTimeEstimate;
+        const counterProposalHash = isTuple ? d[8] : d.counterProposalHash;
+
         const enriched = {
-          priceEth: formatEther((data as any).price),
-          timeEstimate: (data as any).timeEstimate,
-          proposalHash: (data as any).proposalHash,
-          bidAt: (data as any).bidAt,
-          bidder: (data as any).bidderAddr,
-          hasCounter: (data as any).hasCounter,
-          counterPriceEth: (data as any).counterPrice ? formatEther((data as any).counterPrice) : "0",
-          counterTimeEstimate: (data as any).counterTimeEstimate,
-          counterProposalHash: (data as any).counterProposalHash,
+          priceEth: formatEther(price ?? 0n),
+          timeEstimate: timeEstimate?.toString(),
+          proposalHash,
+          bidAt: bidAt?.toString(),
+          bidder: bidderAddr,
+          hasCounter,
+          counterPriceEth: counterPrice ? formatEther(counterPrice) : "0",
+          counterTimeEstimate: counterTimeEstimate?.toString(),
+          counterProposalHash,
         };
         return formatReadResult(enriched, `Bid on Task #${taskId}`);
       } catch (e) {
@@ -230,7 +265,7 @@ export function registerMarketTools(server: McpServer): void {
   // select_worker
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "select_worker",
+    "corven_select_worker",
     {
       title: "Select Worker",
       description:
@@ -272,7 +307,7 @@ export function registerMarketTools(server: McpServer): void {
   // make_counter_offer
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "make_counter_offer",
+    "corven_make_counter_offer",
     {
       title: "Make Counter Offer",
       description:
@@ -318,7 +353,7 @@ export function registerMarketTools(server: McpServer): void {
   // accept_counter_offer
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "accept_counter_offer",
+    "corven_accept_counter_offer",
     {
       title: "Accept Counter Offer",
       description: "Worker accepts the client's counter offer on their bid.",
@@ -350,7 +385,7 @@ export function registerMarketTools(server: McpServer): void {
   // withdraw_bid
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "withdraw_bid",
+    "corven_withdraw_bid",
     {
       title: "Withdraw Bid",
       description: "Withdraw your bid from an open task before being selected.",
@@ -382,7 +417,7 @@ export function registerMarketTools(server: McpServer): void {
   // cancel_open_task
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "cancel_open_task",
+    "corven_cancel_open_task",
     {
       title: "Cancel Open Task",
       description: "Cancel an open task and refund the escrowed payment.",
@@ -409,6 +444,50 @@ export function registerMarketTools(server: McpServer): void {
       } catch (e) {
         return formatError(e);
       }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_complete_open_task
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_complete_open_task",
+    {
+      title: "Complete Open Task",
+      description: "Worker marks an open market task as completed after being selected.",
+      inputSchema: { taskId: z.number().describe("Task ID") },
+    },
+    async ({ taskId }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.OpenTaskMarket, ABI, "completeTask", [BigInt(taskId)]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_reject_counter_offer
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_reject_counter_offer",
+    {
+      title: "Reject Counter Offer",
+      description: "Worker rejects the client's counter offer on their bid.",
+      inputSchema: { taskId: z.number().describe("Task ID") },
+    },
+    async ({ taskId }) => {
+      try {
+        const account = getAccount();
+        if (!account) return formatError(new Error("No private key configured"));
+        const result = await executeOrPrepare(
+          CONTRACTS.OpenTaskMarket, ABI, "rejectCounterOffer", [BigInt(taskId)]
+        );
+        return formatTxResult(result);
+      } catch (e) { return formatError(e); }
     }
   );
 }
