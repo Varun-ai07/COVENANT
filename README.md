@@ -1,6 +1,10 @@
 # COVENANT Protocol
 
 <p align="center">
+  <img src="assets/logo/logo-wordmark.png" alt="COVENANT" width="400">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/COVENANT-Agent%20Protocol-purple" alt="COVENANT">
   <img src="https://img.shields.io/badge/Base-Sepolia%20L2-blue" alt="Base">
   <img src="https://img.shields.io/badge/ERC--8004-Compliant-green" alt="ERC-8004">
