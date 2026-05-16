@@ -2,15 +2,14 @@
  * COVENANT MCP Utilities
  * Helper functions for encoding and data conversion
  */
-import { pad, toHex, type Hex } from "viem";
+import { pad, toHex, keccak256, toBytes, type Hex } from "viem";
 
 /**
  * Convert a string to bytes32 format.
  * Handles IPFS CIDs and other task description hashes.
  *
- * For strings <= 31 chars: Encodes as UTF-8 bytes, padded right
- * For strings > 31 chars: Truncates to fit
  * For hex strings starting with 0x: Validates length and pads if needed
+ * For all other strings: Hashes with keccak256 to produce deterministic bytes32
  */
 export function stringToBytes32(str: string): Hex {
   // If it's already a 0x-prefixed hex string
@@ -23,22 +22,12 @@ export function stringToBytes32(str: string): Hex {
     if (str.length < 66) {
       return pad(str as Hex, { size: 32 });
     }
-    // If longer, truncate
-    return str.slice(0, 66) as Hex;
+    // If longer, hash it
+    return keccak256(toBytes(str));
   }
 
-  // For plaintext strings, encode to hex and pad
-  // Convert string to UTF-8 bytes, then to hex
-  const encoder = new TextEncoder();
-  const bytes = encoder.encode(str);
-
-  // bytes32 is 32 bytes, strings can use up to 31 bytes (last byte is length)
-  // For simplicity, we truncate to 31 bytes and pad
-  const truncatedBytes = bytes.slice(0, 31);
-  const hexString = toHex(truncatedBytes);
-
-  // Pad to 32 bytes (right-pad for string data)
-  return pad(hexString as Hex, { size: 32, dir: "right" });
+  // For plaintext strings (IPFS CIDs, etc.), hash to produce deterministic bytes32
+  return keccak256(toBytes(str));
 }
 
 /**
@@ -50,25 +39,10 @@ export function stringsToBytes32(strings: string[]): Hex[] {
 
 /**
  * Decode bytes32 back to string (for display purposes).
- * Falls back to hex string if not UTF-8 decodable.
+ * Since strings are now hashed with keccak256, this returns the hex representation.
  */
 export function bytes32ToString(bytes32: Hex): string {
-  try {
-    // Remove 0x prefix and decode hex as UTF-8
-    const hex = bytes32.slice(2);
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < hex.length; i += 2) {
-      bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
-    }
-    // Find null terminator or trailing zeros
-    let end = bytes.findIndex(b => b === 0);
-    if (end === -1) end = bytes.length;
-    const decoder = new TextDecoder();
-    return decoder.decode(bytes.slice(0, end));
-  } catch {
-    // If decoding fails, return hex representation
-    return bytes32;
-  }
+  return bytes32;
 }
 
 /**

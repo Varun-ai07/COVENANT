@@ -213,7 +213,9 @@ export class EventIndexer {
   getTaskEvents(taskId: number): IndexedEvent[] {
     return this.events.filter(e =>
       e.args?.taskId === BigInt(taskId) ||
-      JSON.stringify(e.args).includes(`"taskId":"${taskId}"`)
+      JSON.stringify(e.args, (_key, value) =>
+        typeof value === "bigint" ? value.toString() : value
+      ).includes(`"taskId":"${taskId}"`)
     );
   }
 
@@ -224,7 +226,9 @@ export class EventIndexer {
     const addr = address.toLowerCase();
     return this.events.filter(e =>
       e.address.toLowerCase() === addr ||
-      JSON.stringify(e.args).toLowerCase().includes(addr.slice(2))
+      JSON.stringify(e.args, (_key, value) =>
+        typeof value === "bigint" ? value.toString() : value
+      ).toLowerCase().includes(addr.slice(2))
     );
   }
 

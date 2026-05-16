@@ -201,8 +201,7 @@ export function registerCollectiveTools(server: McpServer): void {
 
         const enriched = {
           ...(data as any),
-          minContributionEth: formatEther((data as any).minContribution),
-          treasuryEth: formatEther((data as any).treasury),
+          totalFundEth: formatEther((data as any).totalFund),
         };
         return formatReadResult(enriched, `Collective #${collectiveId}`);
       } catch (e) {

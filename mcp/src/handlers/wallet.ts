@@ -407,7 +407,9 @@ export async function readContract(
   }
 
   // Generate cache key
-  const argsHash = JSON.stringify(args).slice(0, 100);
+  const argsHash = JSON.stringify(args, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : value
+  ).slice(0, 100);
   const cacheKey = `read:${contractAddress}:${functionName}:${argsHash}`;
   const category = getCacheCategory(functionName);
 
