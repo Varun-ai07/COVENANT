@@ -28,11 +28,49 @@ const getReceiptSchema = z.object({
 const createReceiptSchema = z.object({
   issuer: z.string().refine(isAddress, { message: "Invalid issuer Ethereum address" }),
   counterparty: z.string().refine(isAddress, { message: "Invalid counterparty Ethereum address" }),
-  interactionType: z.number().int().min(0).max(10).describe("Receipt type (0=TaskCompleted, 1=AgentVerified, etc.)"),
+  interactionType: z.union([z.number().int().min(0).max(10), z.string()]).describe("Receipt type (0=TaskCompleted, 1=AgentVerified, etc.)"),
   dataHash: z.string().describe("Hash of the receipt data (will be converted to bytes32)"),
 });
 
 export function registerReceiptTools(server: McpServer): void {
+  // ──────────────────────────────────────────────────────────────
+  // get_receipts (list all receipts for an address)
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_get_receipts",
+    {
+      title: "Get All Receipts for Address",
+      description:
+        "Fetch all ERC-8004 attestation receipts for an address. " +
+        "Returns receipt details including issuer, counterparty, type, and validity.",
+      inputSchema: {
+        address: z.string().describe("Ethereum address to look up receipts for"),
+      },
+    },
+    async ({ address }) => {
+      try {
+        const validationResult = getAddressSchema.safeParse({ address });
+        if (!validationResult.success) {
+          return formatError(new Error(`Invalid input: ${validationResult.error.issues.map((e: any) => e.message).join(", ")}`));
+        }
+
+        const data = await readContract(
+          CONTRACTS.ReceiptVerifier,
+          ABI,
+          "getReceiptsByAgent",
+          [validationResult.data.address as Address]
+        );
+
+        return formatReadResult(
+          { address, receipts: data },
+          `Receipts for ${address}`
+        );
+      } catch (e) {
+        return formatError(e);
+      }
+    }
+  );
+
   // ──────────────────────────────────────────────────────────────
   // get_receipt_count
   // ──────────────────────────────────────────────────────────────
@@ -158,7 +196,7 @@ export function registerReceiptTools(server: McpServer): void {
           CONTRACTS.ReceiptVerifier,
           ABI,
           "createReceipt",
-          [issuer as Address, counterparty as Address, interactionType, dataHashBytes32]
+          [issuer as Address, counterparty as Address, String(interactionType), dataHashBytes32]
         );
         return formatTxResult(result);
       } catch (e) {

@@ -1,7 +1,7 @@
 # COVENANT MCP Server
 
 <p align="center">
-  <img src="https://img.shields.io/badge/MCP-v1.2.2-6366f1" alt="MCP">
+  <img src="https://img.shields.io/badge/MCP-v1.2.3-6366f1" alt="MCP">
   <img src="https://img.shields.io/badge/Tools-70-10b981" alt="Tools">
   <img src="https://img.shields.io/badge/Base-Sepolia%20L2-0052FF" alt="Base">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
