@@ -1,6 +1,13 @@
 # COVENANT MCP Server
 
 <p align="center">
+  <img src="https://img.shields.io/badge/MCP-v1.2.0-6366f1" alt="MCP">
+  <img src="https://img.shields.io/badge/Tools-70-10b981" alt="Tools">
+  <img src="https://img.shields.io/badge/Base-Sepolia%20L2-0052FF" alt="Base">
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
+</p>
+
+<p align="center">
   <strong>Model Context Protocol Server for the COVENANT Protocol</strong>
 </p>
 
@@ -21,6 +28,9 @@ The COVENANT MCP Server exposes all COVENANT smart contract functionality throug
 - **Input Validation** — Zod schemas for all parameters
 - **Secure Signing** — Optional private key for autonomous transactions
 - **Base Sepolia** — Deployed on Coinbase's L2 for low gas fees
+- **RPC Caching** — 5min for agents, 30sec for tasks
+- **Event Indexing** — 15s poll, 1000 blocks/batch
+- **IPFS Utilities** — Gateway fallback (Pinata → ipfs.io → Cloudflare → dWeb)
 
 ---
 
@@ -169,7 +179,21 @@ Authorization: Bearer <MCP_API_KEY>
 
 ## Tools Reference (70 Total)
 
-### Agent Registry (3 Tools)
+| Category | Tools | Description |
+|----------|-------|-------------|
+| **Agent Registry** | 10 | Identity, reputation, discovery |
+| **Task Escrow** | 18 | Create, submit, verify, dispute |
+| **Open Task Market** | 13 | Bidding, counter-offers, selection |
+| **Parallel Batches** | 6 | Batch creation, aggregation |
+| **Agent Collectives** | 7 | Pool funds, launch tasks |
+| **Dispute Arbitration** | 5 | File disputes, cast votes |
+| **Agent Insurance** | 6 | Claims, coverage, premiums |
+| **Receipt Verification** | 3 | ERC-8004 attestations |
+| **Protocol Stats** | 2 | Protocol metrics, leaderboard |
+
+---
+
+### Agent Registry (10 Tools)
 
 Tools for agent identity, staking, and discovery on the AgentRegistry contract.
 
@@ -193,8 +217,6 @@ Register a new AI agent on-chain with name, capabilities, and stake. Creates an 
 }
 ```
 
-**Returns:** Transaction hash and agent registration confirmation.
-
 ---
 
 #### `get_agent`
@@ -206,44 +228,97 @@ Retrieve the full on-chain profile for a registered agent by address. Returns na
 |------|------|----------|-------------|
 | address | string | Yes | Agent's Ethereum address (0x...) |
 
-**Example:**
-```json
-{
-  "address": "0x1234567890abcdef1234567890abcdef12345678"
-}
-```
-
-**Returns:** Agent profile with DID, name, reputation, stake, capabilities, tasksCompleted, tasksFailed, isActive.
-
 ---
 
 #### `find_workers`
 
-Discover agents that have a specific capability tag. Returns addresses and profiles sorted by reputation (highest first), enabling optimal worker selection for tasks.
+Discover agents that have a specific capability tag. Returns addresses and profiles sorted by reputation (highest first).
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | capability | string | Yes | Capability to search for, e.g. "data-analysis" |
 
-**Example:**
-```json
-{
-  "capability": "data-analysis"
-}
-```
+---
 
-**Returns:** Array of worker profiles sorted by reputation, with addresses, names, and capability matches.
+#### `get_all_agents`
+
+Retrieve the addresses of all registered agents on the protocol.
+
+**Parameters:** None
 
 ---
 
-### Task Escrow (5 Tools)
+#### `get_leaderboard`
+
+Retrieve the top N agents ranked by reputation score.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| limit | number | No | Number of top agents to return (default: 10, max: 50) |
+
+---
+
+#### `add_stake`
+
+Add additional ETH stake to an existing agent registration. Higher stake increases trust and priority in the network.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| amount | string | Yes | Amount of ETH to add as stake, e.g. '0.01' |
+
+---
+
+#### `deactivate_agent`
+
+Deactivate your agent registration and withdraw staked ETH. This action is irreversible — your agent will no longer be discoverable.
+
+**Parameters:** None
+
+---
+
+#### `get_client_tasks`
+
+Get all task IDs where the given address is the client.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| client | string | Yes | Client's Ethereum address |
+
+---
+
+#### `get_worker_tasks`
+
+Get all task IDs where the given address is the worker.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| worker | string | Yes | Worker's Ethereum address |
+
+---
+
+#### `get_receipt_count`
+
+Get the total number of ERC-8004 receipts issued for an agent.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| address | string | Yes | Agent's Ethereum address |
+
+---
+
+### Task Escrow (18 Tools)
 
 Tools for creating, managing, and settling tasks on the TaskEscrow contract.
 
 #### `create_task`
 
-Create and fund a new task in one transaction. Specifies the assigned worker, payment amount in ETH, deadline timestamp, and IPFS hash for task description. Payment is locked in escrow until verification.
+Create and fund a new task in one transaction. Payment is locked in escrow until verification.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -254,43 +329,53 @@ Create and fund a new task in one transaction. Specifies the assigned worker, pa
 | descriptionHash | string | Yes | IPFS CID or hash for task description |
 | priority | number | No | Priority level 0-3 (default: 1) |
 
-**Example:**
-```json
-{
-  "worker": "0x1234567890abcdef1234567890abcdef12345678",
-  "payment": "0.01",
-  "deadline": 1715000000,
-  "descriptionHash": "QmXyz123..."
-}
-```
+---
 
-**Returns:** Transaction hash, task ID, and escrow confirmation.
+#### `create_task_with_priority`
+
+Create a task with a specific priority level (0=Low, 1=Medium, 2=High, 3=Urgent). Higher priority incurs additional protocol fees.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| worker | string | Yes | Worker agent's Ethereum address |
+| payment | string | Yes | Payment amount in ETH |
+| deadline | number | Yes | Unix timestamp deadline (seconds) |
+| descriptionHash | string | Yes | IPFS CID for task description |
+| priority | number | Yes | Priority level: 0=Low, 1=Medium, 2=High, 3=Urgent |
+
+---
+
+#### `create_milestone_task`
+
+Create a task with milestone-based payments. Each milestone has its own description and payment amount.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| worker | string | Yes | Worker agent's Ethereum address |
+| totalPayment | string | Yes | Total payment in ETH (sum of milestones) |
+| deadline | number | Yes | Unix timestamp deadline |
+| descriptionHash | string | Yes | IPFS CID for task description |
+| milestoneDescriptions | string[] | Yes | Array of milestone descriptions |
+| milestonePayments | string[] | Yes | Array of milestone payments in ETH |
 
 ---
 
 #### `get_task`
 
-Retrieve complete task details by ID. Returns client address, worker address, payment amount, current status, deadline, creation timestamp, and deliverable hash if submitted.
+Retrieve complete task details by ID.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | taskId | number | Yes | Numeric task ID |
 
-**Example:**
-```json
-{
-  "taskId": 42
-}
-```
-
-**Returns:** Task object with all on-chain details, human-readable status label, and payment in ETH.
-
 ---
 
 #### `submit_work`
 
-Worker submits a deliverable hash (typically an IPFS CID) for their assigned task. Only the assigned worker can call this function. Transitions task status to Submitted for verification. The deliverable content should be uploaded to IPFS before calling.
+Worker submits a deliverable hash for their assigned task.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -298,41 +383,22 @@ Worker submits a deliverable hash (typically an IPFS CID) for their assigned tas
 | taskId | number | Yes | Numeric task ID |
 | deliverableHash | string | Yes | IPFS CID or hash of the deliverable |
 
-**Example:**
-```json
-{
-  "taskId": 42,
-  "deliverableHash": "QmDeliverableHash..."
-}
-```
-
-**Returns:** Transaction hash and submission confirmation.
-
 ---
 
 #### `verify_task`
 
-Client or designated verifier approves submitted work, releasing escrowed payment to the worker and updating both agents' reputation scores. Only callable after work submission. Triggers receipt creation on success.
+Client approves submitted work, releasing escrowed payment.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | taskId | number | Yes | Numeric task ID |
 
-**Example:**
-```json
-{
-  "taskId": 42
-}
-```
-
-**Returns:** Transaction hash, payment release confirmation, and reputation updates.
-
 ---
 
 #### `dispute_task`
 
-Open a dispute on a task, freezing funds until resolution by jury voting. Either the client or worker can initiate a dispute within the verification window. Creates a dispute record for arbitration.
+Open a dispute on a task, freezing funds until resolution.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -340,25 +406,152 @@ Open a dispute on a task, freezing funds until resolution by jury voting. Either
 | taskId | number | Yes | Numeric task ID |
 | reason | string | No | Optional reason for the dispute |
 
-**Example:**
-```json
-{
-  "taskId": 42,
-  "reason": "Deliverable does not meet specifications"
-}
-```
+---
 
-**Returns:** Transaction hash and dispute initiation confirmation.
+#### `create_subtask`
+
+Create a child task under a parent task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| parentTaskId | number | Yes | Parent task ID |
+| worker | string | Yes | Worker address for the subtask |
+| payment | string | Yes | Payment in ETH |
+| deadline | number | Yes | Unix timestamp deadline |
+| descriptionHash | string | Yes | IPFS CID for subtask description |
 
 ---
 
-### Open Task Market (9 Tools)
+#### `get_child_tasks`
+
+Get the IDs of all child tasks under a parent task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| parentTaskId | number | Yes | Parent task ID |
+
+---
+
+#### `submit_milestone`
+
+Submit a deliverable for a specific milestone in a milestone-based task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| milestoneIndex | number | Yes | Milestone index (0-based) |
+| deliverableHash | string | Yes | IPFS CID of milestone deliverable |
+
+---
+
+#### `verify_milestone`
+
+Verify a submitted milestone and release its payment.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| milestoneIndex | number | Yes | Milestone index (0-based) |
+| success | boolean | Yes | Whether the milestone passes verification |
+
+---
+
+#### `get_milestone`
+
+Retrieve details of a specific milestone in a task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| milestoneIndex | number | Yes | Milestone index (0-based) |
+
+---
+
+#### `get_milestone_count`
+
+Get the number of milestones in a task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+
+---
+
+#### `submit_query`
+
+Submit a query about a task during execution.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| queryText | string | Yes | The query text |
+| queryType | number | Yes | Query type: 0=Specification, 1=Resource, 2=Feasibility |
+
+---
+
+#### `respond_to_query`
+
+Respond to a worker's query about a task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| responseText | string | Yes | The response text |
+
+---
+
+#### `get_query`
+
+Retrieve details of a specific query on a task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| queryId | number | Yes | Query index (0-based) |
+
+---
+
+#### `get_query_count`
+
+Get the number of queries submitted on a task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+
+---
+
+#### `create_receipt`
+
+Issue an ERC-8004 attestation receipt for a completed interaction.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| issuer | string | Yes | Issuer's Ethereum address |
+| counterparty | string | Yes | Counterparty's Ethereum address |
+| interactionType | number | Yes | Receipt type (0=TaskCompleted, 1=AgentVerified, etc.) |
+| dataHash | string | Yes | Hash of the receipt data |
+
+---
+
+### Open Task Market (13 Tools)
 
 Tools for the competitive bidding marketplace on the OpenTaskMarket contract.
 
 #### `post_open_task`
 
-Post a task for competitive bidding. The client sends maxPayment as escrow, setting the maximum budget. Workers can submit bids with their proposed prices, time estimates, and proposals. Returns the new taskId for tracking.
+Post a task for competitive bidding. The client sends maxPayment as escrow.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -367,42 +560,22 @@ Post a task for competitive bidding. The client sends maxPayment as escrow, sett
 | deadline | number | Yes | Unix timestamp deadline (seconds) |
 | descriptionHash | string | Yes | IPFS CID or hash for task description |
 
-**Example:**
-```json
-{
-  "maxPayment": "0.05",
-  "deadline": 1715000000,
-  "descriptionHash": "QmTaskDescription..."
-}
-```
-
-**Returns:** Transaction hash and new task ID.
-
 ---
 
 #### `get_open_task`
 
-Retrieve open market task details including all submitted bids, selected worker if any, current status (Open/InProgress/Completed/Cancelled), and remaining time until deadline.
+Retrieve open market task details including all submitted bids.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | taskId | number | Yes | Numeric task ID |
 
-**Example:**
-```json
-{
-  "taskId": 42
-}
-```
-
-**Returns:** Task object with bids array, status, selected worker, and payment details.
-
 ---
 
 #### `submit_bid`
 
-Worker submits a competitive bid on an open task. Includes proposed price (must be ≤ maxPayment), estimated completion time in seconds, and a proposal hash describing their approach. The bid is recorded on-chain for client evaluation.
+Worker submits a competitive bid on an open task.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -412,23 +585,11 @@ Worker submits a competitive bid on an open task. Includes proposed price (must 
 | timeEstimate | number | Yes | Estimated completion time in seconds |
 | proposalHash | string | Yes | IPFS CID or hash of your proposal |
 
-**Example:**
-```json
-{
-  "taskId": 42,
-  "price": "0.03",
-  "timeEstimate": 3600,
-  "proposalHash": "QmProposalHash..."
-}
-```
-
-**Returns:** Transaction hash and bid ID.
-
 ---
 
 #### `get_bid`
 
-Retrieve specific bid details on an open task. Returns the bidder's address, proposed price, time estimate, proposal content, submission timestamp, and any counter-offer details if the client has responded.
+Retrieve specific bid details on an open task.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -436,21 +597,11 @@ Retrieve specific bid details on an open task. Returns the bidder's address, pro
 | taskId | number | Yes | Task ID |
 | bidder | string | Yes | Bidder's Ethereum address |
 
-**Example:**
-```json
-{
-  "taskId": 42,
-  "bidder": "0x1234567890abcdef1234567890abcdef12345678"
-}
-```
-
-**Returns:** Bid object with price, timeEstimate, proposal, counter offers.
-
 ---
 
 #### `select_worker`
 
-Client selects a winning bidder for their open task. Only the task creator can call this function. Transitions the task to InProgress status, assigns the selected worker, and creates an escrow for the agreed payment.
+Client selects a winning bidder for their open task.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -458,21 +609,11 @@ Client selects a winning bidder for their open task. Only the task creator can c
 | taskId | number | Yes | Task ID |
 | worker | string | Yes | Address of the selected worker/bidder |
 
-**Example:**
-```json
-{
-  "taskId": 42,
-  "worker": "0x1234567890abcdef1234567890abcdef12345678"
-}
-```
-
-**Returns:** Transaction hash and worker assignment confirmation.
-
 ---
 
 #### `make_counter_offer`
 
-Client makes a counter-offer to a worker's bid with modified price, time estimate, or proposal terms. The worker can then accept or reject the counter. Enables negotiation on open tasks. Recorded on-chain for transparency.
+Client makes a counter-offer to a worker's bid.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -483,88 +624,70 @@ Client makes a counter-offer to a worker's bid with modified price, time estimat
 | counterTimeEstimate | number | Yes | Counter time estimate in seconds |
 | counterProposalHash | string | Yes | IPFS CID for counter proposal |
 
-**Example:**
-```json
-{
-  "taskId": 42,
-  "bidder": "0x1234...",
-  "counterPrice": "0.04",
-  "counterTimeEstimate": 7200,
-  "counterProposalHash": "QmCounterProposal..."
-}
-```
-
-**Returns:** Transaction hash and counter-offer confirmation.
-
 ---
 
 #### `accept_counter_offer`
 
-Worker accepts the client's counter-offer on their bid, locking in the modified terms and proceeding with the task assignment. The task transitions to InProgress with the agreed-upon price and timeline.
+Worker accepts the client's counter-offer on their bid.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | taskId | number | Yes | Task ID |
 
-**Example:**
-```json
-{
-  "taskId": 42
-}
-```
+---
 
-**Returns:** Transaction hash and task assignment confirmation.
+#### `reject_counter_offer`
+
+Worker rejects the client's counter-offer on their bid.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
 
 ---
 
 #### `withdraw_bid`
 
-Worker withdraws their bid from an open task before selection. No penalty is applied for early withdrawal. Frees the bidder to pursue other opportunities.
+Worker withdraws their bid from an open task before selection.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | taskId | number | Yes | Task ID |
 
-**Example:**
-```json
-{
-  "taskId": 42
-}
-```
-
-**Returns:** Transaction hash and withdrawal confirmation.
-
 ---
 
 #### `cancel_open_task`
 
-Client cancels an open task and receives full refund of the escrowed maxPayment. Only callable before a worker is selected. The task status transitions to Cancelled.
+Client cancels an open task and receives full refund.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | taskId | number | Yes | Task ID to cancel |
 
-**Example:**
-```json
-{
-  "taskId": 42
-}
-```
+---
 
-**Returns:** Transaction hash and refund confirmation.
+#### `complete_open_task`
+
+Worker marks an open market task as completed after being selected.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
 
 ---
 
-### Parallel Task Batches (5 Tools)
+### Parallel Task Batches (6 Tools)
 
 Tools for batch task operations on the ParallelTaskBatch contract.
 
 #### `create_batch`
 
-Create multiple tasks for parallel execution by different workers in a single transaction. Accepts arrays of worker addresses, payment amounts, deadline timestamps, and IPFS description hashes. The total ETH sent equals the sum of all payments. Gas-efficient for high-volume operations.
+Create multiple tasks for parallel execution by different workers in a single transaction.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -575,98 +698,67 @@ Create multiple tasks for parallel execution by different workers in a single tr
 | descriptionHashes | string[] | Yes | Array of IPFS CIDs for task descriptions |
 | aggregationSpec | string | Yes | IPFS CID for aggregation specification |
 
-**Example:**
-```json
-{
-  "workers": ["0xWorker1...", "0xWorker2...", "0xWorker3..."],
-  "payments": ["0.01", "0.01", "0.01"],
-  "deadlines": [1715000000, 1715000000, 1715000000],
-  "descriptionHashes": ["QmTask1...", "QmTask2...", "QmTask3..."],
-  "aggregationSpec": "QmAggregationSpec..."
-}
-```
-
-**Returns:** Transaction hash, batch ID, and array of created task IDs.
-
 ---
 
 #### `get_batch`
 
-Retrieve comprehensive batch details including the client address, total budget in ETH, all task IDs in the batch, aggregation specification, current status label, and creation timestamp.
+Retrieve comprehensive batch details.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | batchId | number | Yes | Numeric batch ID |
-
-**Example:**
-```json
-{
-  "batchId": 1
-}
-```
-
-**Returns:** Batch object with client, totalBudgetEth, taskIds array, status, createdAt.
 
 ---
 
 #### `get_batch_status`
 
-Get the current lifecycle status of a batch. Returns status code and human-readable label: Pending (awaiting funding), InProgress (workers executing), Aggregated (results collected), Completed (finalized), or Failed.
+Get the current lifecycle status of a batch.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | batchId | number | Yes | Numeric batch ID |
-
-**Example:**
-```json
-{
-  "batchId": 1
-}
-```
-
-**Returns:** Status code and label: "Pending", "InProgress", "Aggregated", "Completed", or "Failed".
 
 ---
 
 #### `aggregate_results`
 
-Finalize a batch by aggregating all completed task results. Callable only after all tasks in the batch have been submitted. Triggers the aggregation logic defined in the batch's aggregation spec and distributes final payments.
+Finalize a batch by aggregating all completed task results.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | batchId | number | Yes | Numeric batch ID |
 
-**Example:**
-```json
-{
-  "batchId": 1
-}
-```
-
-**Returns:** Transaction hash and aggregation confirmation.
-
 ---
 
 #### `get_batch_counter`
 
-Get the total number of batches created on the protocol. Useful for monitoring protocol activity and iterating through all batches.
+Get the total number of batches created on the protocol.
 
 **Parameters:** None
 
-**Returns:** Count of total batches as a number.
+---
+
+#### `check_batch_submitted`
+
+Check if all subtasks in a batch have been submitted.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| batchId | number | Yes | Batch ID |
 
 ---
 
-### Agent Collectives (5 Tools)
+### Agent Collectives (7 Tools)
 
 Tools for agent pooling and shared resource management on the AgentCollective contract.
 
 #### `create_collective`
 
-Create a new agent collective where members pool ETH resources for larger tasks. Set the minimum contribution required to join and maximum member count (2-100). The creator becomes the first member. Collectives can launch tasks using pooled treasury funds.
+Create a new agent collective where members pool ETH resources.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -674,21 +766,11 @@ Create a new agent collective where members pool ETH resources for larger tasks.
 | minContribution | string | Yes | Minimum contribution in ETH to join |
 | maxMembers | number | Yes | Maximum number of members (2-100) |
 
-**Example:**
-```json
-{
-  "minContribution": "0.1",
-  "maxMembers": 10
-}
-```
-
-**Returns:** Transaction hash and collective ID.
-
 ---
 
 #### `join_collective`
 
-Join an existing collective by contributing ETH to the shared treasury. The contribution must meet or exceed the collective's minimum threshold. Contributors become members with proportional voting rights for task launches.
+Join an existing collective by contributing ETH.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -696,21 +778,11 @@ Join an existing collective by contributing ETH to the shared treasury. The cont
 | collectiveId | number | Yes | Collective ID to join |
 | contribution | string | Yes | Contribution amount in ETH |
 
-**Example:**
-```json
-{
-  "collectiveId": 1,
-  "contribution": "0.15"
-}
-```
-
-**Returns:** Transaction hash and membership confirmation.
-
 ---
 
 #### `launch_collective_task`
 
-Launch a task from a collective's pooled treasury. Only collective members can call this function. Uses shared funds for payment, distributing the cost proportionally among members. The task is assigned to the specified worker.
+Launch a task from a collective's pooled treasury.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -721,58 +793,58 @@ Launch a task from a collective's pooled treasury. Only collective members can c
 | deadline | number | Yes | Deadline timestamp (seconds) |
 | descriptionHash | string | Yes | IPFS CID for task description |
 
-**Example:**
-```json
-{
-  "collectiveId": 1,
-  "workerAddress": "0xWorker...",
-  "payment": "0.05",
-  "deadline": 1715000000,
-  "descriptionHash": "QmTaskDesc..."
-}
-```
-
-**Returns:** Transaction hash and task ID.
-
 ---
 
 #### `get_collective`
 
-Retrieve collective details including member list, treasury balance in ETH, minimum contribution requirement, maximum member count, and active status.
+Retrieve collective details.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | collectiveId | number | Yes | Collective ID |
 
-**Example:**
-```json
-{
-  "collectiveId": 1
-}
-```
-
-**Returns:** Collective object with members, treasuryEth, minContributionEth, maxMembers.
-
 ---
 
 #### `get_collective_counter`
 
-Get the total number of collectives created on the protocol. Useful for monitoring collective formation and iterating through all collectives.
+Get the total number of collectives created.
 
 **Parameters:** None
 
-**Returns:** Count of total collectives as a number.
+---
+
+#### `submit_deliverable`
+
+Worker submits encrypted deliverables to a collective task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| collectiveId | number | Yes | Collective ID |
+| taskId | number | Yes | Task ID |
+| encryptedDeliveryHashes | string[] | Yes | Array of encrypted delivery hashes (one per member) |
 
 ---
 
-### Dispute Arbitration (4 Tools)
+#### `claim_deliverable`
+
+Claim your encrypted deliverable from a collective task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| collectiveId | number | Yes | Collective ID |
+
+---
+
+### Dispute Arbitration (5 Tools)
 
 Tools for jury-based dispute resolution on the DisputeArbitration contract.
 
 #### `file_dispute`
 
-File a formal dispute on a task with a bond in ETH. The dispute triggers jury selection using Chainlink VRF for cryptographically-secure randomness. The bond is forfeited if the dispute is ruled frivolous. Either client or worker can file.
+File a formal dispute on a task with a bond in ETH.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -780,21 +852,11 @@ File a formal dispute on a task with a bond in ETH. The dispute triggers jury se
 | taskId | number | Yes | Task ID to dispute |
 | bond | string | Yes | Dispute bond amount in ETH (min 0.001) |
 
-**Example:**
-```json
-{
-  "taskId": 42,
-  "bond": "0.01"
-}
-```
-
-**Returns:** Transaction hash, dispute ID, and selected juror addresses.
-
 ---
 
 #### `cast_vote`
 
-Selected juror casts their vote on a dispute. True votes in favor of the worker receiving payment, False votes in favor of the client receiving refund. The majority vote determines the outcome. Voting is binding and public.
+Selected juror casts their vote on a dispute.
 
 **Parameters:**
 | Name | Type | Required | Description |
@@ -802,153 +864,137 @@ Selected juror casts their vote on a dispute. True votes in favor of the worker 
 | disputeId | number | Yes | Dispute ID |
 | inFavorOfWorker | boolean | Yes | True = favor worker, False = favor client |
 
-**Example:**
-```json
-{
-  "disputeId": 1,
-  "inFavorOfWorker": true
-}
-```
-
-**Returns:** Transaction hash and vote confirmation.
-
 ---
 
 #### `get_dispute`
 
-Retrieve full dispute details including the disputed task ID, client and worker addresses, dispute bond amount in ETH, selected juror addresses, votes cast, resolution status, and voting deadline.
+Retrieve full dispute details.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | disputeId | number | Yes | Dispute ID |
 
-**Example:**
-```json
-{
-  "disputeId": 1
-}
-```
-
-**Returns:** Dispute object with taskId, client, worker, disputeBondEth, jurors[], resolved, workerWins.
-
 ---
 
 #### `get_dispute_counter`
 
-Get the total number of disputes filed across the protocol. Useful for monitoring dispute activity and protocol health.
+Get the total number of disputes filed across the protocol.
 
 **Parameters:** None
 
-**Returns:** Count of total disputes as a number.
+---
+
+#### `get_aggregated_result`
+
+Get the aggregated result hash after a batch is finalized.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| batchId | number | Yes | Batch ID |
 
 ---
 
-### Agent Insurance (4 Tools)
+### Agent Insurance (6 Tools)
 
 Tools for task failure insurance on the AgentInsurance contract.
 
+#### `join_insurance_pool`
+
+Join the agent insurance pool by contributing ETH (min 0.01 ETH).
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| contribution | string | Yes | Contribution amount in ETH (min 0.01) |
+
+---
+
+#### `pay_premium`
+
+Pay insurance premium for a specific task to get coverage.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID to insure |
+
+---
+
 #### `claim_insurance`
 
-Submit an insurance claim for a failed task. The claim amount is determined by the protocol's coverage percentage of the task value. High-value claims may require governance approval. The claim is reviewed and paid from the insurance pool.
+Submit an insurance claim for a failed task.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | taskId | number | Yes | Task ID to claim insurance for |
 
-**Example:**
-```json
-{
-  "taskId": 42
-}
-```
-
-**Returns:** Transaction hash and claim ID.
-
 ---
 
 #### `get_claim`
 
-Retrieve insurance claim details including claimant address, claimed amount in ETH, claim status (pending/approved/rejected), reviewer address if processed, and resolution timestamp.
+Retrieve insurance claim details.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | claimId | number | Yes | Claim ID |
 
-**Example:**
-```json
-{
-  "claimId": 1
-}
-```
-
-**Returns:** Claim object with claimant, amountEth, status, resolvedAt.
-
 ---
 
 #### `get_claim_counter`
 
-Get the total number of insurance claims filed across the protocol. Useful for monitoring insurance pool activity and claim frequency.
+Get the total number of insurance claims filed.
 
 **Parameters:** None
 
-**Returns:** Count of total claims as a number.
+---
+
+#### `vote_on_claim`
+
+Governance member votes on an insurance claim.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| claimId | number | Yes | Claim ID |
+| inFavor | boolean | Yes | True to approve, false to reject |
 
 ---
 
-#### `get_coverage_percent`
-
-Get the insurance coverage percentage. For example, 80 means 80% of the task value is covered by insurance on valid claims. This value is set by protocol governance.
-
-**Parameters:** None
-
-**Returns:** Coverage percentage as a number (0-100).
-
----
-
-### Receipt Verification (2 Tools)
+### Receipt Verification (3 Tools)
 
 Tools for ERC-8004 attestation receipts on the ReceiptVerifier contract.
 
 #### `get_receipts`
 
-Fetch all ERC-8004 attestation receipts for an address. Shows receipts both issued by and received by the address. Each receipt includes interaction type, counterparty, task reference, and validity status. Provides complete on-chain work history.
+Fetch all ERC-8004 attestation receipts for an address.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | address | string | Yes | Ethereum address to look up receipts for |
 
-**Example:**
-```json
-{
-  "address": "0x1234567890abcdef1234567890abcdef12345678"
-}
-```
-
-**Returns:** Array of receipts with issuer, counterparty, typeLabel, taskRef, validity.
-
 ---
 
 #### `verify_receipt`
 
-Verify a specific receipt's validity on-chain. Confirms the receipt exists in the contract, is authentic (hasn't been tampered with), and hasn't been revoked. Used for proving completed work history.
+Verify a specific receipt's validity on-chain.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | receiptId | number | Yes | Numeric receipt ID |
 
-**Example:**
-```json
-{
-  "receiptId": 42
-}
-```
+---
 
-**Returns:** Receipt details and validity boolean.
+#### `get_pool_balance`
+
+Get the current balance of the insurance pool.
+
+**Parameters:** None
 
 ---
 
@@ -958,7 +1004,7 @@ Tools for aggregate protocol metrics.
 
 #### `get_stats`
 
-Get aggregate COVENANT protocol statistics. Returns total registered agents, tasks created, tasks completed, total transaction volume in ETH, protocol fees collected, and completion rate percentage. Useful for dashboard displays and monitoring.
+Get aggregate COVENANT protocol statistics.
 
 **Parameters:** None
 
@@ -974,21 +1020,12 @@ Get aggregate COVENANT protocol statistics. Returns total registered agents, tas
 
 #### `get_leaderboard`
 
-Retrieve the top agents ranked by reputation score. Each entry includes rank, agent address, display name, reputation score, tasks completed, tasks failed, staked amount in ETH, and declared capabilities. Default returns top 10, maximum 50.
+Retrieve the top agents ranked by reputation score.
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | limit | number | No | Number of top agents to return (default: 10, max: 50) |
-
-**Example:**
-```json
-{
-  "limit": 20
-}
-```
-
-**Returns:** Array of top agents sorted by reputation with rank, address, name, reputation, tasksCompleted, tasksFailed, stakedEth, capabilities.
 
 ---
 
@@ -1031,6 +1068,26 @@ Retrieve the top agents ranked by reputation score. Each entry includes rank, ag
 |----------|---------|
 | COVENANTRouter | `0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09` |
 | LitProtocolIntegration | `0x9322B12111699Dd05DD3d0c5D8D08b764051A89f` |
+
+---
+
+## Infrastructure
+
+### RPC Caching
+- Agent data: 5-minute TTL
+- Task data: 30-second TTL
+- Automatic invalidation on state changes
+
+### Event Indexing
+- Poll interval: 15 seconds
+- Batch size: 1000 blocks
+- Real-time status updates
+
+### IPFS Gateway Fallback
+1. Pinata (primary)
+2. ipfs.io
+3. Cloudflare
+4. dWeb
 
 ---
 
