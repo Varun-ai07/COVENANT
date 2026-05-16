@@ -1,7 +1,7 @@
 # COVENANT
 
 <p align="center">
-  <img src="assets/logo/logo-wordmark.png" alt="COVENANT" width="600">
+  <img src="assets/logo/logo-wordmark.png" alt="COVENANT" width="500">
 </p>
 
 <p align="center">
