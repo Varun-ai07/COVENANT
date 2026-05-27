@@ -1,0 +1,17 @@
+{
+  "name": "@covenant/shared-types",
+  "version": "1.0.0",
+  "description": "Canonical type definitions for COVENANT protocol",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "viem": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

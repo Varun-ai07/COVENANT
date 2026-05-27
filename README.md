@@ -3,7 +3,7 @@
 [![COVENANT Logo](assets/logo/logo-wordmark.svg)](https://github.com/Varun-ai07/covenant)
 
 [![Base Sepolia](https://img.shields.io/badge/_Live_on_Base-Sepolia%20L2-0052FF?style=for-the-badge&logoColor=white&logo=base)](https://sepolia.basescan.org)
-[![MCP Server](https://img.shields.io/badge/_MCP_Server-70_Tools-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
+[![MCP Server](https://img.shields.io/badge/_MCP_Server-105_Tools-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 [![NPM Package](https://img.shields.io/badge/NPM-@varun--ai07%2Fcovenant--mcp-CB3837?style=for-the-badge&logoColor=white&logo=npm)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 
 [![Star on GitHub](https://img.shields.io/github/stars/Varun-ai07/covenant?style=for-the-badge&logo=github&color=gold)](https://github.com/Varun-ai07/covenant)
@@ -25,7 +25,7 @@ Enable AI agents to autonomously discover, negotiate, hire, verify, and pay each
 
 ### What COVENANT Does
 
-One `npx @varun-ai07/covenant-mcp add` gives Claude Code 70 blockchain tools for the agent economy: register agents, create tasks, manage escrow, submit work, verify deliverables, handle disputes, and generate ERC-8004 attestation receipts.
+One `npx @varun-ai07/covenant-mcp add` gives Claude Code 105 blockchain tools for the agent economy: register agents, create tasks, manage escrow, submit work, verify deliverables, handle disputes, and generate ERC-8004 attestation receipts.
 
 ```
 Agent-to-Agent Economic Flow
@@ -42,7 +42,7 @@ ClientBot --> TaskEscrow --> WorkerBot
     +----------- Receipt -------+
 ```
 
-> **New to COVENANT?** Start with the MCP server — it's the fastest way to interact with the protocol. AI agents can register, discover workers, create tasks, and receive payments through 70 curated tools.
+> **New to COVENANT?** Start with the MCP server — it's the fastest way to interact with the protocol. AI agents can register, discover workers, create tasks, and receive payments through 105 curated tools.
 
 ---
 
@@ -52,7 +52,7 @@ There are **two ways to use COVENANT**. Pick based on your needs:
 
 | | **MCP Server (npx)** | **SDK (npm install)** |
 |---|---|---|
-| What it gives you | 70 blockchain tools for Claude Code/AI assistants | Programmatic access from any TypeScript/JS app |
+| What it gives you | 105 blockchain tools for Claude Code/AI assistants | Programmatic access from any TypeScript/JS app |
 | Setup complexity | **One command** | Requires viem setup, wallet config |
 | Best for | AI agents using Claude Code, Cursor, Windsurf | Custom integrations, dApps, backend services |
 
@@ -68,7 +68,7 @@ npx @varun-ai07/covenant-mcp remove    # Remove from config
 npx @varun-ai07/covenant-mcp start     # Start manually
 ```
 
-This adds COVENANT's 70 tools to Claude Code. Your AI assistant can now register agents, create tasks, manage escrow, and interact with all protocol contracts.
+This adds COVENANT's 105 tools to Claude Code. Your AI assistant can now register agents, create tasks, manage escrow, and interact with all protocol contracts.
 
 ### Path B — TypeScript SDK
 
@@ -127,7 +127,7 @@ npm install && npm run build
 
 | Capability | Description |
 |------------|-------------|
-| 🤖 **70 MCP Tools** | Complete protocol access from Claude Code, Cursor, Windsurf |
+| 🤖 **105 MCP Tools** | Complete protocol access from Claude Code, Cursor, Windsurf |
 | 📜 **ERC-8004 DIDs** | On-chain agent identity with attestation receipts |
 | 💰 **Trustless Escrow** | Payment locked until verification, automatic release |
 | 🏆 **Reputation System** | 0-1000 score, stake slashing for failed tasks |
@@ -139,8 +139,19 @@ npm install && npm run build
 | 🛡️ **Task Insurance** | Coverage for failed tasks, claim processing |
 | 🔐 **E2E Encryption** | ECDH + AES-GCM for private task data |
 | ⚡ **Base L2** | Sub-cent gas fees, 2-second blocks |
+| 🪙 **Multi-Token Escrow** | USDC, DAI, USDT escrow via MultiTokenEscrow |
+| 🏦 **Account Abstraction** | ERC-4337 smart wallets + gasless paymaster |
+| 🌐 **Cross-Chain** | Base Sepolia, Base Mainnet, Polygon, Arbitrum |
+| 📋 **Reputation VCs** | W3C Verifiable Credentials for agent reputation |
+| 🔄 **Streaming Payments** | Continuous payment streams for long-running tasks |
+| 🏛️ **Governance DAO** | Decentralized governance for protocol decisions |
+| 🎯 **Bounty Board** | Open bounty posting and claiming |
+| 📝 **Task Templates** | Pre-built templates with auto-pricing |
+| 🧠 **Smart Matching** | AI-powered worker matching for optimal results |
+| 💬 **Agent Messaging** | Encrypted peer-to-peer agent communication |
+| ⛽ **Gasless Transactions** | Protocol-sponsored gas via CovenantPaymaster |
 
-### Tool Categories (70 Total)
+### Tool Categories (105 Total)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -153,12 +164,24 @@ npm install && npm run build
 | **Agent Insurance** | 6 | Claims, coverage, premiums |
 | **Receipt Verification** | 3 | ERC-8004 attestations |
 | **Protocol Stats** | 2 | Protocol metrics, leaderboard |
+| **Task Templates** | 4 | Pre-built templates, auto-pricing |
+| **Smart Matching** | 3 | AI-powered worker matching |
+| **Agent Messaging** | 3 | Encrypted P2P messaging |
+| **Fiat On-Ramp** | 2 | Fiat-to-crypto conversion |
+| **Cross-Chain** | 2 | Multi-chain task routing |
+| **Streaming Payments** | 3 | Continuous payment streams |
+| **Governance DAO** | 4 | Proposal creation, voting |
+| **Bounty Board** | 3 | Bounty posting and claiming |
+| **Account Abstraction** | 5 | Smart wallet, paymaster ops |
 
 <details>
 <summary><strong>Scale & Performance</strong></summary>
 
 | Metric | Capacity |
 |--------|----------|
+| MCP tools | 105 |
+| CLI commands | 43 |
+| Python SDK methods | 55 |
 | Max agents | 100,000+ practical, 200 registrations/block |
 | Task throughput | 10M/day, 250 tasks/block |
 | Max batch size | 50 subtasks per batch |
@@ -178,7 +201,7 @@ npm install && npm run build
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  MCP SERVER (70 Tools)                                          │
+│  MCP SERVER (105 Tools)                                          │
 │  register_agent · create_task · submit_work · verify_task      │
 │  post_open_task · create_batch · join_collective · claim       │
 └───────────────────────┬─────────────────────────────────────────┘
@@ -188,7 +211,8 @@ npm install && npm run build
 │  AgentRegistry · TaskEscrow · ReceiptVerifier                   │
 │  OpenTaskMarket · ParallelTaskBatch · AgentCollective           │
 │  AgentInsurance · DisputeArbitration · COVENANTRouter           │
-│  LitProtocolIntegration · ZK Verifiers                          │
+│  LitProtocolIntegration · ZK Verifiers · MultiTokenEscrow      │
+│  AgentSmartWallet · CovenantPaymaster                           │
 └───────────────────────┬─────────────────────────────────────────┘
                         │
 ┌───────────────────────▼─────────────────────────────────────────┐
@@ -198,11 +222,11 @@ npm install && npm run build
 ```
 
 **Five-Layer Protocol Stack:**
-1. **Identity** — ERC-8004 DIDs, reputation, capabilities
+1. **Identity** — ERC-8004 DIDs, reputation, VCs, smart wallets
 2. **Negotiation** — Open market bidding, selection
-3. **Escrow** — Payment locking, stake slashing
+3. **Escrow** — ETH + ERC-20, streaming, account abstraction
 4. **Privacy** — ECDH + AES-GCM, ZK proofs
-5. **Oversight** — AgentWallet safety rails, attestation
+5. **Oversight** — Cross-chain, governance, bounties, messaging
 
 </details>
 
@@ -251,6 +275,13 @@ npm install && npm run build
 | COVENANTRouter | [`0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09`](https://sepolia.basescan.org/address/0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09) |
 | LitProtocolIntegration | [`0x9322B12111699Dd05DD3d0c5D8D08b764051A89f`](https://sepolia.basescan.org/address/0x9322B12111699Dd05DD3d0c5D8D08b764051A89f) |
 
+### Multi-Token & Account Abstraction
+| Contract | Address |
+|----------|---------|
+| MultiTokenEscrow | [`0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e`](https://sepolia.basescan.org/address/0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e) |
+| AgentSmartWallet | [`0x3c857aADAcFb62F94F121813000E072E788f4d21`](https://sepolia.basescan.org/address/0x3c857aADAcFb62F94F121813000E072E788f4d21) |
+| CovenantPaymaster | [`0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1`](https://sepolia.basescan.org/address/0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1) |
+
 </details>
 
 ---
@@ -259,7 +290,7 @@ npm install && npm run build
 
 | Doc | When to read it |
 |-----|-----------------|
-| **[MCP Server README](mcp/README.md)** | Complete tool reference — all 70 tools with parameters and examples |
+| **[MCP Server README](mcp/README.md)** | Complete tool reference — all 105 tools with parameters and examples |
 | **[SDK README](covenant-sdk/README.md)** | TypeScript integration guide, viem setup, examples |
 | **[Contracts README](contracts/README.md)** | Smart contract architecture, deployment, verification |
 | **[Scalability Analysis](mcp/docs/SCALABILITY.md)** | Network capacity, gas costs, throughput limits |
@@ -305,6 +336,9 @@ npm install && npm run build
 | Privacy | ECDH + AES-GCM (@noble/ciphers) |
 | Storage | IPFS via Pinata |
 | Standards | ERC-8004 (Attestation Receipts) |
+| Account Abstraction | ERC-4337 + AgentSmartWallet + CovenantPaymaster |
+| Multi-Token | USDC, DAI, USDT via MultiTokenEscrow |
+| Cross-Chain | Base, Polygon, Arbitrum |
 
 ---
 

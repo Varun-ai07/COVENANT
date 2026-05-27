@@ -18,7 +18,7 @@
 
 ## Overview
 
-The COVENANT SDK provides a TypeScript-first interface for interacting with the COVENANT protocol on Base Sepolia. Built on Viem, it offers type-safe contract interactions for agent registration, task management, and open market operations.
+The COVENANT SDK provides a TypeScript-first interface for interacting with the COVENANT protocol on Base Sepolia. Built on Viem, it offers type-safe contract interactions for agent registration, task management, open market operations, multi-token escrow (USDC/DAI/USDT), and cross-chain bridging.
 
 ## Installation
 
@@ -259,6 +259,55 @@ await sdk.selectWorker(1n, "0xWinner...");
 
 ---
 
+### Multi-Token Methods
+
+#### `createTokenTask(token: Address, worker: Address, payment: bigint, deadline: bigint, descriptionHash: string): Promise<Hash>`
+
+Create a task escrowed in ERC-20 tokens (USDC, DAI, USDT) instead of ETH.
+
+```typescript
+import { parseUnits } from "viem";
+
+const txHash = await sdk.createTokenTask(
+  "0xUSDCAddress...",
+  "0xWorker...",
+  parseUnits("100", 6), // 100 USDC (6 decimals)
+  deadline,
+  "ipfs://QmTask..."
+);
+```
+
+#### `getTokenBalance(token: Address, account: Address): Promise<bigint>`
+
+Check an agent's balance for any supported ERC-20 token.
+
+#### `getSupportedTokens(): Promise<Address[]>`
+
+List all supported ERC-20 tokens for multi-token escrow.
+
+---
+
+### Cross-Chain Methods
+
+#### `bridgeEstimate(targetChainId: number, amount: bigint, token?: Address): Promise<BridgeQuote>`
+
+Get a bridge fee estimate for cross-chain task settlement.
+
+```typescript
+const quote = await sdk.bridgeEstimate(8453, parseEther("0.1")); // Base mainnet
+console.log(`Bridge fee: ${quote.fee}`);
+```
+
+#### `bridgeExecute(targetChainId: number, amount: bigint, token?: Address): Promise<Hash>`
+
+Initiate a cross-chain bridge transfer.
+
+#### `bridgeStatus(txHash: Hash): Promise<BridgeStatus>`
+
+Check the status of a pending bridge transaction.
+
+---
+
 ### Utility Methods
 
 #### `waitForTransaction(hash: Hash): Promise<TransactionReceipt>`
@@ -343,6 +392,7 @@ interface ContractAddresses {
   AgentCollective: Address;
   AgentInsurance: Address;
   DisputeArbitration: Address;
+  MultiTokenEscrow: Address;
 }
 ```
 
@@ -389,6 +439,9 @@ interface ContractAddresses {
 |----------|---------|
 | COVENANTRouter | `0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09` |
 | LitProtocolIntegration | `0x9322B12111699Dd05DD3d0c5D8D08b764051A89f` |
+| MultiTokenEscrow | _Deployed on Base Sepolia_ |
+| AgentSmartWallet | _Deployed on Base Sepolia_ |
+| CovenantPaymaster | _Deployed on Base Sepolia_ |
 
 ### Custom Addresses
 

@@ -5,10 +5,11 @@
  * get_leaderboard — Top agents by reputation
  */
 import { z } from "zod";
-import { formatEther, type Address } from "viem";
+import { formatEther } from "viem";
 import { loadAbi, CONTRACTS } from "../config.js";
 import { readContract } from "../handlers/wallet.js";
 import { formatReadResult, formatError } from "../handlers/transactions.js";
+import { parseContractError, formatStructuredError } from "../lib/formatResponse.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const registryAbi = loadAbi("AgentRegistry");
@@ -31,7 +32,12 @@ export function registerProtocolTools(server: McpServer): void {
       title: "Protocol Statistics",
       description:
         "Get aggregate COVENANT protocol stats: total agents, tasks created, " +
-        "tasks completed, total volume, fees collected, and active agents.",
+        "tasks completed, total volume, fees collected, and active agents.\n" +
+        "USE WHEN: You need a high-level overview of protocol health, activity level, or growth metrics.\n" +
+        "REQUIRES: None. Read-only query against AgentRegistry and TaskEscrow contracts.\n" +
+        "RETURNS: Object with totalAgents, totalTasks, and totalFeesEth.\n" +
+        "COMES BEFORE: corven_get_leaderboard (use stats to decide if leaderboard is worth querying).\n" +
+        "COMES AFTER: Nothing — this is a standalone read.",
       inputSchema: {},
     },
     async () => {
@@ -58,7 +64,8 @@ export function registerProtocolTools(server: McpServer): void {
 
         return formatReadResult(stats, "COVENANT Protocol Statistics");
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -72,7 +79,12 @@ export function registerProtocolTools(server: McpServer): void {
       title: "Agent Leaderboard",
       description:
         "Retrieve the top N agents ranked by reputation score. " +
-        "Returns agent address, name, reputation, tasks completed/failed, and stake.",
+        "Returns agent address, name, reputation, tasks completed/failed, and stake.\n" +
+        "USE WHEN: You want to discover the highest-reputation agents on the protocol, compare agents, or populate a leaderboard UI.\n" +
+        "REQUIRES: At least one registered agent on AgentRegistry. Returns empty list if none exist.\n" +
+        "RETURNS: Array of agents sorted by reputation (desc) with rank, address, name, reputation, tasksCompleted, tasksFailed, stakedEth, and capabilities.\n" +
+        "COMES BEFORE: corven_get_agent (drill down into a specific agent from the leaderboard).\n" +
+        "COMES AFTER: Nothing — standalone read. Optionally follow with corven_find_workers for capability-specific search.",
       inputSchema: {
         limit: z
           .number()
@@ -149,7 +161,8 @@ export function registerProtocolTools(server: McpServer): void {
           "COVENANT Agent Leaderboard"
         );
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );

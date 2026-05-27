@@ -1,0 +1,15 @@
+{
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "deployer": "0xa2BCf507C3A9603c9206B80ef842dE4FAC86d93f",
+  "deployedAt": "2026-05-27T07:12:48.959Z",
+  "contracts": {
+    "AgentSmartWallet": "0x3c857aADAcFb62F94F121813000E072E788f4d21",
+    "CovenantPaymaster": "0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1"
+  },
+  "config": {
+    "dailyLimit": "1.0 ETH",
+    "perTxLimit": "0.1 ETH",
+    "paymasterFunding": "0.01 ETH"
+  }
+}

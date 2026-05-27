@@ -1,0 +1,14 @@
+[
+  {
+    "id": "task-multi-token-deploy",
+    "key": "multi-token-deploy",
+    "content": "Task completed: multi-token-deploy",
+    "namespace": "tasks",
+    "type": "task-outcome",
+    "metadata": {
+      "success": true,
+      "quality": 0.85
+    },
+    "createdAt": 1779629889961
+  }
+]

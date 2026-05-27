@@ -12,7 +12,8 @@ import {
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import type { WalletMode, ContractConfig } from "./types.js";
+import { BASE_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
+import type { WalletMode, ContractConfig, ContractConfigV2, ContractVersion, ContractConfigMerged } from "./types.js";
 
 dotenv.config({ quiet: true });
 
@@ -36,36 +37,67 @@ export const CHAIN =
     : baseSepolia;
 
 // ============================================================
-// Contract Addresses
+// Contract Addresses — Version-Aware
 // ============================================================
 
 export const ZERO_ADDRESS =
   "0x0000000000000000000000000000000000000000" as Address;
 
-export const CONTRACTS: ContractConfig = {
-  // Core Protocol
-  AgentRegistry: (process.env.REGISTRY_ADDRESS || "0xB215589dA259A98eEE8BF39739F6255131ac33A1") as Address,
-  TaskEscrow: (process.env.ESCROW_ADDRESS || "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3") as Address,
-  ReceiptVerifier: (process.env.VERIFIER_ADDRESS || "0xa47D15099be6aC516B53a6859D468E9004eEf76b") as Address,
-  // Market & Batching
-  OpenTaskMarket: (process.env.MARKET_ADDRESS || "0x5ccF09469222E5046b0830c6d71ed6B912bE70e6") as Address,
-  ParallelTaskBatch: (process.env.BATCH_ADDRESS || "0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc") as Address,
-  // Collective & Insurance
-  AgentCollective: (process.env.COLLECTIVE_ADDRESS || "0x0CDE9560D2E95338922c40A52A2c81cdd20613d1") as Address,
-  AgentInsurance: (process.env.INSURANCE_ADDRESS || "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55") as Address,
-  // Dispute Resolution
-  DisputeArbitration: (process.env.DISPUTE_ADDRESS || "0x37A62C6eDd18461CCe00B6772Da8640C75DE740e") as Address,
-  // ZK Verifiers
-  Groth16VerifierCapability: (process.env.CAPABILITY_VERIFIER_ADDRESS || "0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85") as Address,
-  CapabilityVerifier: (process.env.CAPABILITY_WRAPPER_ADDRESS || "0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb") as Address,
-  Groth16VerifierReputation: (process.env.REPUTATION_VERIFIER_ADDRESS || "0xbe6AfBa53E06099410d78d56A75b689dfCa6532F") as Address,
-  ReputationVerifier: (process.env.REPUTATION_WRAPPER_ADDRESS || "0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149") as Address,
-  // Router & Integration
-  COVENANTRouter: (process.env.ROUTER_ADDRESS || "0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09") as Address,
-  LitProtocolIntegration: (process.env.LIT_ADDRESS || "0x9322B12111699Dd05DD3d0c5D8D08b764051A89f") as Address,
-  // Wallet (sample)
-  AgentWallet: (process.env.WALLET_ADDRESS || "0x70F6d2dBd0471DD0aA6a1A54d492eF1AE4F400A1") as Address,
+// V1 addresses (original deployed contracts — defaults from canonical shared-types)
+const _v1: ContractConfig = {
+  AgentRegistry: (process.env.REGISTRY_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentRegistry) as Address,
+  TaskEscrow: (process.env.ESCROW_ADDRESS || BASE_SEPOLIA_ADDRESSES.TaskEscrow) as Address,
+  ReceiptVerifier: (process.env.VERIFIER_ADDRESS || BASE_SEPOLIA_ADDRESSES.ReceiptVerifier) as Address,
+  OpenTaskMarket: (process.env.MARKET_ADDRESS || BASE_SEPOLIA_ADDRESSES.OpenTaskMarket) as Address,
+  ParallelTaskBatch: (process.env.BATCH_ADDRESS || BASE_SEPOLIA_ADDRESSES.ParallelTaskBatch) as Address,
+  AgentCollective: (process.env.COLLECTIVE_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentCollective) as Address,
+  AgentInsurance: (process.env.INSURANCE_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentInsurance) as Address,
+  DisputeArbitration: (process.env.DISPUTE_ADDRESS || BASE_SEPOLIA_ADDRESSES.DisputeArbitration) as Address,
+  Groth16VerifierCapability: (process.env.CAPABILITY_VERIFIER_ADDRESS || BASE_SEPOLIA_ADDRESSES.Groth16VerifierCapability) as Address,
+  CapabilityVerifier: (process.env.CAPABILITY_WRAPPER_ADDRESS || BASE_SEPOLIA_ADDRESSES.CapabilityVerifier) as Address,
+  Groth16VerifierReputation: (process.env.REPUTATION_VERIFIER_ADDRESS || BASE_SEPOLIA_ADDRESSES.Groth16VerifierReputation) as Address,
+  ReputationVerifier: (process.env.REPUTATION_WRAPPER_ADDRESS || BASE_SEPOLIA_ADDRESSES.ReputationVerifier) as Address,
+  COVENANTRouter: (process.env.ROUTER_ADDRESS || BASE_SEPOLIA_ADDRESSES.COVENANTRouter) as Address,
+  LitProtocolIntegration: (process.env.LIT_ADDRESS || BASE_SEPOLIA_ADDRESSES.LitProtocolIntegration) as Address,
+  AgentWallet: (process.env.WALLET_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentWallet) as Address,
 };
+
+// V2 addresses (minimal settlement contracts)
+const _v2: ContractConfigV2 = {
+  AgentRegistry: (process.env.AGENT_REGISTRY_V2 || ZERO_ADDRESS) as Address,
+  TaskEscrow: (process.env.TASK_ESCROW_V2 || ZERO_ADDRESS) as Address,
+  ReceiptVerifier: (process.env.RECEIPT_VERIFIER_V2 || ZERO_ADDRESS) as Address,
+  InsurancePool: (process.env.INSURANCE_POOL || ZERO_ADDRESS) as Address,
+  DisputeResolution: (process.env.DISPUTE_RESOLUTION || ZERO_ADDRESS) as Address,
+  MultiTokenEscrow: (process.env.MULTI_TOKEN_ESCROW || ZERO_ADDRESS) as Address,
+};
+
+export const CONTRACT_VERSION: ContractVersion =
+  (process.env.CONTRACT_VERSION as ContractVersion) || "v1";
+
+/**
+ * Active contract addresses. When CONTRACT_VERSION=v2:
+ * - AgentRegistry, TaskEscrow, ReceiptVerifier → v2 addresses
+ * - AgentInsurance → InsurancePool v2 address
+ * - DisputeArbitration → DisputeResolution v2 address
+ * - All other v1 contracts (market, batches, collective, router, etc.) unchanged
+ */
+export const CONTRACTS: ContractConfig = CONTRACT_VERSION === "v2"
+  ? {
+      ..._v1,
+      AgentRegistry: _v2.AgentRegistry,
+      TaskEscrow: _v2.TaskEscrow,
+      ReceiptVerifier: _v2.ReceiptVerifier,
+      AgentInsurance: _v2.InsurancePool,       // v1 name → v2 address
+      DisputeArbitration: _v2.DisputeResolution, // v1 name → v2 address
+      MultiTokenEscrow: _v2.MultiTokenEscrow,
+    } as ContractConfig
+  : _v1;
+
+/** Returns the active contract set based on CONTRACT_VERSION env var. */
+export function getActiveContracts(): ContractConfig {
+  return CONTRACTS;
+}
 
 // ============================================================
 // Wallet Mode
@@ -166,7 +198,11 @@ export function getAccount(): any {
   if (!_account) {
     const key = getPrivateKey();
     if (!key) return null;
-    _account = privateKeyToAccount(key as `0x${string}`);
+    try {
+      _account = privateKeyToAccount(key as `0x${string}`);
+    } catch {
+      return null;
+    }
   }
   return _account;
 }
@@ -187,11 +223,17 @@ import DisputeArbitrationAbi from "./abis/DisputeArbitration.json" with { type: 
 import COVENANTRouterAbi from "./abis/COVENANTRouter.json" with { type: "json" };
 import LitProtocolIntegrationAbi from "./abis/LitProtocolIntegration.json" with { type: "json" };
 import AgentWalletAbi from "./abis/AgentWallet.json" with { type: "json" };
+import MultiTokenEscrowAbi from "./abis/MultiTokenEscrow.json" with { type: "json" };
 // ZK Verifiers
 import Groth16VerifierCapabilityAbi from "./abis/Groth16VerifierCapability.json" with { type: "json" };
 import CapabilityVerifierAbi from "./abis/CapabilityVerifier.json" with { type: "json" };
 import Groth16VerifierReputationAbi from "./abis/Groth16VerifierReputation.json" with { type: "json" };
 import ReputationVerifierAbi from "./abis/ReputationVerifier.json" with { type: "json" };
+
+// V2 ABIs — loaded dynamically via loadAbiV2(); static imports added as v2 artifacts are compiled
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const ABIS: Record<string, any> = {
   // Core Protocol
@@ -216,15 +258,84 @@ const ABIS: Record<string, any> = {
   CapabilityVerifier: CapabilityVerifierAbi,
   Groth16VerifierReputation: Groth16VerifierReputationAbi,
   ReputationVerifier: ReputationVerifierAbi,
+  // Multi-Token Escrow
+  MultiTokenEscrow: MultiTokenEscrowAbi,
 };
 
 const ALLOWED_CONTRACTS = Object.keys(ABIS);
 
+// V1→V2 contract name mapping (tools use v1 names, v2 ABIs have different names)
+const V1_TO_V2_ABI_MAP: Record<string, string> = {
+  AgentInsurance: "InsurancePool",
+  DisputeArbitration: "DisputeResolution",
+};
+
 export function loadAbi(contractName: string): any {
+  // When v2 is active, try v2 ABI first
+  if (CONTRACT_VERSION === "v2") {
+    const v2Name = V1_TO_V2_ABI_MAP[contractName] || contractName;
+    try {
+      const filePath = path.join(V2_ABI_DIR, `${v2Name}.json`);
+      if (fs.existsSync(filePath)) {
+        const artifact = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        return artifact.abi ?? artifact;
+      }
+    } catch { /* fall through to v1 ABI */ }
+  }
   if (!ALLOWED_CONTRACTS.includes(contractName)) {
     throw new Error(`Unknown contract: ${contractName}. Allowed: ${ALLOWED_CONTRACTS.join(", ")}`);
   }
   return ABIS[contractName];
+}
+
+// ============================================================
+// V2 ABI Loader
+// ============================================================
+
+const _filename = fileURLToPath(import.meta.url);
+const _dirname = path.dirname(_filename);
+
+const V2_ABI_DIR = path.resolve(_dirname, "abis", "v2");
+
+/** V2 contract names that have compiled ABI artifacts. */
+const V2_ALLOWED_CONTRACTS = [
+  "AgentRegistry",
+  "TaskEscrow",
+  "ReceiptVerifier",
+  "InsurancePool",
+  "DisputeResolution",
+] as const;
+
+/**
+ * Load a v2 contract ABI from the `abis/v2/` directory.
+ * Expects `{ContractName}.json` files with an `.abi` field (Hardhat artifact format).
+ */
+export function loadAbiV2(contractName: string): any {
+  if (!V2_ALLOWED_CONTRACTS.includes(contractName as any)) {
+    throw new Error(
+      `Unknown v2 contract: ${contractName}. Allowed: ${V2_ALLOWED_CONTRACTS.join(", ")}`
+    );
+  }
+  const filePath = path.join(V2_ABI_DIR, `${contractName}.json`);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(
+      `V2 ABI file not found: ${filePath}. Compile v2 contracts first (npx hardhat compile).`
+    );
+  }
+  const artifact = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  return artifact.abi ?? artifact;
+}
+
+/**
+ * Auto-select ABI based on CONTRACT_VERSION.
+ * When v2 is active and a v2 ABI exists for the contract, returns it.
+ * Otherwise falls back to v1 ABI.
+ */
+export function loadAbiAuto(contractName: string): any {
+  if (CONTRACT_VERSION === "v2" && V2_ALLOWED_CONTRACTS.includes(contractName as any)) {
+    try { return loadAbiV2(contractName); } catch { /* fall through to v1 */ }
+  }
+  return loadAbi(contractName);
 }
 
 // ============================================================

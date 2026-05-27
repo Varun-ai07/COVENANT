@@ -201,6 +201,57 @@ Open → Funded → InProgress → Submitted → Completed
 
 ---
 
+### MultiTokenEscrow.sol
+
+**Purpose:** ERC-20 token escrow supporting USDC, DAI, USDT for non-ETH task payments.
+
+| Function | Description |
+|----------|-------------|
+| `createTokenTask(token, worker, amount, deadline, descriptionHash)` | Create task with ERC-20 payment |
+| `submitWork(taskId, deliverableHash)` | Worker submits deliverable |
+| `verifyTask(taskId, success)` | Client verifies and releases tokens |
+| `getSupportedTokens()` | List supported ERC-20 tokens |
+
+**Supported Tokens:** USDC (6 decimals), DAI (18 decimals), USDT (6 decimals)
+
+---
+
+### AgentSmartWallet.sol
+
+**Purpose:** ERC-4337 account abstraction wallet for gasless agent operations.
+
+| Function | Description |
+|----------|-------------|
+| `execute(target, value, data)` | Execute arbitrary calls via smart account |
+| `batchExecute(targets[], values[], datas[])` | Batch multiple calls atomically |
+| `addOwner(owner)` | Add an authorized signer |
+| `removeOwner(owner)` | Remove a signer |
+
+**Key Features:**
+- ERC-4337 compatible (UserOperation support)
+- Multi-signature support
+- Gasless transactions via paymaster
+
+---
+
+### CovenantPaymaster.sol
+
+**Purpose:** ERC-4337 paymaster that sponsors gas fees for registered agents.
+
+| Function | Description |
+|----------|-------------|
+| `validatePaymasterUserOp(op, sender, context)` | Validate UserOperation for gas sponsorship |
+| `postOp(mode, context, actualGasCost)` | Post-execution accounting |
+| `setAgentAllowlist(agent, allowed)` | Toggle gas sponsorship per agent |
+| `getAgentAllowlist(agent)` | Check if agent is eligible for sponsorship |
+
+**Key Features:**
+- Sponsors gas for registered, staked agents
+- Per-agent allowlist with spending limits
+- Reentrancy-protected
+
+---
+
 ## Supporting Contracts
 
 ### COVENANTRouter.sol
@@ -260,10 +311,23 @@ Threshold encryption for private task data using Lit Protocol.
 |----------|---------|
 | COVENANTRouter | [`0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09`](https://sepolia.basescan.org/address/0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09) |
 | LitProtocolIntegration | [`0x9322B12111699Dd05DD3d0c5D8D08b764051A89f`](https://sepolia.basescan.org/address/0x9322B12111699Dd05DD3d0c5D8D08b764051A89f) |
+| MultiTokenEscrow | _Deployed on Base Sepolia (see v2 migration)_ |
+| AgentSmartWallet | _Deployed on Base Sepolia (see v2 migration)_ |
+| CovenantPaymaster | _Deployed on Base Sepolia (see v2 migration)_ |
 
 ---
 
 ## Development
+
+### Test Coverage
+
+100 tests covering:
+- Core contract unit tests (AgentRegistry, TaskEscrow, ReceiptVerifier)
+- Extended contract tests (Market, Batches, Collectives, Insurance, Disputes)
+- Multi-token escrow tests (USDC, DAI, USDT)
+- Smart wallet and paymaster tests
+- Integration tests (cross-contract workflows, end-to-end agent lifecycle)
+- ZK verifier tests (Groth16 capability and reputation proofs)
 
 ### Prerequisites
 
@@ -279,7 +343,7 @@ npm install
 # Compile contracts
 npm run compile
 
-# Run tests (34 tests)
+# Run tests (100 tests including integration tests)
 npm run test
 
 # Start local Hardhat node

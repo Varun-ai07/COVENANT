@@ -18,6 +18,8 @@
     "postinstall": "node dist/postinstall.js || echo 'COVENANT MCP Server installed. Run: npx covenant add'"
   },
   "dependencies": {
+    "@covenant/shared-types": "*",
+    "@graphprotocol/graph-cli": "^0.98.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",

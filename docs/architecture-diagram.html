@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COVENANT v2 Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0F0F0F; color: #E5E7EB; font-family: 'Inter', -apple-system, sans-serif; padding: 2rem; }
+  h1 { text-align: center; color: #F59E0B; font-size: 2rem; margin-bottom: 0.5rem; }
+  .subtitle { text-align: center; color: #6B7280; margin-bottom: 2rem; }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* Layers */
+  .layer { border: 2px solid; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; position: relative; }
+  .layer-title { position: absolute; top: -14px; left: 20px; background: #0F0F0F; padding: 0 12px; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .layer-settlement { border-color: #3B82F6; }
+  .layer-settlement .layer-title { color: #3B82F6; }
+
+  .layer-coordination { border-color: #10B981; }
+  .layer-coordination .layer-title { color: #10B981; }
+
+  .layer-proof { border-color: #8B5CF6; }
+  .layer-proof .layer-title { color: #8B5CF6; }
+
+  .layer-user { border-color: #F59E0B; }
+  .layer-user .layer-title { color: #F59E0B; }
+
+  /* Cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+  .card { background: #1A1A2E; border-radius: 8px; padding: 1rem; text-align: center; transition: transform 0.2s, box-shadow 0.2s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15); }
+  .card-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .card-title { font-weight: 600; font-size: 0.9rem; color: #F9FAFB; margin-bottom: 0.25rem; }
+  .card-addr { font-family: 'Fira Code', monospace; font-size: 0.65rem; color: #6B7280; word-break: break-all; }
+  .card-stat { font-size: 0.75rem; color: #9CA3AF; margin-top: 0.25rem; }
+  .card-new { border: 1px solid #10B981; }
+  .card-v1 { border: 1px solid #374151; opacity: 0.7; }
+
+  /* Arrows */
+  .flow { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin: 1rem 0; color: #6B7280; font-size: 0.8rem; }
+  .arrow { color: #F59E0B; font-size: 1.2rem; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat { background: #1A1A2E; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #374151; }
+  .stat-value { font-size: 1.8rem; font-weight: 700; color: #F59E0B; }
+  .stat-label { font-size: 0.75rem; color: #9CA3AF; margin-top: 0.25rem; }
+
+  /* Flow diagram */
+  .flow-row { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+  .flow-box { background: #1A1A2E; border-radius: 8px; padding: 0.75rem 1.25rem; font-size: 0.85rem; border: 1px solid #374151; }
+  .flow-arrow { color: #F59E0B; font-size: 1.5rem; }
+
+  /* Legend */
+  .legend { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.5rem; font-size: 0.8rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>COVENANT v2 Architecture</h1>
+<p class="subtitle">Minimal Settlement Onchain — Maximum Coordination Offchain</p>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="stat-value">6</div><div class="stat-label">Settlement Contracts</div></div>
+  <div class="stat"><div class="stat-value">81</div><div class="stat-label">MCP Tools</div></div>
+  <div class="stat"><div class="stat-value">14/14</div><div class="stat-label">Tests Passing</div></div>
+  <div class="stat"><div class="stat-value">9</div><div class="stat-label">Subgraph Entities</div></div>
+</div>
+
+<!-- User Layer -->
+<div class="layer layer-user">
+  <div class="layer-title">User / Agent Layer</div>
+  <div class="grid">
+    <div class="card"><div class="card-icon">👤</div><div class="card-title">Clients</div><div class="card-stat">Create tasks, verify work</div></div>
+    <div class="card"><div class="card-icon">🤖</div><div class="card-title">Workers</div><div class="card-stat">Submit deliverables</div></div>
+    <div class="card"><div class="card-icon">💰</div><div class="card-title">Insurers</div><div class="card-stat">Pool ETH for coverage</div></div>
+    <div class="card"><div class="card-icon">⚖️</div><div class="card-title">Arbiters</div><div class="card-stat">Resolve disputes</div></div>
+  </div>
+</div>
+
+<div class="flow"><span class="arrow">↕</span> Frontend (Next.js) + MCP Server <span class="arrow">↕</span></div>
+
+<!-- Settlement Layer -->
+<div class="layer layer-settlement">
+  <div class="layer-title">Settlement Layer — Base Sepolia (Onchain)</div>
+  <div class="grid">
+    <div class="card card-new">
+      <div class="card-icon">🪪</div>
+      <div class="card-title">AgentRegistry v2</div>
+      <div class="card-addr">0x773d...21E1</div>
+      <div class="card-stat">Identity · Staking · Capability Hashes</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">🔐</div>
+      <div class="card-title">TaskEscrow v2</div>
+      <div class="card-addr">0xf4d0...a6F5</div>
+      <div class="card-stat">Escrow · Milestones · State Machine</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">📜</div>
+      <div class="card-title">ReceiptVerifier v2</div>
+      <div class="card-addr">0x05cC...7edF</div>
+      <div class="card-stat">ERC-8004 Attestations · Enum Types</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">🛡️</div>
+      <div class="card-title">InsurancePool</div>
+      <div class="card-addr">0x920f...BE1d</div>
+      <div class="card-stat">ETH Pool · Offchain Governance</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">⚖️</div>
+      <div class="card-title">DisputeResolution</div>
+      <div class="card-addr">0xFA6d...F28F</div>
+      <div class="card-stat">Bonds · Offchain Jurors</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔢</div>
+      <div class="card-title">ZK Verifiers</div>
+      <div class="card-addr">Groth16</div>
+      <div class="card-stat">Capability · Reputation Proofs</div>
+    </div>
+  </div>
+</div>
+
+<div class="flow"><span class="arrow">↕</span> Events + Proofs <span class="arrow">↕</span></div>
+
+<!-- Proof Layer -->
+<div class="layer layer-proof">
+  <div class="layer-title">Proof Layer — Cryptographic Anchors</div>
+  <div class="grid">
+    <div class="card"><div class="card-icon">🌳</div><div class="card-title">Merkle Roots</div><div class="card-stat">Collective deliverables</div></div>
+    <div class="card"><div class="card-icon">📝</div><div class="card-title">EIP-712 Signatures</div><div class="card-stat">Insurance governance</div></div>
+    <div class="card"><div class="card-icon">🔗</div><div class="card-title">ZK Proofs</div><div class="card-stat">Capability + reputation</div></div>
+    <div class="card"><div class="card-icon">📊</div><div class="card-title">The Graph Subgraph</div><div class="card-stat">Event indexing · 9 entities</div></div>
+  </div>
+</div>
+
+<div class="flow"><span class="arrow">↕</span> Indexed Data <span class="arrow">↕</span></div>
+
+<!-- Coordination Layer -->
+<div class="layer layer-coordination">
+  <div class="layer-title">Coordination Layer — Offchain (MCP Tools)</div>
+  <div class="grid">
+    <div class="card card-new">
+      <div class="card-icon">👤</div>
+      <div class="card-title">Agent Profiles</div>
+      <div class="card-addr">corven_profile_*</div>
+      <div class="card-stat">Signed by wallet · IPFS</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">🔍</div>
+      <div class="card-title">Smart Matching</div>
+      <div class="card-addr">corven_match_agents</div>
+      <div class="card-stat">Multi-factor scoring</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">💬</div>
+      <div class="card-title">Messaging</div>
+      <div class="card-addr">corven_message_*</div>
+      <div class="card-stat">Encrypted · Offchain</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Templates</div>
+      <div class="card-addr">corven_templates_*</div>
+      <div class="card-stat">Auto-pricing · 5 templates</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">🏪</div>
+      <div class="card-title">Marketplace</div>
+      <div class="card-addr">corven_marketplace_*</div>
+      <div class="card-stat">Discovery · Filtering</div>
+    </div>
+    <div class="card card-new">
+      <div class="card-icon">👥</div>
+      <div class="card-title">Collective</div>
+      <div class="card-addr">corven_collective_*</div>
+      <div class="card-stat">Proposals · Merkle root</div>
+    </div>
+  </div>
+</div>
+
+<!-- Removed Contracts -->
+<div style="margin-top: 2rem; padding: 1rem; border: 1px dashed #374151; border-radius: 8px;">
+  <h3 style="color: #EF4444; margin-bottom: 0.5rem;">Removed from Production (8 contracts → offchain)</h3>
+  <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.8rem; color: #6B7280;">
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">LitProtocolIntegration</span>
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">COVENANTRouter</span>
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">AgentWallet</span>
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">CapabilityVerifierWrapper</span>
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">ReputationVerifierWrapper</span>
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">AgentCollective</span>
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">ParallelTaskBatch</span>
+    <span style="background: #1F2937; padding: 0.25rem 0.75rem; border-radius: 4px;">OpenTaskMarket</span>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background: #10B981;"></div> New in v2</div>
+  <div class="legend-item"><div class="legend-dot" style="background: #3B82F6;"></div> Settlement</div>
+  <div class="legend-item"><div class="legend-dot" style="background: #8B5CF6;"></div> Proofs</div>
+  <div class="legend-item"><div class="legend-dot" style="background: #F59E0B;"></div> Users</div>
+  <div class="legend-item"><div class="legend-dot" style="background: #10B981;"></div> Coordination</div>
+</div>
+
+</div>
+</body>
+</html>

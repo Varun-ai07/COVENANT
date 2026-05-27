@@ -12,6 +12,8 @@ import { parseEther, formatEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
+import { parseContractError, formatStructuredError } from "../lib/formatResponse.js";
+import { ethAddress, ethAmount, ipfsCid, unixDeadline } from "../lib/schemaHelpers.js";
 import { stringToBytes32, stringsToBytes32 } from "../utils.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -49,14 +51,19 @@ export function registerBatchTools(server: McpServer): void {
     {
       title: "Create Parallel Task Batch",
       description:
-        "Create a batch of tasks for multiple workers to execute in parallel. " +
-        "All arrays must have the same length. Total ETH sent = sum of payments.",
+        "Create a batch of tasks for multiple workers to execute in parallel. All arrays must have the same length. Total ETH sent = sum of payments.\n" +
+        "USE WHEN: You have a large task that can be split across multiple workers for parallel execution.\n" +
+        "REQUIRES: All workers must be registered agents. Your wallet must have enough ETH for the sum of all payments plus gas.\n" +
+        "RETURNS: Transaction hash. The batch ID and individual task IDs are emitted in the event logs.\n" +
+        "COMES AFTER: corven_find_workers to identify available workers for the task.\n" +
+        "COMES BEFORE: corven_check_batch_submitted (poll for completion), corven_aggregate_results (finalize when all done).\n" +
+        "NOTE: All arrays (workers, payments, deadlines, descriptionHashes) must be the same length. Max 50 workers per batch.",
       inputSchema: {
-        workers: z.array(z.string()).describe("Array of worker addresses"),
-        payments: z.array(z.string()).describe("Array of payment amounts in ETH (one per worker)"),
-        deadlines: z.array(z.number()).describe("Array of deadline timestamps (seconds)"),
-        descriptionHashes: z.array(z.string()).describe("Array of IPFS CIDs for task descriptions"),
-        aggregationSpec: z.string().describe("IPFS CID for aggregation specification"),
+        workers: z.array(ethAddress).describe("Array of worker addresses"),
+        payments: z.array(ethAmount).describe("Array of payment amounts in ETH (one per worker)"),
+        deadlines: z.array(unixDeadline).describe("Array of deadline timestamps (seconds)"),
+        descriptionHashes: z.array(ipfsCid).describe("Array of IPFS CIDs for task descriptions"),
+        aggregationSpec: ipfsCid.describe("IPFS CID for aggregation specification"),
       },
     },
     async ({ workers, payments, deadlines, descriptionHashes, aggregationSpec }) => {
@@ -94,7 +101,8 @@ export function registerBatchTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -105,21 +113,26 @@ export function registerBatchTools(server: McpServer): void {
   server.registerTool(
     "corven_get_batch",
     {
-      title: "Get Batch Details",
-      description: "Retrieve full details of a task batch including all task IDs.",
+      title: "Get Batch",
+      description:
+        "Get batch details by ID, or total batch count if no ID provided.\n" +
+        "USE WHEN: You need to inspect a batch's tasks, budget, status, or aggregation spec.\n" +
+        "REQUIRES: The batch must exist on-chain.\n" +
+        "RETURNS: Batch details including client, total budget, task IDs, aggregation spec, status, and creation time. If no ID provided, returns total batch count.\n" +
+        "COMES AFTER: corven_create_batch created the batch.\n" +
+        "COMES BEFORE: corven_get_batch_status (check progress), corven_aggregate_results (finalize).\n" +
+        "NOTE: Omit batchId to get the total number of batches.",
       inputSchema: {
-        batchId: z.number().describe("Numeric batch ID"),
+        batchId: z.number().optional().describe("Batch ID. Omit to get total batch count."),
       },
     },
     async ({ batchId }) => {
       try {
-        const data = await readContract(
-          CONTRACTS.ParallelTaskBatch,
-          ABI,
-          "getBatchDetails",
-          [BigInt(batchId)]
-        );
-
+        if (batchId === undefined) {
+          const count = await readContract(CONTRACTS.ParallelTaskBatch, ABI, "batchCounter", []);
+          return formatReadResult({ batchCount: Number(count) }, "Total Batches");
+        }
+        const data = await readContract(CONTRACTS.ParallelTaskBatch, ABI, "getBatchDetails", [BigInt(batchId)]);
         const enriched = {
           client: (data as any).client,
           totalBudgetEth: formatEther((data as any).totalBudget),
@@ -130,7 +143,8 @@ export function registerBatchTools(server: McpServer): void {
         };
         return formatReadResult(enriched, `Batch #${batchId}`);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -142,7 +156,14 @@ export function registerBatchTools(server: McpServer): void {
     "corven_get_batch_status",
     {
       title: "Get Batch Status",
-      description: "Get the current status of a batch (Pending/InProgress/Aggregated/etc).",
+      description:
+        "Get the current status of a batch (Pending/InProgress/Aggregated/etc).\n" +
+        "USE WHEN: You need to check whether a batch's tasks are all completed and ready for aggregation.\n" +
+        "REQUIRES: The batch must exist on-chain.\n" +
+        "RETURNS: Batch status as a numeric code and human-readable label (Pending, InProgress, Aggregated, Completed, Failed).\n" +
+        "COMES AFTER: corven_create_batch created the batch.\n" +
+        "COMES BEFORE: corven_aggregate_results (when status shows all tasks are done).\n" +
+        "NOTE: Status 2 (Aggregated) means all tasks completed and results were finalized.",
       inputSchema: {
         batchId: z.number().describe("Numeric batch ID"),
       },
@@ -163,7 +184,8 @@ export function registerBatchTools(server: McpServer): void {
         };
         return formatReadResult(result, `Batch #${batchId} Status`);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -176,8 +198,13 @@ export function registerBatchTools(server: McpServer): void {
     {
       title: "Aggregate Batch Results",
       description:
-        "Finalize a batch by aggregating all completed task results. " +
-        "Can only be called after all tasks in the batch are Submitted.",
+        "Finalize a batch by aggregating all completed task results. Can only be called after all tasks in the batch are Submitted.\n" +
+        "USE WHEN: All workers in the batch have submitted their deliverables and you want to finalize the batch.\n" +
+        "REQUIRES: All tasks in the batch must be in Submitted status. You must be the batch creator.\n" +
+        "RETURNS: Transaction hash. The aggregated result hash is stored on-chain.\n" +
+        "COMES AFTER: corven_check_batch_submitted confirmed all tasks are done.\n" +
+        "COMES BEFORE: corven_get_aggregated_result to retrieve the final combined result.\n" +
+        "NOTE: This releases payments to all workers in the batch.",
       inputSchema: {
         batchId: z.number().describe("Numeric batch ID"),
       },
@@ -197,35 +224,13 @@ export function registerBatchTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
 
-  // ──────────────────────────────────────────────────────────────
-  // get_batch_counter
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_get_batch_counter",
-    {
-      title: "Get Batch Counter",
-      description: "Get the total number of batches created on the protocol.",
-      inputSchema: {},
-    },
-    async () => {
-      try {
-        const count = await readContract(
-          CONTRACTS.ParallelTaskBatch,
-          ABI,
-          "batchCounter",
-          []
-        );
-        return formatReadResult({ count: Number(count) }, "Batch Counter");
-      } catch (e) {
-        return formatError(e);
-      }
-    }
-  );
+  // get_batch_counter merged into get_batch (returns count when no batchId)
 
   // ──────────────────────────────────────────────────────────────
   // corven_check_batch_submitted
@@ -234,7 +239,14 @@ export function registerBatchTools(server: McpServer): void {
     "corven_check_batch_submitted",
     {
       title: "Check Batch All Submitted",
-      description: "Check if all subtasks in a batch have been submitted.",
+      description:
+        "Check if all subtasks in a batch have been submitted.\n" +
+        "USE WHEN: You want to know whether a batch is ready for result aggregation.\n" +
+        "REQUIRES: The batch must exist on-chain.\n" +
+        "RETURNS: Boolean indicating whether all tasks in the batch have been submitted.\n" +
+        "COMES AFTER: corven_create_batch created the batch and workers are executing tasks.\n" +
+        "COMES BEFORE: corven_aggregate_results (call when allSubmitted is true).\n" +
+        "NOTE: Poll this periodically or after workers report completion.",
       inputSchema: { batchId: z.number().describe("Batch ID") },
     },
     async ({ batchId }) => {
@@ -246,7 +258,10 @@ export function registerBatchTools(server: McpServer): void {
           { batchId, allSubmitted },
           `Batch #${batchId} submission status`
         );
-      } catch (e) { return formatError(e); }
+      } catch (e) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
     }
   );
 
@@ -257,7 +272,14 @@ export function registerBatchTools(server: McpServer): void {
     "corven_get_aggregated_result",
     {
       title: "Get Aggregated Result",
-      description: "Get the aggregated result hash after a batch is finalized.",
+      description:
+        "Get the aggregated result hash after a batch is finalized.\n" +
+        "USE WHEN: You need to retrieve the combined result of all tasks in a completed batch.\n" +
+        "REQUIRES: The batch must have been finalized via corven_aggregate_results.\n" +
+        "RETURNS: The aggregated result hash (bytes32) that represents the combined output of all batch tasks.\n" +
+        "COMES AFTER: corven_aggregate_results finalized the batch.\n" +
+        "COMES BEFORE: Use the result hash to verify or store the batch output.\n" +
+        "NOTE: Returns empty/zero hash if the batch has not been aggregated yet.",
       inputSchema: { batchId: z.number().describe("Batch ID") },
     },
     async ({ batchId }) => {
@@ -269,7 +291,10 @@ export function registerBatchTools(server: McpServer): void {
           { batchId, aggregatedResult: result },
           `Aggregated result for Batch #${batchId}`
         );
-      } catch (e) { return formatError(e); }
+      } catch (e) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
     }
   );
 }

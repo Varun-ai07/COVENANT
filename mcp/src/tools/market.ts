@@ -15,7 +15,9 @@ import { z } from "zod";
 import { parseEther, formatEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
-import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
+import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
+import { formatSuccess, formatStructuredError, parseContractError } from "../lib/formatResponse.js";
+import { ethAddress, ethAmount, ipfsCid, unixDeadline, taskId as taskIdSchema } from "../lib/schemaHelpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const ABI = loadAbi("OpenTaskMarket");
@@ -75,24 +77,27 @@ export function registerMarketTools(server: McpServer): void {
     {
       title: "Post Open Task",
       description:
-        "Post an open task for competitive bidding. Workers can submit bids. " +
-        "Client sends maxPayment as msg.value. Returns the new taskId.",
+        "Posts a task to the open marketplace for competitive bidding. All capable workers can see and bid. You pay only the winning bid price.\n" +
+        "USE WHEN: You want competitive pricing. You don't have a specific worker in mind. You want multiple proposals to compare.\n" +
+        "REQUIRES: Registered as client. Wallet needs maxPayment plus ~0.0003 ETH gas.\n" +
+        "RETURNS: Open task ID, instructions for reviewing incoming bids.\n" +
+        "COMES BEFORE: Workers call corven_submit_bid. You call corven_select_worker.",
       inputSchema: {
-        maxPayment: z.string().describe("Maximum payment in ETH (e.g. '0.05')"),
-        deadline: z.number().describe("Unix timestamp deadline (seconds)"),
-        descriptionHash: z.string().describe("IPFS CID or hash for task description"),
+        maxPayment: ethAmount,
+        deadline: unixDeadline,
+        descriptionHash: ipfsCid,
       },
     },
     async ({ maxPayment, deadline, descriptionHash }) => {
       try {
         const validation = postTaskSchema.safeParse({ maxPayment, deadline, descriptionHash });
         if (!validation.success) {
-          return formatError(new Error(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`));
+          return formatStructuredError(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`, "Validation failed.", "Check parameter formats.", false);
         }
 
         const account = getAccount();
         if (!account) {
-          return formatError(new Error("No private key configured — cannot send transactions"));
+          return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
         }
 
         const paymentWei = parseEther(maxPayment);
@@ -105,7 +110,8 @@ export function registerMarketTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -117,9 +123,15 @@ export function registerMarketTools(server: McpServer): void {
     "corven_get_open_task",
     {
       title: "Get Open Task Details",
-      description: "Retrieve details of an open market task including bids and selected worker.",
+      description:
+        "Reads details of an open market task including all bids and the selected worker.\n" +
+        "USE WHEN: Checking bids on your posted task. Viewing a task before bidding. Monitoring auction status.\n" +
+        "REQUIRES: Nothing. Free read-only call.\n" +
+        "RETURNS: Max payment, deadline, status, description hash, client, selected worker, all bids with prices and time estimates.\n" +
+        "COMES AFTER: corven_post_open_task created the task.\n" +
+        "COMES BEFORE: corven_submit_bid (for workers), corven_select_worker (for client).",
       inputSchema: {
-        taskId: z.number().describe("Numeric task ID"),
+        taskId: taskIdSchema,
       },
     },
     async ({ taskId }) => {
@@ -161,7 +173,8 @@ export function registerMarketTools(server: McpServer): void {
         };
         return formatReadResult(enriched, `Open Task #${taskId}`);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -174,24 +187,30 @@ export function registerMarketTools(server: McpServer): void {
     {
       title: "Submit Bid",
       description:
-        "Submit a bid on an open task. Include your proposed price, time estimate, and proposal hash.",
+        "Submits a competitive bid on an open market task with your proposed price, timeline, and proposal.\n" +
+        "USE WHEN: You found an open task (corven_find_open_tasks) and want to compete for the work.\n" +
+        "REQUIRES: You must be a registered agent. Task must be Open (status=0). You cannot bid twice on the same task.\n" +
+        "RETURNS: Bid confirmation, task ID, your price, time estimate, txHash.\n" +
+        "COMES AFTER: corven_get_open_task or corven_find_open_tasks to find tasks to bid on.\n" +
+        "COMES BEFORE: Client calls corven_select_worker or corven_make_counter_offer. You call corven_accept_counter_offer or corven_withdraw_bid.\n" +
+        "NOTE: Bids below the client's maxPayment are more likely to be selected. You can withdraw with corven_withdraw_bid before selection.",
       inputSchema: {
-        taskId: z.number().describe("Task ID to bid on"),
-        price: z.string().describe("Your bid price in ETH"),
+        taskId: taskIdSchema,
+        price: ethAmount,
         timeEstimate: z.number().describe("Estimated completion time in seconds"),
-        proposalHash: z.string().describe("IPFS CID or hash of your proposal"),
+        proposalHash: ipfsCid,
       },
     },
     async ({ taskId, price, timeEstimate, proposalHash }) => {
       try {
         const validation = submitBidSchema.safeParse({ taskId, price, timeEstimate, proposalHash });
         if (!validation.success) {
-          return formatError(new Error(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`));
+          return formatStructuredError(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`, "Validation failed.", "Check parameter formats.", false);
         }
 
         const account = getAccount();
         if (!account) {
-          return formatError(new Error("No private key configured"));
+          return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
         }
 
         const priceWei = parseEther(price);
@@ -203,7 +222,8 @@ export function registerMarketTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -215,10 +235,16 @@ export function registerMarketTools(server: McpServer): void {
     "corven_get_bid",
     {
       title: "Get Bid Details",
-      description: "Retrieve a specific bid on an open task by taskId and bidder address.",
+      description:
+        "Reads a specific bid on an open task by task ID and bidder address.\n" +
+        "USE WHEN: Checking your own bid status. Viewing a competitor's bid. Comparing bids before selecting.\n" +
+        "REQUIRES: Nothing. Free read-only call.\n" +
+        "RETURNS: Bidder address, price, time estimate, proposal hash, bid status (pending/selected/rejected).\n" +
+        "COMES AFTER: corven_submit_bid placed a bid.\n" +
+        "COMES BEFORE: corven_select_worker (client) or corven_accept_counter_offer (worker).",
       inputSchema: {
-        taskId: z.number().describe("Task ID"),
-        bidder: z.string().describe("Bidder's Ethereum address"),
+        taskId: taskIdSchema,
+        bidder: ethAddress,
       },
     },
     async ({ taskId, bidder }) => {
@@ -256,7 +282,8 @@ export function registerMarketTools(server: McpServer): void {
         };
         return formatReadResult(enriched, `Bid on Task #${taskId}`);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -269,23 +296,28 @@ export function registerMarketTools(server: McpServer): void {
     {
       title: "Select Worker",
       description:
-        "Select a winning bidder for your open task. Only the task client can call this. " +
-        "Transitions task to InProgress and assigns the worker.",
+        "Client selects a winning bidder for their open task. Assigns the worker and locks the bid price.\n" +
+        "USE WHEN: You reviewed bids (corven_get_open_task) and want to hire a specific bidder.\n" +
+        "REQUIRES: You must be the task client. Task must be Open (status=0). The bidder must have an active bid.\n" +
+        "RETURNS: Task ID, selected worker, assigned price, task status, txHash.\n" +
+        "COMES AFTER: corven_submit_bid by workers, corven_get_open_task to review bids.\n" +
+        "COMES BEFORE: Worker calls corven_complete_open_task. Client calls corven_verify_task.\n" +
+        "NOTE: Unselected bidders can still be considered via counter offers. Selection is final once confirmed.",
       inputSchema: {
-        taskId: z.number().describe("Task ID"),
-        worker: z.string().describe("Address of the selected worker/bidder"),
+        taskId: taskIdSchema,
+        worker: ethAddress,
       },
     },
     async ({ taskId, worker }) => {
       try {
         const validation = selectWorkerSchema.safeParse({ taskId, worker });
         if (!validation.success) {
-          return formatError(new Error(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`));
+          return formatStructuredError(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`, "Validation failed.", "Check parameter formats.", false);
         }
 
         const account = getAccount();
         if (!account) {
-          return formatError(new Error("No private key configured"));
+          return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
         }
 
         const result = await executeOrPrepare(
@@ -298,86 +330,57 @@ export function registerMarketTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
 
   // ──────────────────────────────────────────────────────────────
-  // make_counter_offer
+  // corven_counter_offer (consolidated: make, accept, reject)
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "corven_make_counter_offer",
+    "corven_counter_offer",
     {
-      title: "Make Counter Offer",
+      title: "Counter Offer",
       description:
-        "Task client makes a counter offer to a worker's bid. " +
-        "The worker can then accept or reject the counter.",
+        "Manages counter offers on open tasks. Three actions: make (client counters a bid), accept (worker accepts), reject (worker rejects).\n" +
+        "USE WHEN: Client wants to propose a different price/time than a bid. Worker wants to respond to a client's counter.\n" +
+        "REQUIRES: Action 'make': you must be the task client, bidder must have an active bid. Action 'accept'/'reject': you must be the bidder.\n" +
+        "RETURNS: Counter offer action confirmation, task ID, new terms, txHash.\n" +
+        "COMES AFTER: corven_submit_bid placed a bid. Client used corven_get_open_task to review bids.\n" +
+        "COMES BEFORE: If accepted, task transitions to InProgress. If rejected, bid remains pending.\n" +
+        "NOTE: 'make' requires bidder, counterPrice, counterTimeEstimate, and counterProposalHash. 'accept' and 'reject' only need taskId.",
       inputSchema: {
-        taskId: z.number().describe("Task ID"),
-        bidder: z.string().describe("Bidder address to counter"),
-        counterPrice: z.string().describe("Counter price in ETH"),
-        counterTimeEstimate: z.number().describe("Counter time estimate in seconds"),
-        counterProposalHash: z.string().describe("IPFS CID for counter proposal"),
+        action: z.enum(["make", "accept", "reject"]).describe("Counter offer action"),
+        taskId: taskIdSchema,
+        bidder: ethAddress.optional().describe("Bidder address (required for 'make')"),
+        counterPrice: ethAmount.optional().describe("Counter price in ETH (required for 'make')"),
+        counterTimeEstimate: z.number().optional().describe("Counter time estimate in seconds (required for 'make')"),
+        counterProposalHash: ipfsCid.optional().describe("IPFS CID for counter proposal (required for 'make')"),
       },
     },
-    async ({ taskId, bidder, counterPrice, counterTimeEstimate, counterProposalHash }) => {
-      try {
-        const validation = counterOfferSchema.safeParse({ taskId, bidder, counterPrice, counterTimeEstimate, counterProposalHash });
-        if (!validation.success) {
-          return formatError(new Error(`Invalid input: ${validation.error.issues.map(e => e.message).join(", ")}`));
-        }
-
-        const account = getAccount();
-        if (!account) {
-          return formatError(new Error("No private key configured"));
-        }
-
-        const priceWei = parseEther(counterPrice);
-        const result = await executeOrPrepare(
-          CONTRACTS.OpenTaskMarket,
-          ABI,
-          "makeCounterOffer",
-          [BigInt(taskId), bidder as Address, priceWei, BigInt(counterTimeEstimate), counterProposalHash],
-          undefined,
-          "OpenTaskMarket"
-        );
-        return formatTxResult(result);
-      } catch (e) {
-        return formatError(e);
-      }
-    }
-  );
-
-  // ──────────────────────────────────────────────────────────────
-  // accept_counter_offer
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_accept_counter_offer",
-    {
-      title: "Accept Counter Offer",
-      description: "Worker accepts the client's counter offer on their bid.",
-      inputSchema: {
-        taskId: z.number().describe("Task ID"),
-      },
-    },
-    async ({ taskId }) => {
+    async ({ action, taskId, bidder, counterPrice, counterTimeEstimate, counterProposalHash }) => {
       try {
         const account = getAccount();
-        if (!account) {
-          return formatError(new Error("No private key configured"));
+        if (!account) return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
+
+        if (action === "make") {
+          if (!bidder || !counterPrice || !counterTimeEstimate || !counterProposalHash) {
+            return formatStructuredError("Missing required fields.", "bidder, counterPrice, counterTimeEstimate, and counterProposalHash required for 'make'.", "Provide all counter offer parameters.", false);
+          }
+          const priceWei = parseEther(counterPrice);
+          const result = await executeOrPrepare(
+            CONTRACTS.OpenTaskMarket, ABI, "makeCounterOffer",
+            [BigInt(taskId), bidder as Address, priceWei, BigInt(counterTimeEstimate), counterProposalHash]
+          );
+          return formatTxResult(result);
         }
 
-        const result = await executeOrPrepare(
-          CONTRACTS.OpenTaskMarket,
-          ABI,
-          "acceptCounterOffer",
-          [BigInt(taskId)]
-        );
+        const fn = action === "accept" ? "acceptCounterOffer" : "rejectCounterOffer";
+        const result = await executeOrPrepare(CONTRACTS.OpenTaskMarket, ABI, fn, [BigInt(taskId)]);
         return formatTxResult(result);
-      } catch (e) {
-        return formatError(e);
-      }
+      } catch (e) { const parsed = parseContractError(e); return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable); }
     }
   );
 
@@ -388,16 +391,22 @@ export function registerMarketTools(server: McpServer): void {
     "corven_withdraw_bid",
     {
       title: "Withdraw Bid",
-      description: "Withdraw your bid from an open task before being selected.",
+      description:
+        "Withdraws your bid from an open task before you are selected.\n" +
+        "USE WHEN: You no longer want to compete. You underbid by mistake. You found better work elsewhere.\n" +
+        "REQUIRES: You must have an active bid on the task. Task must still be Open.\n" +
+        "RETURNS: Withdrawal confirmation, task ID, txHash.\n" +
+        "COMES AFTER: corven_submit_bid placed your bid.\n" +
+        "NOTE: Cannot withdraw after you are selected via corven_select_worker.",
       inputSchema: {
-        taskId: z.number().describe("Task ID"),
+        taskId: taskIdSchema,
       },
     },
     async ({ taskId }) => {
       try {
         const account = getAccount();
         if (!account) {
-          return formatError(new Error("No private key configured"));
+          return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
         }
 
         const result = await executeOrPrepare(
@@ -408,7 +417,8 @@ export function registerMarketTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -420,16 +430,22 @@ export function registerMarketTools(server: McpServer): void {
     "corven_cancel_open_task",
     {
       title: "Cancel Open Task",
-      description: "Cancel an open task and refund the escrowed payment.",
+      description:
+        "Cancels an open task and refunds the escrowed payment to the client.\n" +
+        "USE WHEN: You no longer need the work. No bids were satisfactory. Requirements changed.\n" +
+        "REQUIRES: You must be the task client. Task must still be Open (not InProgress).\n" +
+        "RETURNS: Cancellation confirmation, refund amount, task ID, txHash.\n" +
+        "COMES AFTER: corven_post_open_task created the task.\n" +
+        "NOTE: Cannot cancel after a worker is selected via corven_select_worker. Bidders' bids are released automatically.",
       inputSchema: {
-        taskId: z.number().describe("Task ID to cancel"),
+        taskId: taskIdSchema,
       },
     },
     async ({ taskId }) => {
       try {
         const account = getAccount();
         if (!account) {
-          return formatError(new Error("No private key configured"));
+          return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
         }
 
         const result = await executeOrPrepare(
@@ -442,7 +458,8 @@ export function registerMarketTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -454,40 +471,26 @@ export function registerMarketTools(server: McpServer): void {
     "corven_complete_open_task",
     {
       title: "Complete Open Task",
-      description: "Worker marks an open market task as completed after being selected.",
-      inputSchema: { taskId: z.number().describe("Task ID") },
+      description:
+        "Worker marks an open market task as completed after finishing the work.\n" +
+        "USE WHEN: You are the selected worker. Work is done. You want to signal completion for client review.\n" +
+        "REQUIRES: You must be the selected worker. Task must be InProgress.\n" +
+        "RETURNS: Completion confirmation, task ID, status update, txHash.\n" +
+        "COMES AFTER: corven_select_worker assigned you to the task.\n" +
+        "COMES BEFORE: Client calls corven_verify_task to approve and release payment.\n" +
+        "NOTE: This does NOT release payment. The client must verify first.",
+      inputSchema: { taskId: taskIdSchema },
     },
     async ({ taskId }) => {
       try {
         const account = getAccount();
-        if (!account) return formatError(new Error("No private key configured"));
+        if (!account) return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
         const result = await executeOrPrepare(
           CONTRACTS.OpenTaskMarket, ABI, "completeTask", [BigInt(taskId)]
         );
         return formatTxResult(result);
-      } catch (e) { return formatError(e); }
+      } catch (e) { const parsed = parseContractError(e); return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable); }
     }
   );
 
-  // ──────────────────────────────────────────────────────────────
-  // corven_reject_counter_offer
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_reject_counter_offer",
-    {
-      title: "Reject Counter Offer",
-      description: "Worker rejects the client's counter offer on their bid.",
-      inputSchema: { taskId: z.number().describe("Task ID") },
-    },
-    async ({ taskId }) => {
-      try {
-        const account = getAccount();
-        if (!account) return formatError(new Error("No private key configured"));
-        const result = await executeOrPrepare(
-          CONTRACTS.OpenTaskMarket, ABI, "rejectCounterOffer", [BigInt(taskId)]
-        );
-        return formatTxResult(result);
-      } catch (e) { return formatError(e); }
-    }
-  );
 }

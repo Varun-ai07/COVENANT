@@ -1,0 +1,27 @@
+{
+  "name": "covenant-monitoring",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/event-listener.ts",
+    "events": "tsx src/event-listener.ts",
+    "health": "tsx src/subgraph-health.ts",
+    "metrics": "tsx src/metrics-collector.ts",
+    "alerts": "tsx src/alerts.ts",
+    "dashboard": "tsx src/dashboard.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.11.0",
+    "blessed": "^0.1.81",
+    "dotenv": "^16.4.0",
+    "graphql": "^16.9.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/blessed": "^0.1.25",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

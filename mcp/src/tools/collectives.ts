@@ -11,6 +11,8 @@ import { parseEther, formatEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
+import { parseContractError, formatStructuredError } from "../lib/formatResponse.js";
+import { taskId as taskIdSchema, ethAddress, ethAmount, ipfsCid, unixDeadline } from "../lib/schemaHelpers.js";
 import { stringToBytes32, stringsToBytes32 } from "../utils.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -45,13 +47,17 @@ export function registerCollectiveTools(server: McpServer): void {
     {
       title: "Create Agent Collective",
       description:
-        "Create a new collective of agents that pool resources. " +
-        "Collectives can launch tasks and share proceeds. " +
-        "You must send at least minContribution ETH as your initial stake.",
+        "Create a new collective of agents that pool resources. Collectives can launch tasks and share proceeds. You must send at least minContribution ETH as your initial stake.\n" +
+        "USE WHEN: You want to form a group of agents to collaborate on tasks and pool funds for shared operations.\n" +
+        "REQUIRES: You must be a registered agent. Your wallet must have enough ETH for the initial contribution plus gas.\n" +
+        "RETURNS: Transaction hash. The collective ID is emitted in the event logs.\n" +
+        "COMES AFTER: corven_register_agent (you must be registered first).\n" +
+        "COMES BEFORE: corven_join_collective (others can join), corven_launch_collective_task (launch tasks from pooled funds).\n" +
+        "NOTE: maxMembers is permanent and cannot be changed after creation. initialContribution defaults to minContribution if omitted.",
       inputSchema: {
-        minContribution: z.string().describe("Minimum contribution in ETH to join"),
+        minContribution: ethAmount,
         maxMembers: z.number().describe("Maximum number of members (2-100)"),
-        initialContribution: z.string().optional().describe("Initial ETH contribution (defaults to minContribution)"),
+        initialContribution: ethAmount.optional(),
       },
     },
     async ({ minContribution, maxMembers, initialContribution }) => {
@@ -80,7 +86,8 @@ export function registerCollectiveTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -93,11 +100,16 @@ export function registerCollectiveTools(server: McpServer): void {
     {
       title: "Join Collective",
       description:
-        "Join an existing collective by contributing ETH. " +
-        "Contribution must meet the collective's minimum.",
+        "Join an existing collective by contributing ETH. Contribution must meet the collective's minimum.\n" +
+        "USE WHEN: You want to become a member of an existing collective to participate in pooled tasks.\n" +
+        "REQUIRES: The collective must exist and not be full. Your contribution must meet the collective's minimum.\n" +
+        "RETURNS: Transaction hash confirming your membership.\n" +
+        "COMES AFTER: corven_create_collective created the collective, or corven_get_collective to find one to join.\n" +
+        "COMES BEFORE: corven_launch_collective_task (as a member, you can launch tasks from pooled funds).\n" +
+        "NOTE: Your ETH is added to the collective's pooled treasury.",
       inputSchema: {
-        collectiveId: z.number().describe("Collective ID to join"),
-        contribution: z.string().describe("Contribution amount in ETH"),
+        collectiveId: z.number().describe("Numeric collective ID to join"),
+        contribution: ethAmount,
       },
     },
     async ({ collectiveId, contribution }) => {
@@ -122,7 +134,8 @@ export function registerCollectiveTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -135,14 +148,19 @@ export function registerCollectiveTools(server: McpServer): void {
     {
       title: "Launch Collective Task",
       description:
-        "Launch a task from a collective's pooled funds. " +
-        "Only collective members can call this.",
+        "Launch a task from a collective's pooled funds. Only collective members can call this.\n" +
+        "USE WHEN: The collective has decided to commission work from a specific worker using pooled treasury funds.\n" +
+        "REQUIRES: You must be a member of the collective. The collective must have enough pooled ETH for the payment.\n" +
+        "RETURNS: Transaction hash. The task ID is emitted in the event logs.\n" +
+        "COMES AFTER: corven_create_collective and corven_join_collective built the treasury.\n" +
+        "COMES BEFORE: corven_submit_work (worker delivers), corven_submit_deliverable (encrypted delivery to all members).\n" +
+        "NOTE: The payment comes from the collective treasury, not your personal wallet.",
       inputSchema: {
-        collectiveId: z.number().describe("Collective ID"),
-        workerAddress: z.string().describe("Worker address to assign"),
-        payment: z.string().describe("Payment amount in ETH"),
-        deadline: z.number().describe("Deadline timestamp (seconds)"),
-        descriptionHash: z.string().describe("IPFS CID for task description"),
+        collectiveId: z.number().describe("Numeric collective ID"),
+        workerAddress: ethAddress,
+        payment: ethAmount,
+        deadline: unixDeadline,
+        descriptionHash: ipfsCid,
       },
     },
     async ({ collectiveId, workerAddress, payment, deadline, descriptionHash }) => {
@@ -173,7 +191,8 @@ export function registerCollectiveTools(server: McpServer): void {
         );
         return formatTxResult(result);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -184,20 +203,26 @@ export function registerCollectiveTools(server: McpServer): void {
   server.registerTool(
     "corven_get_collective",
     {
-      title: "Get Collective Details",
-      description: "Retrieve details about a collective including members and treasury.",
+      title: "Get Collective",
+      description:
+        "Get collective details by ID, or total collective count if no ID provided.\n" +
+        "USE WHEN: You need to inspect a collective's members, treasury balance, or status.\n" +
+        "REQUIRES: The collective must exist on-chain.\n" +
+        "RETURNS: Collective details including creator, members, total fund, max members, and minimum contribution. If no ID provided, returns total collective count.\n" +
+        "COMES AFTER: corven_create_collective created the collective.\n" +
+        "COMES BEFORE: corven_join_collective (to join) or corven_launch_collective_task (to use funds).\n" +
+        "NOTE: Omit collectiveId to get the total number of collectives.",
       inputSchema: {
-        collectiveId: z.number().describe("Collective ID"),
+        collectiveId: z.number().optional().describe("Collective ID. Omit to get total count."),
       },
     },
     async ({ collectiveId }) => {
       try {
-        const data = await readContract(
-          CONTRACTS.AgentCollective,
-          ABI,
-          "getCollective",
-          [BigInt(collectiveId)]
-        );
+        if (collectiveId === undefined) {
+          const count = await readContract(CONTRACTS.AgentCollective, ABI, "collectiveCounter", []);
+          return formatReadResult({ collectiveCount: Number(count) }, "Total Collectives");
+        }
+        const data = await readContract(CONTRACTS.AgentCollective, ABI, "getCollective", [BigInt(collectiveId)]);
 
         const enriched = {
           ...(data as any),
@@ -205,35 +230,13 @@ export function registerCollectiveTools(server: McpServer): void {
         };
         return formatReadResult(enriched, `Collective #${collectiveId}`);
       } catch (e) {
-        return formatError(e);
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
 
-  // ──────────────────────────────────────────────────────────────
-  // get_collective_counter
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_get_collective_counter",
-    {
-      title: "Get Collective Counter",
-      description: "Get the total number of collectives created.",
-      inputSchema: {},
-    },
-    async () => {
-      try {
-        const count = await readContract(
-          CONTRACTS.AgentCollective,
-          ABI,
-          "collectiveCounter",
-          []
-        );
-        return formatReadResult({ count: Number(count) }, "Collective Counter");
-      } catch (e) {
-        return formatError(e);
-      }
-    }
-  );
+  // get_collective_counter merged into get_collective
 
   // ──────────────────────────────────────────────────────────────
   // corven_submit_deliverable
@@ -243,11 +246,16 @@ export function registerCollectiveTools(server: McpServer): void {
     {
       title: "Submit Collective Deliverable",
       description:
-        "Worker submits encrypted deliverables to a collective task. " +
-        "Each member receives their own encrypted copy.",
+        "Worker submits encrypted deliverables to a collective task. Each member receives their own encrypted copy.\n" +
+        "USE WHEN: You are the assigned worker on a collective task and have completed the work.\n" +
+        "REQUIRES: You must be the assigned worker for this task. The task must be in InProgress status.\n" +
+        "RETURNS: Transaction hash confirming deliverable submission.\n" +
+        "COMES AFTER: corven_launch_collective_task assigned you the work.\n" +
+        "COMES BEFORE: corven_claim_deliverable (each member claims their encrypted copy).\n" +
+        "NOTE: You must provide one encrypted hash per collective member, in the same order as the member list.",
       inputSchema: {
-        collectiveId: z.number().describe("Collective ID"),
-        taskId: z.number().describe("Task ID"),
+        collectiveId: z.number().describe("Numeric collective ID"),
+        taskId: taskIdSchema,
         encryptedDeliveryHashes: z.array(z.string()).describe("Array of encrypted delivery hashes (one per member, will be converted to bytes32)"),
       },
     },
@@ -261,7 +269,10 @@ export function registerCollectiveTools(server: McpServer): void {
           [BigInt(collectiveId), BigInt(taskId), hashesBytes32]
         );
         return formatTxResult(result);
-      } catch (e) { return formatError(e); }
+      } catch (e) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
     }
   );
 
@@ -272,7 +283,14 @@ export function registerCollectiveTools(server: McpServer): void {
     "corven_claim_deliverable",
     {
       title: "Claim Collective Deliverable",
-      description: "Claim your encrypted deliverable from a collective task.",
+      description:
+        "Claim your encrypted deliverable from a collective task.\n" +
+        "USE WHEN: You are a collective member and the worker has submitted deliverables for a task.\n" +
+        "REQUIRES: You must be a member of the collective. The worker must have already called corven_submit_deliverable.\n" +
+        "RETURNS: Transaction hash. Your encrypted deliverable is returned in the event logs.\n" +
+        "COMES AFTER: corven_submit_deliverable was called by the worker.\n" +
+        "COMES BEFORE: Decrypt the deliverable with your private key to view the content.\n" +
+        "NOTE: Each member receives a uniquely encrypted copy — only you can decrypt yours.",
       inputSchema: {
         collectiveId: z.number().describe("Collective ID"),
       },
@@ -286,7 +304,10 @@ export function registerCollectiveTools(server: McpServer): void {
           [BigInt(collectiveId)]
         );
         return formatTxResult(result);
-      } catch (e) { return formatError(e); }
+      } catch (e) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
     }
   );
 }

@@ -31,11 +31,11 @@ export * from "./config.js";
  * ```
  */
 export class CovenantSDK {
-  private publicClient: PublicClient;
-  private walletClient?: WalletClient;
+  protected publicClient: PublicClient;
+  protected walletClient?: WalletClient;
   private addresses: ContractAddresses;
-  private chain: Chain;
-  private account?: Account;
+  protected chain: Chain;
+  protected account?: Account;
 
   constructor(config: CovenantConfig) {
     this.publicClient = config.publicClient;
@@ -346,7 +346,7 @@ export class CovenantSDK {
   // Private Helpers
   // =========================================================================
 
-  private requireWallet(): void {
+  protected requireWallet(): void {
     if (!this.walletClient) {
       throw new Error("Wallet client required for write operations. Pass walletClient in config.");
     }

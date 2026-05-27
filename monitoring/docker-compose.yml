@@ -1,0 +1,15 @@
+services:
+  covenantd-monitor:
+    build: .
+    container_name: covenantd-monitor
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,33 +1,13 @@
 import type { Address } from "viem";
-import type { ContractAddresses } from "./types.js";
+import { BASE_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
+import type { ContractAddresses, V2ContractAddresses } from "./types.js";
 
 /**
  * Default contract addresses by chain ID
  */
 export const DEFAULT_ADDRESSES: Record<number, ContractAddresses> = {
   // Base Sepolia Testnet
-  84532: {
-    // Core Protocol
-    AgentRegistry: "0xB215589dA259A98eEE8BF39739F6255131ac33A1",
-    TaskEscrow: "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3",
-    ReceiptVerifier: "0xa47D15099be6aC516B53a6859D468E9004eEf76b",
-    // Market & Batching
-    OpenTaskMarket: "0x5ccF09469222E5046b0830c6d71ed6B912bE70e6",
-    ParallelTaskBatch: "0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc",
-    // Collective & Insurance
-    AgentCollective: "0x0CDE9560D2E95338922c40A52A2c81cdd20613d1",
-    AgentInsurance: "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55",
-    // Dispute Resolution
-    DisputeArbitration: "0x37A62C6eDd18461CCe00B6772Da8640C75DE740e",
-    // ZK Verifiers
-    Groth16VerifierCapability: "0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85",
-    CapabilityVerifier: "0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb",
-    Groth16VerifierReputation: "0xbe6AfBa53E06099410d78d56A75b689dfCa6532F",
-    ReputationVerifier: "0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149",
-    // Router & Integration
-    COVENANTRouter: "0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09",
-    LitProtocolIntegration: "0x9322B12111699Dd05DD3d0c5D8D08b764051A89f",
-  },
+  84532: BASE_SEPOLIA_ADDRESSES,
   // Hardhat Local (placeholder addresses)
   31337: {
     AgentRegistry: "0x0000000000000000000000000000000000000000",
@@ -38,6 +18,16 @@ export const DEFAULT_ADDRESSES: Record<number, ContractAddresses> = {
     AgentCollective: "0x0000000000000000000000000000000000000000",
     AgentInsurance: "0x0000000000000000000000000000000000000000",
     DisputeArbitration: "0x0000000000000000000000000000000000000000",
+    Groth16VerifierCapability: "0x0000000000000000000000000000000000000000",
+    CapabilityVerifier: "0x0000000000000000000000000000000000000000",
+    Groth16VerifierReputation: "0x0000000000000000000000000000000000000000",
+    ReputationVerifier: "0x0000000000000000000000000000000000000000",
+    COVENANTRouter: "0x0000000000000000000000000000000000000000",
+    LitProtocolIntegration: "0x0000000000000000000000000000000000000000",
+    MultiTokenEscrow: "0x0000000000000000000000000000000000000000",
+    AgentSmartWallet: "0x0000000000000000000000000000000000000000",
+    CovenantPaymaster: "0x0000000000000000000000000000000000000000",
+    AgentWallet: "0x0000000000000000000000000000000000000000",
   },
   // Base Mainnet (placeholder - not deployed yet)
   8453: {
@@ -49,6 +39,46 @@ export const DEFAULT_ADDRESSES: Record<number, ContractAddresses> = {
     AgentCollective: "0x0000000000000000000000000000000000000000",
     AgentInsurance: "0x0000000000000000000000000000000000000000",
     DisputeArbitration: "0x0000000000000000000000000000000000000000",
+    Groth16VerifierCapability: "0x0000000000000000000000000000000000000000",
+    CapabilityVerifier: "0x0000000000000000000000000000000000000000",
+    Groth16VerifierReputation: "0x0000000000000000000000000000000000000000",
+    ReputationVerifier: "0x0000000000000000000000000000000000000000",
+    COVENANTRouter: "0x0000000000000000000000000000000000000000",
+    LitProtocolIntegration: "0x0000000000000000000000000000000000000000",
+    MultiTokenEscrow: "0x0000000000000000000000000000000000000000",
+    AgentSmartWallet: "0x0000000000000000000000000000000000000000",
+    CovenantPaymaster: "0x0000000000000000000000000000000000000000",
+    AgentWallet: "0x0000000000000000000000000000000000000000",
+  },
+};
+
+/**
+ * Default V2 contract addresses by chain ID
+ */
+export const V2_ADDRESSES: Record<number, V2ContractAddresses> = {
+  // Base Sepolia Testnet
+  84532: {
+    AgentRegistry: "0x773d1954997b6A91e917e0c2326ABCcAf36e21E1",
+    TaskEscrow: "0xf4d0765A935E36F888d899D9A7C9156CeCdEa6F5",
+    ReceiptVerifier: "0x05cC13692755015FCb11e95d609187b214197edF",
+    InsurancePool: "0x920f3925122B3Ce9380A220AA748e67bD787BE1d",
+    DisputeResolution: "0xFA6dd0929a4ACCCC2E083DaDaD89226dd71Ef28F",
+  },
+  // Hardhat Local (placeholder addresses)
+  31337: {
+    AgentRegistry: "0x0000000000000000000000000000000000000000",
+    TaskEscrow: "0x0000000000000000000000000000000000000000",
+    ReceiptVerifier: "0x0000000000000000000000000000000000000000",
+    InsurancePool: "0x0000000000000000000000000000000000000000",
+    DisputeResolution: "0x0000000000000000000000000000000000000000",
+  },
+  // Base Mainnet (placeholder - not deployed yet)
+  8453: {
+    AgentRegistry: "0x0000000000000000000000000000000000000000",
+    TaskEscrow: "0x0000000000000000000000000000000000000000",
+    ReceiptVerifier: "0x0000000000000000000000000000000000000000",
+    InsurancePool: "0x0000000000000000000000000000000000000000",
+    DisputeResolution: "0x0000000000000000000000000000000000000000",
   },
 };
 
@@ -132,4 +162,18 @@ export function isDeployed(chainId: number): boolean {
   const addresses = DEFAULT_ADDRESSES[chainId];
   if (!addresses) return false;
   return addresses.AgentRegistry !== "0x0000000000000000000000000000000000000000";
+}
+
+/**
+ * Get V2 contract addresses for a chain ID with optional overrides
+ */
+export function getV2ContractAddresses(
+  chainId: number,
+  overrides?: Partial<V2ContractAddresses>
+): V2ContractAddresses {
+  const defaults = V2_ADDRESSES[chainId];
+  if (!defaults) {
+    throw new Error(`Unsupported chain ID for V2: ${chainId}. Supported: ${Object.keys(V2_ADDRESSES).join(", ")}`);
+  }
+  return { ...defaults, ...overrides };
 }

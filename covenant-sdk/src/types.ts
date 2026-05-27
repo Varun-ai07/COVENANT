@@ -1,101 +1,101 @@
 import type { Address, PublicClient, WalletClient } from "viem";
 
 // ============================================================================
-// Core Types
+// Re-export canonical types from @covenant/shared-types
+// ============================================================================
+
+export type {
+  ContractAddresses,
+  AgentData,
+  TaskData,
+  ReceiptData,
+  BidData,
+  CollectiveData,
+  TaskStatus,
+} from "@covenant/shared-types";
+
+export {
+  TASK_STATUS,
+  PRIORITY_LEVEL,
+  RECEIPT_TYPE,
+  BASE_SEPOLIA_ADDRESSES,
+} from "@covenant/shared-types";
+
+// ============================================================================
+// V2 Types
 // ============================================================================
 
 /**
- * Agent data returned from the registry
+ * ERC-8004 Receipt type enum (mirrors on-chain ReceiptVerifier.ReceiptType)
  */
-export interface AgentData {
-  did: `0x${string}`;
-  name: string;
-  capabilities: string[];
-  reputation: bigint;
-  stakedAmount: bigint;
-  tasksCompleted: bigint;
-  tasksFailed: bigint;
-  totalValueTransferred: bigint;
-  isActive: boolean;
-  registeredAt: bigint;
-  walletAddress: Address;
+export enum ReceiptType {
+  TaskCompleted = 0,
+  AgentVerified = 1,
+  DisputeResolved = 2,
+  InsuranceClaimed = 3,
+  MilestoneReached = 4,
+  ReputationUpdated = 5,
 }
 
 /**
- * Task status enum
+ * V2 Receipt data from ReceiptVerifier v2
  */
-export type TaskStatus =
-  | "Open"
-  | "Funded"
-  | "InProgress"
-  | "Submitted"
-  | "Completed"
-  | "Disputed"
-  | "Failed"
-  | "Cancelled";
-
-/**
- * Task data structure
- */
-export interface TaskData {
-  taskId: bigint;
-  client: Address;
-  worker: Address;
-  payment: bigint;
-  deadline: bigint;
-  descriptionHash: string;
-  deliverableHash: string;
-  status: TaskStatus;
-  createdAt: bigint;
-  completedAt: bigint;
-  protocolFee: bigint;
-  totalValue: bigint;
-}
-
-/**
- * Receipt data from ReceiptVerifier
- */
-export interface ReceiptData {
-  receiptId: bigint;
+export interface ReceiptDataV2 {
+  receiptId: `0x${string}`;
   issuer: Address;
   counterparty: Address;
-  interactionType: string;
+  receiptType: number;
   dataHash: `0x${string}`;
   timestamp: bigint;
-  verified: boolean;
+  isValid: boolean;
 }
 
 /**
- * Bid data from OpenTaskMarket
+ * Insurance claim data
  */
-export interface BidData {
+export interface InsuranceClaimData {
+  claimant: Address;
   taskId: bigint;
-  bidder: Address;
-  price: bigint;
-  timeEstimate: bigint;
-  proposalHash: string;
-  bidAt: bigint;
-  isSelected: boolean;
+  amount: bigint;
+  paid: boolean;
+  timestamp: bigint;
 }
 
 /**
- * Collective funding pool data
+ * Insurance pool member info
  */
-export interface CollectiveData {
-  collectiveId: bigint;
-  creator: Address;
-  members: Address[];
-  contributions: bigint[];
-  totalFunded: bigint;
-  selectedWorker: Address;
+export interface MemberInfo {
+  active: boolean;
+  contributed: bigint;
+}
+
+/**
+ * Dispute data from DisputeResolution
+ */
+export interface DisputeData {
   taskId: bigint;
-  status: "Open" | "Funded" | "InProgress" | "Completed";
-  createdAt: bigint;
+  filedBy: Address;
+  bondAmount: bigint;
+  votingEndsAt: bigint;
+  resolved: boolean;
+  workerWins: boolean;
+  workerShare: bigint;
 }
 
 // ============================================================================
 // Configuration Types
 // ============================================================================
+
+/**
+ * V2 contract addresses
+ */
+export interface V2ContractAddresses {
+  AgentRegistry: Address;
+  TaskEscrow: Address;
+  ReceiptVerifier: Address;
+  InsurancePool: Address;
+  DisputeResolution: Address;
+}
 
 /**
  * SDK configuration
@@ -109,6 +109,16 @@ export interface CovenantConfig {
   walletClient?: WalletClient;
   /** Custom contract addresses (optional - uses defaults if not provided) */
   contractAddresses?: PartialContractAddresses;
+}
+
+/**
+ * V2 SDK configuration — extends base config with version selection
+ */
+export interface CovenantConfigV2 extends CovenantConfig {
+  /** SDK version — "v2" enables v2 contract methods */
+  version: "v2";
+  /** Custom v2 contract addresses (optional - uses defaults if not provided) */
+  v2ContractAddresses?: Partial<V2ContractAddresses>;
 }
 
 /**
@@ -135,32 +145,8 @@ export interface PartialContractAddresses {
   // Router & Integration
   COVENANTRouter?: Address;
   LitProtocolIntegration?: Address;
-}
-
-/**
- * Full contract addresses
- */
-export interface ContractAddresses {
-  // Core Protocol
-  AgentRegistry: Address;
-  TaskEscrow: Address;
-  ReceiptVerifier: Address;
-  // Market & Batching
-  OpenTaskMarket: Address;
-  ParallelTaskBatch: Address;
-  // Collective & Insurance
-  AgentCollective: Address;
-  AgentInsurance: Address;
-  // Dispute Resolution
-  DisputeArbitration: Address;
-  // ZK Verifiers
-  Groth16VerifierCapability: Address;
-  CapabilityVerifier: Address;
-  Groth16VerifierReputation: Address;
-  ReputationVerifier: Address;
-  // Router & Integration
-  COVENANTRouter: Address;
-  LitProtocolIntegration: Address;
+  // Wallet
+  AgentWallet?: Address;
 }
 
 // ============================================================================

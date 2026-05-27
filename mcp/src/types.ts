@@ -1,6 +1,12 @@
 import type { Address, Hash, Abi } from "viem";
 
 // ============================================================
+// Re-export canonical types from @covenant/shared-types
+// ============================================================
+
+export { TASK_STATUS, PRIORITY_LEVEL, RECEIPT_TYPE, BASE_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
+
+// ============================================================
 // Wallet & Transaction Types
 // ============================================================
 
@@ -67,24 +73,6 @@ export interface TaskInfo {
   priorityLevel: number;
 }
 
-export const TASK_STATUS: Record<number, string> = {
-  0: "Created",
-  1: "Funded",
-  2: "InProgress",
-  3: "Submitted",
-  4: "Completed",
-  5: "Failed",
-  6: "Disputed",
-  7: "Cancelled",
-};
-
-export const PRIORITY_LEVEL: Record<number, string> = {
-  0: "Low (0.5% fee)",
-  1: "Medium (1% fee)",
-  2: "High (2% fee)",
-  3: "Urgent (5% fee)",
-};
-
 // ============================================================
 // Receipt Types
 // ============================================================
@@ -99,14 +87,6 @@ export interface ReceiptInfo {
   timestamp: number;
   isValid: boolean;
 }
-
-export const RECEIPT_TYPE: Record<number, string> = {
-  0: "TaskCompletion",
-  1: "PaymentReceived",
-  2: "DisputeResolved",
-  3: "ReputationUpdate",
-  4: "CapabilityVerified",
-};
 
 // ============================================================
 // Protocol Stats
@@ -148,7 +128,27 @@ export interface ContractConfig {
   LitProtocolIntegration: Address;
   // Wallet (sample)
   AgentWallet: Address;
+  // V2 Extensions (populated when CONTRACT_VERSION=v2)
+  InsurancePool?: Address;
+  DisputeResolution?: Address;
+  MultiTokenEscrow?: Address;
 }
+
+export interface ContractConfigV2 {
+  // Core Protocol (v2)
+  AgentRegistry: Address;
+  TaskEscrow: Address;
+  ReceiptVerifier: Address;
+  // Extensions (v2)
+  InsurancePool: Address;
+  DisputeResolution: Address;
+  MultiTokenEscrow: Address;
+}
+
+export type ContractVersion = "v1" | "v2";
+
+/** Merged contract config: v1 base + v2 overrides for core contracts */
+export type ContractConfigMerged = ContractConfig & Partial<ContractConfigV2>;
 
 // ============================================================
 // MCP Tool Result (re-export for convenience)
