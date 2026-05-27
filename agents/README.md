@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/JSON-ABI-green" alt="ABI">
-  <img src="https://img.shields.io/badge/Contracts-24-blue" alt="Contracts">
+  <img src="https://img.shields.io/badge/Contracts-32-blue" alt="Contracts">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
 
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <em>24 contract ABIs and verification infrastructure for autonomous agents</em>
+  <em>11 contract ABIs and verification infrastructure for autonomous agents</em>
 </p>
 
 ---
