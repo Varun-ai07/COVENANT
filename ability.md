@@ -1,4 +1,4 @@
-# COVENANT Protocol — Complete Ability Reference
+# COVENANT Protocol — Ability Reference
 
 > Auto-generated analysis of all 17 deployed contracts and 105 MCP tools.
 
