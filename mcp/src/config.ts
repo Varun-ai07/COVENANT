@@ -70,6 +70,7 @@ const _v2: ContractConfigV2 = {
   InsurancePool: (process.env.INSURANCE_POOL || ZERO_ADDRESS) as Address,
   DisputeResolution: (process.env.DISPUTE_RESOLUTION || ZERO_ADDRESS) as Address,
   MultiTokenEscrow: (process.env.MULTI_TOKEN_ESCROW || ZERO_ADDRESS) as Address,
+  RevisionManager: (process.env.REVISION_MANAGER_V2 || ZERO_ADDRESS) as Address,
 };
 
 export const CONTRACT_VERSION: ContractVersion =
@@ -93,11 +94,6 @@ export const CONTRACTS: ContractConfig = CONTRACT_VERSION === "v2"
       MultiTokenEscrow: _v2.MultiTokenEscrow,
     } as ContractConfig
   : _v1;
-
-/** Returns the active contract set based on CONTRACT_VERSION env var. */
-export function getActiveContracts(): ContractConfig {
-  return CONTRACTS;
-}
 
 // ============================================================
 // Wallet Mode
@@ -296,47 +292,6 @@ const _filename = fileURLToPath(import.meta.url);
 const _dirname = path.dirname(_filename);
 
 const V2_ABI_DIR = path.resolve(_dirname, "abis", "v2");
-
-/** V2 contract names that have compiled ABI artifacts. */
-const V2_ALLOWED_CONTRACTS = [
-  "AgentRegistry",
-  "TaskEscrow",
-  "ReceiptVerifier",
-  "InsurancePool",
-  "DisputeResolution",
-] as const;
-
-/**
- * Load a v2 contract ABI from the `abis/v2/` directory.
- * Expects `{ContractName}.json` files with an `.abi` field (Hardhat artifact format).
- */
-export function loadAbiV2(contractName: string): any {
-  if (!V2_ALLOWED_CONTRACTS.includes(contractName as any)) {
-    throw new Error(
-      `Unknown v2 contract: ${contractName}. Allowed: ${V2_ALLOWED_CONTRACTS.join(", ")}`
-    );
-  }
-  const filePath = path.join(V2_ABI_DIR, `${contractName}.json`);
-  if (!fs.existsSync(filePath)) {
-    throw new Error(
-      `V2 ABI file not found: ${filePath}. Compile v2 contracts first (npx hardhat compile).`
-    );
-  }
-  const artifact = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  return artifact.abi ?? artifact;
-}
-
-/**
- * Auto-select ABI based on CONTRACT_VERSION.
- * When v2 is active and a v2 ABI exists for the contract, returns it.
- * Otherwise falls back to v1 ABI.
- */
-export function loadAbiAuto(contractName: string): any {
-  if (CONTRACT_VERSION === "v2" && V2_ALLOWED_CONTRACTS.includes(contractName as any)) {
-    try { return loadAbiV2(contractName); } catch { /* fall through to v1 */ }
-  }
-  return loadAbi(contractName);
-}
 
 // ============================================================
 // Chain helpers

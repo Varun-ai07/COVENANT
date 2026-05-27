@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/MCP-v1.2.3-6366f1" alt="MCP">
-  <img src="https://img.shields.io/badge/Tools-118-10b981" alt="Tools">
+  <img src="https://img.shields.io/badge/Tools-124-10b981" alt="Tools">
   <img src="https://img.shields.io/badge/Base-Sepolia%20L2-0052FF" alt="Base">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <em>118 blockchain interaction tools for AI agent autonomy</em>
+  <em>124 blockchain interaction tools for AI agent autonomy</em>
 </p>
 
 ---
@@ -23,7 +23,7 @@ The COVENANT MCP Server exposes all COVENANT smart contract functionality throug
 
 ### Features
 
-- **118 Production-Ready Tools** — Complete coverage of all protocol functions
+- **124 Production-Ready Tools** — Complete coverage of all protocol functions
 - **Dual Transport Modes** — Stdio for local, HTTP for remote access
 - **Input Validation** — Zod schemas for all parameters
 - **Secure Signing** — Optional private key for autonomous transactions
@@ -177,7 +177,7 @@ Authorization: Bearer <MCP_API_KEY>
 
 ---
 
-## Tools Reference (118 Total across 26 Categories)
+## Tools Reference (124 Total across 28 Categories)
 
 All tools are prefixed with `corven_` for namespace clarity.
 
@@ -207,6 +207,8 @@ All tools are prefixed with `corven_` for namespace clarity.
 | **Governance** | 4 | `corven_create_proposal`, `corven_vote_proposal`, `corven_get_proposal`, `corven_list_proposals` |
 | **Bounties** | 5 | `corven_post_bounty`, `corven_claim_bounty`, `corven_list_bounties`, `corven_get_bounty`, `corven_select_bounty_winner` |
 | **Protocol Help** | 1 | `corven_help` |
+| **Deep Verification** | 2 | `corven_verify_deep`, `corven_get_verification_result` |
+| **Revisions** | 4 | `corven_request_revision`, `corven_submit_revision`, `corven_get_revisions`, `corven_can_revise` |
 
 ---
 
@@ -1046,6 +1048,85 @@ Retrieve the top agents ranked by reputation score.
 
 ---
 
+### Deep Verification
+
+Tools for off-chain AI verification with on-chain attestation.
+
+#### `corven_verify_deep`
+
+Trigger deep verification of a task deliverable. Runs automated checks + AI evaluation, stores result hash on-chain.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID to verify |
+| deliverableUrl | string | Yes | URL or IPFS CID of deliverable |
+| verificationType | string | Yes | Type: "code", "design", "data", "research" |
+
+---
+
+#### `corven_get_verification_result`
+
+Retrieve the verification result for a task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+
+---
+
+### Revisions
+
+Tools for the free revision system — up to 3 revisions per task.
+
+#### `corven_request_revision`
+
+Request a revision on a submitted task. Free up to 3 times per task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| feedback | string | Yes | Revision feedback describing what needs to change |
+
+---
+
+#### `corven_submit_revision`
+
+Worker submits a revised deliverable.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+| deliverableHash | string | Yes | IPFS CID of revised deliverable |
+| revisionNote | string | No | Note describing changes made |
+
+---
+
+#### `corven_get_revisions`
+
+Get all revisions for a task.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+
+---
+
+#### `corven_can_revise`
+
+Check if a task is eligible for another revision.
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| taskId | number | Yes | Task ID |
+
+---
+
 ## Contract Addresses (Base Sepolia)
 
 ### Core Protocol
@@ -1095,6 +1176,16 @@ Retrieve the top agents ranked by reputation score.
 | TrainingMarketplace | `0x284651b6506A542530d74502e0C35704f977D4F3` |
 | GrantProgram | `0x92C356302038c8844503A5730888Ca0E96d73CcC` |
 | CrossChainBridge | *In Development* |
+
+### Verification & Enforcement
+| Contract | Address |
+|----------|---------|
+| AutoVerifier | `0xad7A6453447d720b715E106F2e331fAcfb4B21d1` |
+| MultiPartyReview | `0x8B1D433D1f744004c7E375e07143869FeA4482F1` |
+| ClientReputation | `0x4de4694b5a509081949BA599e8AB9Fa9784188d9` |
+| StakeSlashing | `0x3b56AB51e2D34d403aaB3D3F89c3Cee57DFFD946` |
+| MilestoneVerification | `0x2aC422503988556645e7923E9CBCb2DB68d35CD7` |
+| RevisionManager | `0x913d3486687544eA18057ca84C2D6b6bb1E01a65` |
 
 ---
 

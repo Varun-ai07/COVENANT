@@ -16,7 +16,9 @@ import { RECEIPT_TYPE } from "../types.js";
 import { stringToBytes32, isBytes32 } from "../utils.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const ABI = loadAbi("ReceiptVerifier");
+// V2 ReceiptVerifier doesn't have getReceiptsByAgent - use V1 ABI for that function
+const V1_ABI = loadAbi("ReceiptVerifier");
+const V2_ABI = loadAbi("ReceiptVerifier");
 
 // Input validation schemas
 const getAddressSchema = z.object({
@@ -63,7 +65,7 @@ export function registerReceiptTools(server: McpServer): void {
 
         const data = await readContract(
           CONTRACTS.ReceiptVerifier,
-          ABI,
+          V1_ABI,
           "getReceiptsByAgent",
           [validationResult.data.address as Address]
         );
@@ -119,7 +121,7 @@ export function registerReceiptTools(server: McpServer): void {
 
         const data = await readContract(
           CONTRACTS.ReceiptVerifier,
-          ABI,
+          V2_ABI,
           "getReceipt",
           [receiptIdBytes32]
         );
@@ -178,7 +180,7 @@ export function registerReceiptTools(server: McpServer): void {
 
         const result = await executeOrPrepare(
           CONTRACTS.ReceiptVerifier,
-          ABI,
+          V2_ABI,
           "createReceipt",
           [issuer as Address, counterparty as Address, String(interactionType), dataHashBytes32]
         );

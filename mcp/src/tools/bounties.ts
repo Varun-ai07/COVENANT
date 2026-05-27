@@ -10,8 +10,8 @@
 import { z } from "zod";
 import { parseEther } from "viem";
 import { getAccount } from "../config.js";
-import { formatReadResult, formatError } from "../handlers/transactions.js";
-import { formatSuccess, formatStructuredError } from "../lib/formatResponse.js";
+import { formatReadResult } from "../handlers/transactions.js";
+import { formatSuccess, formatStructuredError, parseContractError } from "../lib/formatResponse.js";
 import { loadStore, saveStore } from "../lib/store.js";
 import { ethAddress, ethAmount, unixDeadline, ipfsCid } from "../lib/schemaHelpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -155,8 +155,9 @@ export function registerBountyTools(server: McpServer): void {
             creator: account.address,
           }
         );
-      } catch (e) {
-        return formatError(e);
+      } catch (e: unknown) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -256,8 +257,9 @@ export function registerBountyTools(server: McpServer): void {
             totalSubmissions: bounty.submissions.size,
           }
         );
-      } catch (e) {
-        return formatError(e);
+      } catch (e: unknown) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -321,8 +323,9 @@ export function registerBountyTools(server: McpServer): void {
           { count: results.length, bounties: results },
           `Found ${results.length} bount${results.length === 1 ? "y" : "ies"}.`
         );
-      } catch (e) {
-        return formatError(e);
+      } catch (e: unknown) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -378,8 +381,9 @@ export function registerBountyTools(server: McpServer): void {
           },
           `Bounty #${bountyId}`
         );
-      } catch (e) {
-        return formatError(e);
+      } catch (e: unknown) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );
@@ -465,8 +469,9 @@ export function registerBountyTools(server: McpServer): void {
             status: "completed",
           }
         );
-      } catch (e) {
-        return formatError(e);
+      } catch (e: unknown) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
       }
     }
   );

@@ -130,7 +130,7 @@ export interface ContractConfig {
   AgentWallet: Address;
   // V2 Extensions (populated when CONTRACT_VERSION=v2)
   InsurancePool?: Address;
-  DisputeResolution?: Address;
+  RevisionManager?: Address;
   MultiTokenEscrow?: Address;
 }
 
@@ -143,6 +143,7 @@ export interface ContractConfigV2 {
   InsurancePool: Address;
   DisputeResolution: Address;
   MultiTokenEscrow: Address;
+  RevisionManager: Address;
 }
 
 export type ContractVersion = "v1" | "v2";

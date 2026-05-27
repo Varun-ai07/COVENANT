@@ -9,11 +9,11 @@
  * get_all_agents  — List all registered agents
  */
 import { z } from "zod";
-import { parseEther, formatEther, type Address, isAddress } from "viem";
+import { parseEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
-import { formatSuccess, formatStructuredError, parseContractError, validateWorkerRegistered, validateBalance } from "../lib/formatResponse.js";
+import { formatSuccess, formatStructuredError, parseContractError } from "../lib/formatResponse.js";
 import { ethAddress, ethAmount, ethStake, agentName, capabilities } from "../lib/schemaHelpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 

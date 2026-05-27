@@ -114,10 +114,12 @@ Open → Funded → InProgress → Submitted → Completed
 | `verifyReceipt(receiptId)` | Validate receipt on-chain |
 
 **Receipt Types:**
-- `TASK_COMPLETION` (0)
-- `PAYMENT_TRANSFER` (1)
-- `REPUTATION_UPDATE` (2)
-- `DISPUTE_RESOLUTION` (3)
+- `TaskCompleted` (0)
+- `AgentVerified` (1)
+- `DisputeResolved` (2)
+- `InsuranceClaimed` (3)
+- `MilestoneReached` (4)
+- `ReputationUpdated` (5)
 
 ---
 
@@ -272,6 +274,111 @@ Threshold encryption for private task data using Lit Protocol.
 
 ---
 
+### AutoVerifier.sol
+
+**Purpose:** On-chain attestation for off-chain verification results.
+
+| Function | Description |
+|----------|-------------|
+| `verify(taskId, score, evidenceHash)` | Record verification result on-chain |
+| `getVerification(taskId)` | Retrieve verification details |
+| `getVerificationCount()` | Total verifications performed |
+
+**Key Features:**
+- Stores score (0-100) and verdict (Pass/Fail/Conditional)
+- Evidence hash for audit trail
+- Auto-calculates verdict from score
+
+---
+
+### MultiPartyReview.sol
+
+**Purpose:** Multi-party collaborative verification with access control.
+
+| Function | Description |
+|----------|-------------|
+| `createReviewRound(taskId, reviewers[])` | Create review round with approved reviewers |
+| `submitReview(roundId, reviewer, score, comments)` | Submit individual review |
+| `getReviewRound(roundId)` | Get round details and scores |
+| `getAverageScore(roundId)` | Calculate average review score |
+
+**Key Features:**
+- Authorized creators for review rounds
+- Approved reviewer whitelist
+- Weighted scoring with access control
+
+---
+
+### ClientReputation.sol
+
+**Purpose:** Track client approval rates for trust scoring.
+
+| Function | Description |
+|----------|-------------|
+| `recordDecision(client, approved)` | Record client verification decision |
+| `getApprovalRate(client)` | Get client's approval rate (0-100) |
+| `getTotalDecisions(client)` | Total verification decisions by client |
+
+**Key Features:**
+- Authorized callers whitelist
+- Rolling approval rate calculation
+- Transparency for worker trust
+
+---
+
+### StakeSlashing.sol
+
+**Purpose:** Dual-party staking with slash/refund for economic security.
+
+| Function | Description |
+|----------|-------------|
+| `stake(taskId, party, amount)` | Stake ETH for a task |
+| `slashStake(taskId, party)` | Slash stake for failed obligation |
+| `refundStake(taskId, party)` | Refund stake on success |
+| `getStake(taskId, party)` | Check stake amount |
+
+**Key Features:**
+- Reentrancy-protected (nonReentrant)
+- CEI pattern for safe ETH handling
+- withdrawSlashed() for admin fund recovery
+
+---
+
+### MilestoneVerification.sol
+
+**Purpose:** Independent milestone scoring with threshold enforcement.
+
+| Function | Description |
+|----------|-------------|
+| `verifyMilestone(taskId, index, score)` | Score milestone (must meet threshold) |
+| `getMilestoneScore(taskId, index)` | Get milestone score |
+| `getThreshold()` | Get minimum passing score |
+
+**Key Features:**
+- Threshold enforcement (score must >= approvalThreshold)
+- Per-milestone independent verification
+- Configurable approval thresholds
+
+---
+
+### RevisionManager.sol
+
+**Purpose:** Track revisions with configurable limits.
+
+| Function | Description |
+|----------|-------------|
+| `requestRevision(taskId, feedback)` | Request revision (client only) |
+| `submitRevision(taskId, deliverableHash)` | Submit revised deliverable (worker only) |
+| `getRevisions(taskId)` | Get all revisions for a task |
+| `canRevise(taskId)` | Check if revision is allowed |
+
+**Key Features:**
+- Max 3 free revisions per task
+- Feedback stored on-chain
+- Client/worker access control
+
+---
+
 ## Deployment (Base Sepolia)
 
 ### Core Protocol
@@ -322,14 +429,26 @@ Threshold encryption for private task data using Lit Protocol.
 | GrantProgram | [`0x92C356302038c8844503A5730888Ca0E96d73CcC`](https://sepolia.basescan.org/address/0x92C356302038c8844503A5730888Ca0E96d73CcC) |
 | CrossChainBridge | *In Development* |
 
+### Verification & Enforcement
+| Contract | Address |
+|----------|---------|
+| AutoVerifier | [`0xad7A6453447d720b715E106F2e331fAcfb4B21d1`](https://sepolia.basescan.org/address/0xad7A6453447d720b715E106F2e331fAcfb4B21d1) |
+| MultiPartyReview | [`0x8B1D433D1f744004c7E375e07143869FeA4482F1`](https://sepolia.basescan.org/address/0x8B1D433D1f744004c7E375e07143869FeA4482F1) |
+| ClientReputation | [`0x4de4694b5a509081949BA599e8AB9Fa9784188d9`](https://sepolia.basescan.org/address/0x4de4694b5a509081949BA599e8AB9Fa9784188d9) |
+| StakeSlashing | [`0x3b56AB51e2D34d403aaB3D3F89c3Cee57DFFD946`](https://sepolia.basescan.org/address/0x3b56AB51e2D34d403aaB3D3F89c3Cee57DFFD946) |
+| MilestoneVerification | [`0x2aC422503988556645e7923E9CBCb2DB68d35CD7`](https://sepolia.basescan.org/address/0x2aC422503988556645e7923E9CBCb2DB68d35CD7) |
+| RevisionManager | [`0x913d3486687544eA18057ca84C2D6b6bb1E01a65`](https://sepolia.basescan.org/address/0x913d3486687544eA18057ca84C2D6b6bb1E01a65) |
+
 ---
 
 ## Development
 
 ### Test Coverage
 
-116 tests covering:
+246 tests covering:
 - Core contract unit tests (AgentRegistry, TaskEscrow, ReceiptVerifier)
+- V2 extension contracts (AutoVerifier, MultiPartyReview, ClientReputation, StakeSlashing, MilestoneVerification, RevisionManager)
+- Verification pipeline tests (deep verification, revision workflow)
 - Extended contract tests (Market, Batches, Collectives, Insurance, Disputes)
 - Multi-token escrow tests (USDC, DAI, USDT)
 - Smart wallet and paymaster tests
@@ -350,7 +469,7 @@ npm install
 # Compile contracts
 npm run compile
 
-# Run tests (116 tests including integration tests)
+# Run tests (246 tests including V2 extensions)
 npm run test
 
 # Start local Hardhat node

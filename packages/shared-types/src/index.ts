@@ -31,6 +31,12 @@ export interface ContractAddresses {
   CovenantPaymaster: Address;
   TrainingMarketplace: Address;
   GrantProgram: Address;
+  AutoVerifier: Address;
+  MultiPartyReview: Address;
+  ClientReputation: Address;
+  StakeSlashing: Address;
+  MilestoneVerification: Address;
+  RevisionManager: Address;
   AgentWallet: Address;
 }
 
@@ -248,6 +254,12 @@ export const BASE_SEPOLIA_ADDRESSES: ContractAddresses = {
   CovenantPaymaster: "0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1",
   TrainingMarketplace: "0x284651b6506A542530d74502e0C35704f977D4F3",
   GrantProgram: "0x92C356302038c8844503A5730888Ca0E96d73CcC",
+  AutoVerifier: "0xad7A6453447d720b715E106F2e331fAcfb4B21d1",
+  MultiPartyReview: "0x8B1D433D1f744004c7E375e07143869FeA4482F1",
+  ClientReputation: "0x4de4694b5a509081949BA599e8AB9Fa9784188d9",
+  StakeSlashing: "0x3b56AB51e2D34d403aaB3D3F89c3Cee57DFFD946",
+  MilestoneVerification: "0x2aC422503988556645e7923E9CBCb2DB68d35CD7",
+  RevisionManager: "0x2484636Dd3bF529C33B2C12D2D4d7b6942F85357",
   AgentWallet: "0x0000000000000000000000000000000000000000",
 };
 
@@ -271,6 +283,12 @@ export const POLYGON_ADDRESSES: ContractAddresses = {
   CovenantPaymaster: ZERO_ADDRESS,
   TrainingMarketplace: ZERO_ADDRESS,
   GrantProgram: ZERO_ADDRESS,
+  AutoVerifier: ZERO_ADDRESS,
+  MultiPartyReview: ZERO_ADDRESS,
+  ClientReputation: ZERO_ADDRESS,
+  StakeSlashing: ZERO_ADDRESS,
+  MilestoneVerification: ZERO_ADDRESS,
+  RevisionManager: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
 };
 
@@ -294,6 +312,12 @@ export const ARBITRUM_ADDRESSES: ContractAddresses = {
   CovenantPaymaster: ZERO_ADDRESS,
   TrainingMarketplace: ZERO_ADDRESS,
   GrantProgram: ZERO_ADDRESS,
+  AutoVerifier: ZERO_ADDRESS,
+  MultiPartyReview: ZERO_ADDRESS,
+  ClientReputation: ZERO_ADDRESS,
+  StakeSlashing: ZERO_ADDRESS,
+  MilestoneVerification: ZERO_ADDRESS,
+  RevisionManager: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
 };
 
@@ -317,6 +341,12 @@ export const BASE_MAINNET_ADDRESSES: ContractAddresses = {
   CovenantPaymaster: ZERO_ADDRESS,
   TrainingMarketplace: ZERO_ADDRESS,
   GrantProgram: ZERO_ADDRESS,
+  AutoVerifier: ZERO_ADDRESS,
+  MultiPartyReview: ZERO_ADDRESS,
+  ClientReputation: ZERO_ADDRESS,
+  StakeSlashing: ZERO_ADDRESS,
+  MilestoneVerification: ZERO_ADDRESS,
+  RevisionManager: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
 };
 

@@ -29,6 +29,7 @@ The COVENANT Monitoring service provides real-time observability for the COVENAN
 | `metrics-collector.ts` | Protocol metrics aggregation |
 | `alerts.ts` | Threshold-based alerting |
 | `dashboard.ts` | Terminal UI dashboard (blessed) |
+| `verification-listener.ts` | Verification event monitoring |
 
 ## Installation
 
@@ -101,6 +102,9 @@ PRIVATE_KEY=0x...
 ALERT_WEBHOOK_URL=https://hooks.slack.com/...
 METRICS_INTERVAL_SEC=60
 SUBGRAPH_URL=https://api.studio.thegraph.com/query/1753884/local/v0.0.1
+
+# Verification monitoring
+VERIFICATION_POLL_INTERVAL=30
 ```
 
 ## Environment

@@ -51,7 +51,7 @@ export function registerProtocolTools(server: McpServer): void {
         // Fetch stats from both contracts in parallel
         const [totalAgents, totalTasks, accumulatedFees] =
           await Promise.all([
-            readContract(CONTRACTS.AgentRegistry, registryAbi, "getAgentCount", []),
+            readContract(CONTRACTS.AgentRegistry, registryAbi, "agentCount", []),
             readContract(CONTRACTS.TaskEscrow, escrowAbi, "taskCounter", []),
             readContract(CONTRACTS.TaskEscrow, escrowAbi, "accumulatedFees", []),
           ]);
@@ -105,7 +105,7 @@ export function registerProtocolTools(server: McpServer): void {
 
         // Get total agent count
         const totalAgents = Number(
-          await readContract(CONTRACTS.AgentRegistry, registryAbi, "getAgentCount", [])
+          await readContract(CONTRACTS.AgentRegistry, registryAbi, "agentCount", [])
         );
 
         if (totalAgents === 0) {

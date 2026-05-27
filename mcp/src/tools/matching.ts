@@ -172,8 +172,8 @@ export function registerMatchingTools(server: McpServer): void {
         const addresses = (await readContract(
           CONTRACTS.AgentRegistry,
           ABI,
-          "getAllAgents",
-          []
+          "getAgentsPaginated",
+          [0, 100]
         )) as string[];
 
         if (!addresses || addresses.length === 0) {

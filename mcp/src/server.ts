@@ -31,6 +31,8 @@ import { registerBountyTools } from "./tools/bounties.js";
 import { registerBridgeTools } from "./tools/bridge.js";
 import { registerGrantTools } from "./tools/grants.js";
 import { registerTrainingTools } from "./tools/training.js";
+import { registerVerifyDeepTools } from "./tools/verify-deep.js";
+import { registerRevisionTools } from "./tools/revisions.js";
 import { info } from "./logger.js";
 
 export function createServer(): McpServer {
@@ -69,6 +71,8 @@ export function createServer(): McpServer {
   registerBridgeTools(server);           // Cross-chain bridge estimates & status
   registerGrantTools(server);            // Grant Program (in-memory MVP)
   registerTrainingTools(server);         // Training Marketplace (in-memory MVP)
+  registerVerifyDeepTools(server);        // Deep project verification (off-chain analysis)
+  registerRevisionTools(server);          // RevisionManager — revision tracking
 
   info("[SERVER] corven_ MCP tools registered");
   return server;

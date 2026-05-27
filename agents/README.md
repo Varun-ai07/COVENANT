@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/JSON-ABI-green" alt="ABI">
-  <img src="https://img.shields.io/badge/Contracts-11-blue" alt="Contracts">
+  <img src="https://img.shields.io/badge/Contracts-24-blue" alt="Contracts">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
 
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <em>Contract ABIs and verification infrastructure for autonomous agents</em>
+  <em>24 contract ABIs and verification infrastructure for autonomous agents</em>
 </p>
 
 ---
@@ -52,6 +52,15 @@ The `abis/` directory contains JSON ABI files for all COVENANT smart contracts. 
 | `AgentWallet.json` | AgentWallet | Programmable spending limits |
 | `COVENANTRouter.json` | COVENANTRouter | Unified entry point |
 | `LitProtocolIntegration.json` | LitProtocolIntegration | Threshold encryption |
+| `AutoVerifier.json` | AutoVerifier | On-chain verification attestation |
+| `MultiPartyReview.json` | MultiPartyReview | Multi-party collaborative verification |
+| `ClientReputation.json` | ClientReputation | Client approval rate tracking |
+| `StakeSlashing.json` | StakeSlashing | Dual-party staking enforcement |
+| `MilestoneVerification.json` | MilestoneVerification | Milestone scoring with thresholds |
+| `RevisionManager.json` | RevisionManager | Revision tracking and limits |
+| `TrainingMarketplace.json` | TrainingMarketplace | Agent training programs |
+| `GrantProgram.json` | GrantProgram | DAO grant management |
+| `CrossChainBridge.json` | CrossChainBridge | Cross-chain bridging (in development) |
 
 ---
 
@@ -159,6 +168,22 @@ Each ABI file contains:
 |----------|---------|
 | COVENANTRouter | [`0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09`](https://sepolia.basescan.org/address/0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09) |
 | LitProtocolIntegration | [`0x9322B12111699Dd05DD3d0c5D8D08b764051A89f`](https://sepolia.basescan.org/address/0x9322B12111699Dd05DD3d0c5D8D08b764051A89f) |
+
+### Training & Grants
+| Contract | Address |
+|----------|---------|
+| TrainingMarketplace | [`0x284651b6506A542530d74502e0C35704f977D4F3`](https://sepolia.basescan.org/address/0x284651b6506A542530d74502e0C35704f977D4F3) |
+| GrantProgram | [`0x92C356302038c8844503A5730888Ca0E96d73CcC`](https://sepolia.basescan.org/address/0x92C356302038c8844503A5730888Ca0E96d73CcC) |
+
+### Verification & Enforcement
+| Contract | Address |
+|----------|---------|
+| AutoVerifier | [`0xad7A6453447d720b715E106F2e331fAcfb4B21d1`](https://sepolia.basescan.org/address/0xad7A6453447d720b715E106F2e331fAcfb4B21d1) |
+| MultiPartyReview | [`0x8B1D433D1f744004c7E375e07143869FeA4482F1`](https://sepolia.basescan.org/address/0x8B1D433D1f744004c7E375e07143869FeA4482F1) |
+| ClientReputation | [`0x4de4694b5a509081949BA599e8AB9Fa9784188d9`](https://sepolia.basescan.org/address/0x4de4694b5a509081949BA599e8AB9Fa9784188d9) |
+| StakeSlashing | [`0x3b56AB51e2D34d403aaB3D3F89c3Cee57DFFD946`](https://sepolia.basescan.org/address/0x3b56AB51e2D34d403aaB3D3F89c3Cee57DFFD946) |
+| MilestoneVerification | [`0x2aC422503988556645e7923E9CBCb2DB68d35CD7`](https://sepolia.basescan.org/address/0x2aC422503988556645e7923E9CBCb2DB68d35CD7) |
+| RevisionManager | [`0x913d3486687544eA18057ca84C2D6b6bb1E01a65`](https://sepolia.basescan.org/address/0x913d3486687544eA18057ca84C2D6b6bb1E01a65) |
 
 ---
 

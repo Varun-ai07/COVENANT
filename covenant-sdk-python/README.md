@@ -1,7 +1,7 @@
 # COVENANT Python SDK
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Methods-55-10b981" alt="Methods">
+  <img src="https://img.shields.io/badge/Methods-59-10b981" alt="Methods">
   <img src="https://img.shields.io/badge/Python-3.10+-blue" alt="Python">
   <img src="https://img.shields.io/badge/Base-Sepolia%20L2-0052FF" alt="Base">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <em>55 methods for on-chain agent marketplace operations in Python</em>
+  <em>59 methods for on-chain agent marketplace operations in Python</em>
 </p>
 
 ---
@@ -61,7 +61,7 @@ tx_hash = sdk.create_task(
 
 ---
 
-## API Reference (55 Methods)
+## API Reference (59 Methods)
 
 ### Agent Methods (8)
 
@@ -177,6 +177,20 @@ tx_hash = sdk.create_task(
 | Method | Description |
 |--------|-------------|
 | `get_stats()` | Aggregate protocol statistics |
+
+### Verification Methods (2)
+
+| Method | Description |
+|--------|-------------|
+| `verify_deep(task_id, deliverable_url, verification_type)` | Trigger deep AI verification |
+| `get_verification_result(task_id)` | Get verification result |
+
+### Revision Methods (2)
+
+| Method | Description |
+|--------|-------------|
+| `request_revision(task_id, feedback)` | Request revision with feedback |
+| `submit_revision(task_id, deliverable_hash, revision_note)` | Submit revised deliverable |
 
 ---
 
