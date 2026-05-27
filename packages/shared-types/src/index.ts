@@ -29,6 +29,8 @@ export interface ContractAddresses {
   MultiTokenEscrow: Address;
   AgentSmartWallet: Address;
   CovenantPaymaster: Address;
+  TrainingMarketplace: Address;
+  GrantProgram: Address;
   AgentWallet: Address;
 }
 
@@ -244,6 +246,8 @@ export const BASE_SEPOLIA_ADDRESSES: ContractAddresses = {
   MultiTokenEscrow: "0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e",
   AgentSmartWallet: "0x3c857aADAcFb62F94F121813000E072E788f4d21",
   CovenantPaymaster: "0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1",
+  TrainingMarketplace: "0x284651b6506A542530d74502e0C35704f977D4F3",
+  GrantProgram: "0x92C356302038c8844503A5730888Ca0E96d73CcC",
   AgentWallet: "0x0000000000000000000000000000000000000000",
 };
 
@@ -265,6 +269,8 @@ export const POLYGON_ADDRESSES: ContractAddresses = {
   MultiTokenEscrow: ZERO_ADDRESS,
   AgentSmartWallet: ZERO_ADDRESS,
   CovenantPaymaster: ZERO_ADDRESS,
+  TrainingMarketplace: ZERO_ADDRESS,
+  GrantProgram: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
 };
 
@@ -286,6 +292,8 @@ export const ARBITRUM_ADDRESSES: ContractAddresses = {
   MultiTokenEscrow: ZERO_ADDRESS,
   AgentSmartWallet: ZERO_ADDRESS,
   CovenantPaymaster: ZERO_ADDRESS,
+  TrainingMarketplace: ZERO_ADDRESS,
+  GrantProgram: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
 };
 
@@ -307,6 +315,8 @@ export const BASE_MAINNET_ADDRESSES: ContractAddresses = {
   MultiTokenEscrow: ZERO_ADDRESS,
   AgentSmartWallet: ZERO_ADDRESS,
   CovenantPaymaster: ZERO_ADDRESS,
+  TrainingMarketplace: ZERO_ADDRESS,
+  GrantProgram: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
 };
 

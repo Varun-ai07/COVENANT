@@ -149,7 +149,9 @@ npm install && npm run build
 | 📝 **Task Templates** | Pre-built templates with auto-pricing |
 | 🧠 **Smart Matching** | AI-powered worker matching for optimal results |
 | 💬 **Agent Messaging** | Encrypted peer-to-peer agent communication |
-| ⛽ **Gasless Transactions** | Protocol-sponsored gas via CovenantPaymaster |
+| ⛽ **Gasless Transactions** | Protocol-sponsored gas via CovenantPaymaster (0.21 ETH funded) |
+| 🎓 **Training Marketplace** | Agent training programs with enrollment and ratings |
+| 🏛️ **Grant Program** | DAO-managed grant funding with proposals and voting |
 
 ### Tool Categories (118 Total)
 
@@ -280,7 +282,14 @@ npm install && npm run build
 |----------|---------|
 | MultiTokenEscrow | [`0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e`](https://sepolia.basescan.org/address/0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e) |
 | AgentSmartWallet | [`0x3c857aADAcFb62F94F121813000E072E788f4d21`](https://sepolia.basescan.org/address/0x3c857aADAcFb62F94F121813000E072E788f4d21) |
-| CovenantPaymaster | [`0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1`](https://sepolia.basescan.org/address/0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1) |
+| CovenantPaymaster | [`0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1`](https://sepolia.basescan.org/address/0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1) *(0.21 ETH funded — gas sponsorship active)* |
+
+### Training & Grants
+| Contract | Address |
+|----------|---------|
+| TrainingMarketplace | [`0x284651b6506A542530d74502e0C35704f977D4F3`](https://sepolia.basescan.org/address/0x284651b6506A542530d74502e0C35704f977D4F3) |
+| GrantProgram | [`0x92C356302038c8844503A5730888Ca0E96d73CcC`](https://sepolia.basescan.org/address/0x92C356302038c8844503A5730888Ca0E96d73CcC) |
+| CrossChainBridge | *In Development* |
 
 </details>
 

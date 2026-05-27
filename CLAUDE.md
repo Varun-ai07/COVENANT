@@ -35,7 +35,7 @@ Each contract domain (`registry`, `market`, `escrow`, `disputes`, `batches`, `in
 
 ## Architecture
 
-Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (payment escrow), `ReceiptVerifier` (attestation receipts). Extensions: `OpenTaskMarket` (competitive bidding), `ParallelTaskBatch` (multi-worker batches), `AgentCollective` (pooled groups), `AgentInsurance` (coverage pool), `DisputeArbitration` (juror resolution), Groth16 ZK verifiers, `COVENANTRouter` (unified router), `LitProtocolIntegration` (key mgmt), `MultiTokenEscrow` (USDC/DAI/USDT escrow), `AgentSmartWallet` (ERC-4337 account abstraction), `CovenantPaymaster` (gasless transactions). Features: cross-chain support (Base Sepolia, Base Mainnet, Polygon, Arbitrum), reputation VCs (W3C Verifiable Credentials), streaming payments, governance DAO, bounty board, task templates with auto-pricing, smart worker matching, agent messaging, ElizaOS plugin integration, training marketplace, grant program, cross-chain bridge.
+Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (payment escrow), `ReceiptVerifier` (attestation receipts). Extensions: `OpenTaskMarket` (competitive bidding), `ParallelTaskBatch` (multi-worker batches), `AgentCollective` (pooled groups), `AgentInsurance` (coverage pool), `DisputeArbitration` (juror resolution), Groth16 ZK verifiers, `COVENANTRouter` (unified router), `LitProtocolIntegration` (key mgmt), `MultiTokenEscrow` (USDC/DAI/USDT escrow), `AgentSmartWallet` (ERC-4337 account abstraction), `CovenantPaymaster` (gasless transactions), `CrossChainBridge` (cross-chain task/reputation bridging), `TrainingMarketplace` (agent training programs), `GrantProgram` (DAO grant management). Features: cross-chain support (Base Sepolia, Base Mainnet, Polygon, Arbitrum), reputation VCs (W3C Verifiable Credentials), streaming payments, governance DAO, bounty board, task templates with auto-pricing, smart worker matching, agent messaging, ElizaOS plugin integration, training marketplace, grant program, cross-chain bridge.
 
 ## Subgraph
 
@@ -65,6 +65,12 @@ Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (
 | MultiTokenEscrow | `0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e` |
 | AgentSmartWallet | `0x3c857aADAcFb62F94F121813000E072E788f4d21` |
 | CovenantPaymaster | `0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1` |
+| TrainingMarketplace | `0x284651b6506A542530d74502e0C35704f977D4F3` |
+| GrantProgram | `0x92C356302038c8844503A5730888Ca0E96d73CcC` |
+
+| Contract | Address |
+|----------|---------|
+| CrossChainBridge | *In Development* |
 
 ## Technical Specs
 
@@ -98,7 +104,7 @@ Multi-stage pipeline: automated gatekeeping, specialized type checkers (ThreeJS,
 
 | Directory | Command | Notes |
 |-----------|---------|-------|
-| contracts | `npx hardhat compile/test` | Tests: 100 |
+| contracts | `npx hardhat compile/test` | Tests: 116 |
 | contracts | `npx hardhat node` | Local node :8545 |
 | agents | `npx tsx demo.ts` | Full client->worker->verify |
 | agents | `npx tsx register.ts` | Register on-chain |

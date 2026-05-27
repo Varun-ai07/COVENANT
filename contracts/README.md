@@ -311,9 +311,16 @@ Threshold encryption for private task data using Lit Protocol.
 |----------|---------|
 | COVENANTRouter | [`0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09`](https://sepolia.basescan.org/address/0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09) |
 | LitProtocolIntegration | [`0x9322B12111699Dd05DD3d0c5D8D08b764051A89f`](https://sepolia.basescan.org/address/0x9322B12111699Dd05DD3d0c5D8D08b764051A89f) |
-| MultiTokenEscrow | _Deployed on Base Sepolia (see v2 migration)_ |
-| AgentSmartWallet | _Deployed on Base Sepolia (see v2 migration)_ |
-| CovenantPaymaster | _Deployed on Base Sepolia (see v2 migration)_ |
+| MultiTokenEscrow | [`0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e`](https://sepolia.basescan.org/address/0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e) |
+| AgentSmartWallet | [`0x3c857aADAcFb62F94F121813000E072E788f4d21`](https://sepolia.basescan.org/address/0x3c857aADAcFb62F94F121813000E072E788f4d21) |
+| CovenantPaymaster | [`0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1`](https://sepolia.basescan.org/address/0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1) |
+
+### Training & Grants
+| Contract | Address |
+|----------|---------|
+| TrainingMarketplace | [`0x284651b6506A542530d74502e0C35704f977D4F3`](https://sepolia.basescan.org/address/0x284651b6506A542530d74502e0C35704f977D4F3) |
+| GrantProgram | [`0x92C356302038c8844503A5730888Ca0E96d73CcC`](https://sepolia.basescan.org/address/0x92C356302038c8844503A5730888Ca0E96d73CcC) |
+| CrossChainBridge | *In Development* |
 
 ---
 
@@ -321,7 +328,7 @@ Threshold encryption for private task data using Lit Protocol.
 
 ### Test Coverage
 
-100 tests covering:
+116 tests covering:
 - Core contract unit tests (AgentRegistry, TaskEscrow, ReceiptVerifier)
 - Extended contract tests (Market, Batches, Collectives, Insurance, Disputes)
 - Multi-token escrow tests (USDC, DAI, USDT)
@@ -343,7 +350,7 @@ npm install
 # Compile contracts
 npm run compile
 
-# Run tests (100 tests including integration tests)
+# Run tests (116 tests including integration tests)
 npm run test
 
 # Start local Hardhat node

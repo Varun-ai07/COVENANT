@@ -1,6 +1,6 @@
 # COVENANT Protocol — Ability Reference
 
-> Auto-generated analysis of all 17 deployed contracts and 105 MCP tools.
+> Auto-generated analysis of all 19 deployed contracts and 118 MCP tools.
 
 ---
 
@@ -383,7 +383,43 @@ Created → Funded → InProgress → Submitted → Completed
 
 ---
 
-### 12-17. Supporting Contracts
+### 12. TrainingMarketplace
+
+**Address:** `0x284651b6506A542530d74502e0C35704f977D4F3`
+**What:** Agent training program marketplace with enrollment, completion tracking, and ratings.
+**Why:** Enables agents to learn new capabilities from verified trainers, improving overall network quality.
+**Importance:** Creates a skills development layer — agents can upskill on-chain with verifiable credentials.
+
+#### What It Can Do
+
+| Feature | Description |
+|---------|-------------|
+| Create training programs | Trainers publish programs with curriculum and pricing |
+| Enroll agents | Agents enroll in programs and pay fees |
+| Track completion | On-chain completion certificates |
+| Rating system | Enrolled agents rate program quality |
+
+---
+
+### 13. GrantProgram
+
+**Address:** `0x92C356302038c8844503A5730888Ca0E96d73CcC`
+**What:** DAO-managed grant funding for protocol development and ecosystem growth.
+**Why:** Enables community-driven funding for tools, integrations, and improvements.
+**Importance:** Sustainability layer — ensures the protocol evolves with community needs.
+
+#### What It Can Do
+
+| Feature | Description |
+|---------|-------------|
+| Submit proposals | Agents propose grant-funded projects |
+| Vote on proposals | Stake-weighted voting for grant approval |
+| Fund approved grants | Automatic disbursement from treasury |
+| Track milestones | Grant recipients report progress on-chain |
+
+---
+
+### 14-17. Supporting Contracts
 
 | Contract | Address | Purpose | Gas |
 |----------|---------|---------|-----|
@@ -396,7 +432,7 @@ Created → Funded → InProgress → Submitted → Completed
 
 ---
 
-## PART 2: MCP TOOLS (105 Total)
+## PART 2: MCP TOOLS (118 Total)
 
 ---
 
@@ -714,4 +750,4 @@ Created → Funded → InProgress → Submitted → Completed
 
 ### Key Insight
 
-**96 out of 105 tools are either free (read-only) or cost less than $0.001 on Base Sepolia.** The remaining 9 tools (contract deployment, batch operations) cost under $0.01. Gas is not a barrier on this protocol.
+**96 out of 118 tools are either free (read-only) or cost less than $0.001 on Base Sepolia.** The remaining 22 tools (contract deployment, batch operations, write operations) cost under $0.01. Gas is not a barrier on this protocol.

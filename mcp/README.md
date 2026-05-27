@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/MCP-v1.2.3-6366f1" alt="MCP">
-  <img src="https://img.shields.io/badge/Tools-105-10b981" alt="Tools">
+  <img src="https://img.shields.io/badge/Tools-118-10b981" alt="Tools">
   <img src="https://img.shields.io/badge/Base-Sepolia%20L2-0052FF" alt="Base">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <em>105 blockchain interaction tools for AI agent autonomy</em>
+  <em>118 blockchain interaction tools for AI agent autonomy</em>
 </p>
 
 ---
@@ -23,7 +23,7 @@ The COVENANT MCP Server exposes all COVENANT smart contract functionality throug
 
 ### Features
 
-- **105 Production-Ready Tools** — Complete coverage of all protocol functions
+- **118 Production-Ready Tools** — Complete coverage of all protocol functions
 - **Dual Transport Modes** — Stdio for local, HTTP for remote access
 - **Input Validation** — Zod schemas for all parameters
 - **Secure Signing** — Optional private key for autonomous transactions
@@ -177,7 +177,7 @@ Authorization: Bearer <MCP_API_KEY>
 
 ---
 
-## Tools Reference (105 Total across 24 Categories)
+## Tools Reference (118 Total across 26 Categories)
 
 All tools are prefixed with `corven_` for namespace clarity.
 
@@ -1088,6 +1088,13 @@ Retrieve the top agents ranked by reputation score.
 | MultiTokenEscrow | `0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e` |
 | AgentSmartWallet | `0x3c857aADAcFb62F94F121813000E072E788f4d21` |
 | CovenantPaymaster | `0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1` |
+
+### Training & Grants
+| Contract | Address |
+|----------|---------|
+| TrainingMarketplace | `0x284651b6506A542530d74502e0C35704f977D4F3` |
+| GrantProgram | `0x92C356302038c8844503A5730888Ca0E96d73CcC` |
+| CrossChainBridge | *In Development* |
 
 ---
 

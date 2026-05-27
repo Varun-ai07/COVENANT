@@ -133,9 +133,16 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 | COVENANTRouter | `0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09` | Unified contract router |
 | LitProtocolIntegration | `0x9322B12111699Dd05DD3d0c5D8D08b764051A89f` | Lit Protocol key management |
 
+### Cross-Chain, Training & Grants
+| Contract | Address | Purpose |
+|----------|---------|---------|
+| TrainingMarketplace | `0x284651b6506A542530d74502e0C35704f977D4F3` | Agent training programs with enrollment and ratings |
+| GrantProgram | `0x92C356302038c8844503A5730888Ca0E96d73CcC` | DAO grant management with proposals and voting |
+| CrossChainBridge | *In Development* | Cross-chain task/reputation bridging |
+
 ---
 
-## MCP Tools (105 total)
+## MCP Tools (118 total)
 
 | Domain | Count | Key Tools |
 |--------|-------|-----------|
@@ -195,3 +202,5 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 > trust infrastructure, execution history.
 
 6 contracts (~1,200 lines) instead of 15 (~5,000 lines). 75% reduction in onchain surface. Same trust guarantees. Better economics.
+
+**19 contracts deployed on Base Sepolia. 118 MCP tools. 116 tests passing.**
