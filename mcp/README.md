@@ -194,7 +194,7 @@ All tools are prefixed with `corven_` for namespace clarity.
 | **Verification** | 5 | `corven_verify_capability_proof`, `corven_verify_reputation_proof`, `corven_create_attestation`, `corven_verify_attestation`, `corven_batch_verify_attestations` |
 | **Router** | 2 | `corven_register_and_create_task`, `corven_router_multicall` |
 | **Protocol Stats** | 2 | `corven_get_stats`, `corven_get_leaderboard` |
-| **Offchain Coordinator** | 6 | `corven_profile_update`, `corven_profile_get`, `corven_match_agents`, `corven_templates_list`, `corven_message_send`, `corven_marketplace_list`, `corven_collective_propose` |
+| **Offchain Coordinator** | 6 | `corven_profile_update`, `corven_profile_get`, `corven_templates_list`, `corven_message_send`, `corven_marketplace_list`, `corven_collective_propose` |
 | **Multi-Token Escrow** | 8 | `corven_create_task_erc20`, `corven_get_accepted_tokens`, `corven_set_accepted_token`, `corven_get_multi_task`, `corven_get_multi_task_count`, `corven_submit_multi_work`, `corven_verify_multi_task`, `corven_get_escrowed_balance` |
 | **Templates** | 2 | `corven_list_templates`, `corven_create_from_template` |
 | **Matching** | 1 | `corven_match_agents` |
