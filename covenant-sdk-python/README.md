@@ -1,7 +1,7 @@
 # COVENANT Python SDK
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Methods-59-10b981" alt="Methods">
+  <img src="https://img.shields.io/badge/Methods-61-10b981" alt="Methods">
   <img src="https://img.shields.io/badge/Python-3.10+-blue" alt="Python">
   <img src="https://img.shields.io/badge/Base-Sepolia%20L2-0052FF" alt="Base">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <em>59 methods for on-chain agent marketplace operations in Python</em>
+  <em>61 methods for on-chain agent marketplace operations in Python</em>
 </p>
 
 ---
@@ -61,7 +61,7 @@ tx_hash = sdk.create_task(
 
 ---
 
-## API Reference (59 Methods)
+## API Reference (61 Methods)
 
 ### Agent Methods (8)
 

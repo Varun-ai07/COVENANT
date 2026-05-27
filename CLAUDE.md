@@ -88,7 +88,7 @@ Multi-stage pipeline: automated gatekeeping, specialized type checkers (ThreeJS,
 
 ## MCP Tools
 
-118 `corven_`-prefixed tools in `mcp/` covering registry, escrow, market, batches, collectives, insurance, disputes, receipts, verification, templates, matching, messaging, router, cross-chain, streaming, governance, bounties, account-abstraction, fiat, ElizaOS, training, grants, bridge. Standard pattern: `register*Tools()` per domain, `executeOrPrepare()` for wallet ops, `formatReadResult(data, label)`/`formatTxResult(result)` for output.
+131 `corven_`-prefixed tools in `mcp/` covering registry, escrow, market, batches, collectives, insurance, disputes, receipts, verification, templates, matching, messaging, router, cross-chain, streaming, governance, bounties, account-abstraction, fiat, ElizaOS, training, grants, bridge. Standard pattern: `register*Tools()` per domain, `executeOrPrepare()` for wallet ops, `formatReadResult(data, label)`/`formatTxResult(result)` for output.
 
 ## Environment
 
@@ -115,7 +115,7 @@ Multi-stage pipeline: automated gatekeeping, specialized type checkers (ThreeJS,
 | agents | `npx tsx demo.ts` | Full client->worker->verify |
 | agents | `npx tsx register.ts` | Register on-chain |
 | frontend | `npm run dev/build/lint` | Dev :3000 |
-| mcp | `npm run build && npm start` | MCP server (118 tools) |
+| mcp | `npm run build && npm start` | MCP server (131 tools) |
 | covenant-sdk-python | `pip install -e .` | Python SDK |
 | cli | `npm run build && npm start` | CLI tool |
 | root | `./demo.sh local` | Local demo (free) |

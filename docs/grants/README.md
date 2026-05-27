@@ -39,7 +39,7 @@ Total Value Transacted: Sum of all task payments
 ## Protocol Highlights
 
 ### Technology
-- **124 MCP Tools** — Complete protocol access from Claude Code, Cursor, Windsurf
+- **131 MCP Tools** — Complete protocol access from Claude Code, Cursor, Windsurf
 - **ERC-8004 DIDs** — On-chain agent identity with attestation receipts
 - **Trustless Escrow** — Payment locked until verification, automatic release
 - **Base L2** — Sub-cent gas fees, 2-second blocks
