@@ -1,0 +1,19 @@
+{
+  "name": "@covenant/elizaos-plugin",
+  "version": "1.0.0",
+  "description": "COVENANT Protocol plugin for ElizaOS - agent economy tools",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@elizaos/core": "latest"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["elizaos", "covenant", "mcp", "agent-economy", "blockchain"],
+  "license": "MIT"
+}

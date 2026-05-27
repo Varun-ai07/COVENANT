@@ -3,7 +3,7 @@ import "dotenv/config";
 export const RPC_URL = process.env.RPC_URL ?? "https://sepolia.base.org";
 export const SUBGRAPH_URL =
   process.env.SUBGRAPH_URL ??
-  "https://api.studio.thegraph.com/query/1753884/local/v0.0.1";
+  "https://api.studio.thegraph.com/query/1753884/local";
 export const ALERT_WEBHOOK_URL = process.env.ALERT_WEBHOOK_URL ?? "";
 
 export const CONTRACTS = {

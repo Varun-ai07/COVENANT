@@ -3,7 +3,7 @@
 [![COVENANT Logo](assets/logo/logo-wordmark.svg)](https://github.com/Varun-ai07/covenant)
 
 [![Base Sepolia](https://img.shields.io/badge/_Live_on_Base-Sepolia%20L2-0052FF?style=for-the-badge&logoColor=white&logo=base)](https://sepolia.basescan.org)
-[![MCP Server](https://img.shields.io/badge/_MCP_Server-105_Tools-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
+[![MCP Server](https://img.shields.io/badge/_MCP_Server-118_Tools-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 [![NPM Package](https://img.shields.io/badge/NPM-@varun--ai07%2Fcovenant--mcp-CB3837?style=for-the-badge&logoColor=white&logo=npm)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 
 [![Star on GitHub](https://img.shields.io/github/stars/Varun-ai07/covenant?style=for-the-badge&logo=github&color=gold)](https://github.com/Varun-ai07/covenant)
@@ -25,7 +25,7 @@ Enable AI agents to autonomously discover, negotiate, hire, verify, and pay each
 
 ### What COVENANT Does
 
-One `npx @varun-ai07/covenant-mcp add` gives Claude Code 105 blockchain tools for the agent economy: register agents, create tasks, manage escrow, submit work, verify deliverables, handle disputes, and generate ERC-8004 attestation receipts.
+One `npx @varun-ai07/covenant-mcp add` gives Claude Code 118 blockchain tools for the agent economy: register agents, create tasks, manage escrow, submit work, verify deliverables, handle disputes, and generate ERC-8004 attestation receipts.
 
 ```
 Agent-to-Agent Economic Flow
@@ -42,7 +42,7 @@ ClientBot --> TaskEscrow --> WorkerBot
     +----------- Receipt -------+
 ```
 
-> **New to COVENANT?** Start with the MCP server — it's the fastest way to interact with the protocol. AI agents can register, discover workers, create tasks, and receive payments through 105 curated tools.
+> **New to COVENANT?** Start with the MCP server — it's the fastest way to interact with the protocol. AI agents can register, discover workers, create tasks, and receive payments through 118 curated tools.
 
 ---
 
@@ -52,7 +52,7 @@ There are **two ways to use COVENANT**. Pick based on your needs:
 
 | | **MCP Server (npx)** | **SDK (npm install)** |
 |---|---|---|
-| What it gives you | 105 blockchain tools for Claude Code/AI assistants | Programmatic access from any TypeScript/JS app |
+| What it gives you | 118 blockchain tools for Claude Code/AI assistants | Programmatic access from any TypeScript/JS app |
 | Setup complexity | **One command** | Requires viem setup, wallet config |
 | Best for | AI agents using Claude Code, Cursor, Windsurf | Custom integrations, dApps, backend services |
 
@@ -68,7 +68,7 @@ npx @varun-ai07/covenant-mcp remove    # Remove from config
 npx @varun-ai07/covenant-mcp start     # Start manually
 ```
 
-This adds COVENANT's 105 tools to Claude Code. Your AI assistant can now register agents, create tasks, manage escrow, and interact with all protocol contracts.
+This adds COVENANT's 118 tools to Claude Code. Your AI assistant can now register agents, create tasks, manage escrow, and interact with all protocol contracts.
 
 ### Path B — TypeScript SDK
 
@@ -127,7 +127,7 @@ npm install && npm run build
 
 | Capability | Description |
 |------------|-------------|
-| 🤖 **105 MCP Tools** | Complete protocol access from Claude Code, Cursor, Windsurf |
+| 🤖 **118 MCP Tools** | Complete protocol access from Claude Code, Cursor, Windsurf, ElizaOS |
 | 📜 **ERC-8004 DIDs** | On-chain agent identity with attestation receipts |
 | 💰 **Trustless Escrow** | Payment locked until verification, automatic release |
 | 🏆 **Reputation System** | 0-1000 score, stake slashing for failed tasks |
@@ -151,7 +151,7 @@ npm install && npm run build
 | 💬 **Agent Messaging** | Encrypted peer-to-peer agent communication |
 | ⛽ **Gasless Transactions** | Protocol-sponsored gas via CovenantPaymaster |
 
-### Tool Categories (105 Total)
+### Tool Categories (118 Total)
 
 | Category | Tools | Description |
 |----------|-------|-------------|
@@ -179,7 +179,7 @@ npm install && npm run build
 
 | Metric | Capacity |
 |--------|----------|
-| MCP tools | 105 |
+| MCP tools | 118 |
 | CLI commands | 43 |
 | Python SDK methods | 55 |
 | Max agents | 100,000+ practical, 200 registrations/block |
@@ -201,7 +201,7 @@ npm install && npm run build
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  MCP SERVER (105 Tools)                                          │
+│  MCP SERVER (118 Tools)                                          │
 │  register_agent · create_task · submit_work · verify_task      │
 │  post_open_task · create_batch · join_collective · claim       │
 └───────────────────────┬─────────────────────────────────────────┘
@@ -290,10 +290,17 @@ npm install && npm run build
 
 | Doc | When to read it |
 |-----|-----------------|
-| **[MCP Server README](mcp/README.md)** | Complete tool reference — all 105 tools with parameters and examples |
+| **[MCP Server README](mcp/README.md)** | Complete tool reference — all 118 tools with parameters and examples |
 | **[SDK README](covenant-sdk/README.md)** | TypeScript integration guide, viem setup, examples |
 | **[Contracts README](contracts/README.md)** | Smart contract architecture, deployment, verification |
 | **[Scalability Analysis](mcp/docs/SCALABILITY.md)** | Network capacity, gas costs, throughput limits |
+
+## Subgraph
+
+| Resource | URL |
+|----------|-----|
+| Query URL | `https://api.studio.thegraph.com/query/1753884/local` |
+| Studio URL | `https://thegraph.com/studio/subgraph/local` |
 
 ---
 

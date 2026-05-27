@@ -35,7 +35,14 @@ Each contract domain (`registry`, `market`, `escrow`, `disputes`, `batches`, `in
 
 ## Architecture
 
-Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (payment escrow), `ReceiptVerifier` (attestation receipts). Extensions: `OpenTaskMarket` (competitive bidding), `ParallelTaskBatch` (multi-worker batches), `AgentCollective` (pooled groups), `AgentInsurance` (coverage pool), `DisputeArbitration` (juror resolution), Groth16 ZK verifiers, `COVENANTRouter` (unified router), `LitProtocolIntegration` (key mgmt), `MultiTokenEscrow` (USDC/DAI/USDT escrow), `AgentSmartWallet` (ERC-4337 account abstraction), `CovenantPaymaster` (gasless transactions). Features: cross-chain support (Base Sepolia, Base Mainnet, Polygon, Arbitrum), reputation VCs (W3C Verifiable Credentials), streaming payments, governance DAO, bounty board, task templates with auto-pricing, smart worker matching, agent messaging.
+Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (payment escrow), `ReceiptVerifier` (attestation receipts). Extensions: `OpenTaskMarket` (competitive bidding), `ParallelTaskBatch` (multi-worker batches), `AgentCollective` (pooled groups), `AgentInsurance` (coverage pool), `DisputeArbitration` (juror resolution), Groth16 ZK verifiers, `COVENANTRouter` (unified router), `LitProtocolIntegration` (key mgmt), `MultiTokenEscrow` (USDC/DAI/USDT escrow), `AgentSmartWallet` (ERC-4337 account abstraction), `CovenantPaymaster` (gasless transactions). Features: cross-chain support (Base Sepolia, Base Mainnet, Polygon, Arbitrum), reputation VCs (W3C Verifiable Credentials), streaming payments, governance DAO, bounty board, task templates with auto-pricing, smart worker matching, agent messaging, ElizaOS plugin integration, training marketplace, grant program, cross-chain bridge.
+
+## Subgraph
+
+| Resource | URL |
+|----------|-----|
+| Query URL | `https://api.studio.thegraph.com/query/1753884/local` |
+| Studio URL | `https://thegraph.com/studio/subgraph/local` |
 
 ## Contract Addresses (Base Sepolia)
 
@@ -69,7 +76,7 @@ Multi-stage pipeline: automated gatekeeping, specialized type checkers (ThreeJS,
 
 ## MCP Tools
 
-96 `corven_`-prefixed tools in `mcp/` covering registry, escrow, market, batches, collectives, insurance, disputes, receipts, verification, templates, matching, messaging, router, cross-chain, streaming, governance, bounties, account-abstraction, fiat. Standard pattern: `register*Tools()` per domain, `executeOrPrepare()` for wallet ops, `formatReadResult(data, label)`/`formatTxResult(result)` for output.
+118 `corven_`-prefixed tools in `mcp/` covering registry, escrow, market, batches, collectives, insurance, disputes, receipts, verification, templates, matching, messaging, router, cross-chain, streaming, governance, bounties, account-abstraction, fiat, ElizaOS, training, grants, bridge. Standard pattern: `register*Tools()` per domain, `executeOrPrepare()` for wallet ops, `formatReadResult(data, label)`/`formatTxResult(result)` for output.
 
 ## Environment
 
@@ -91,12 +98,12 @@ Multi-stage pipeline: automated gatekeeping, specialized type checkers (ThreeJS,
 
 | Directory | Command | Notes |
 |-----------|---------|-------|
-| contracts | `npx hardhat compile/test` | Tests: 34 |
+| contracts | `npx hardhat compile/test` | Tests: 100 |
 | contracts | `npx hardhat node` | Local node :8545 |
 | agents | `npx tsx demo.ts` | Full client->worker->verify |
 | agents | `npx tsx register.ts` | Register on-chain |
 | frontend | `npm run dev/build/lint` | Dev :3000 |
-| mcp | `npm run build && npm start` | MCP server (96 tools) |
+| mcp | `npm run build && npm start` | MCP server (118 tools) |
 | covenant-sdk-python | `pip install -e .` | Python SDK |
 | cli | `npm run build && npm start` | CLI tool |
 | root | `./demo.sh local` | Local demo (free) |
