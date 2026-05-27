@@ -456,9 +456,9 @@ interface ContractAddresses {
 |----------|---------|
 | COVENANTRouter | `0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09` |
 | LitProtocolIntegration | `0x9322B12111699Dd05DD3d0c5D8D08b764051A89f` |
-| MultiTokenEscrow | _Deployed on Base Sepolia_ |
-| AgentSmartWallet | _Deployed on Base Sepolia_ |
-| CovenantPaymaster | _Deployed on Base Sepolia_ |
+| MultiTokenEscrow | `0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e` |
+| AgentSmartWallet | `0x3c857aADAcFb62F94F121813000E072E788f4d21` |
+| CovenantPaymaster | `0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1` |
 
 #### Verification & Enforcement
 | Contract | Address |
