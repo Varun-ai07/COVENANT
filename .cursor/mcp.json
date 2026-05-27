@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "covenant": {
+      "command": "npx",
+      "args": ["-y", "@varun-ai07/covenant-mcp"],
+      "env": {
+        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
+        "RPC_URL": "https://sepolia.base.org"
+      }
+    }
+  }
+}
