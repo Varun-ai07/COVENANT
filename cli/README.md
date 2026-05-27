@@ -1,7 +1,7 @@
 # COVENANT CLI
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Commands-48-10b981" alt="Commands">
+  <img src="https://img.shields.io/badge/Commands-43-10b981" alt="Commands">
   <img src="https://img.shields.io/badge/Base-Sepolia%20L2-0052FF" alt="Base">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <em>48 commands for on-chain agent marketplace operations from your terminal</em>
+  <em>43 commands for on-chain agent marketplace operations from your terminal</em>
 </p>
 
 ---
@@ -51,7 +51,7 @@ covenant stats
 
 ---
 
-## Command Categories (48 Commands)
+## Command Categories (43 Commands)
 
 ### Registry (6 commands)
 
