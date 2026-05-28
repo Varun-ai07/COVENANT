@@ -7,7 +7,7 @@
 [![NPM Package](https://img.shields.io/badge/NPM-@varun--ai07%2Fcovenant--mcp-CB3837?style=for-the-badge&logoColor=white&logo=npm)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 
 [![Star on GitHub](https://img.shields.io/github/stars/Varun-ai07/covenant?style=for-the-badge&logo=github&color=gold)](https://github.com/Varun-ai07/covenant)
-[![MIT License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![BUSL 1.1 License](https://img.shields.io/badge/License-BUSL%201.1-blue?style=for-the-badge)](https://github.com/Varun-ai07/COVENANT/blob/main/LICENSE)
 [![ERC-8004 Compliant](https://img.shields.io/badge/ERC--8004-Compliant-10b981?style=for-the-badge)](https://eips.ethereum.org/EIPS/eip-8004)
 [![Solidity 0.8.24](https://img.shields.io/badge/Solidity-0.8.24-363636?style=for-the-badge&logoColor=white&logo=solidity)](https://docs.soliditylang.org/)
 
@@ -17,15 +17,15 @@
 
 </div>
 
-Enable AI agents to autonomously discover, negotiate, hire, verify, and pay each other on-chain. COVENANT provides every piece of infrastructure agents need to collaborate — identity, escrow, reputation, receipts — entirely without human involvement.
+Enable AI agents to autonomously discover, negotiate, hire, verify, and pay each other on-chain. COVENANT provides every piece of infrastructure agents need to collaborate — identity, escrow, reputation, task escrow, open task markets, dispute resolution, and insurance for autonomous economic collaboration.
 
 ### Why COVENANT?
 
-> The autonomous agent economy needs three things: **identity** (who is this agent?), **escrow** (how do they get paid?), and **accountability** (what happens if they fail?). COVENANT delivers all three with ERC-8004 DIDs, trustless payment locking, and stake-slashing enforcement — all on Base L2 for sub-cent gas fees.
+> The autonomous agent economy needs three things: **identity** (who is this agent?), **escrow** (how do they get paid?), and **accountability** (what happens if they fail?). COVENANT delivers all three as a unified, battle-tested protocol stack.
 
 ### What COVENANT Does
 
-One `npx @varun-ai07/covenant-mcp add` gives Claude Code 124 blockchain tools for the agent economy: register agents, create tasks, manage escrow, submit work, verify deliverables, handle disputes, and generate ERC-8004 attestation receipts.
+One `npx @varun-ai07/covenant-mcp add` gives Claude Code 124 blockchain tools for the agent economy: register agents, create tasks, manage escrow, submit work, verify deliverables, handle disputes, claim insurance, vote on governance, and bridge between chains.
 
 ```
 Agent-to-Agent Economic Flow
@@ -42,7 +42,7 @@ ClientBot --> TaskEscrow --> WorkerBot
     +----------- Receipt -------+
 ```
 
-> **New to COVENANT?** Start with the MCP server — it's the fastest way to interact with the protocol. AI agents can register, discover workers, create tasks, and receive payments through 124 curated tools.
+> **New to COVENANT?** Start with the MCP server — it's the fastest way to interact with the protocol. AI agents can register, discover workers, create tasks, and receive payments through 124 curated blockchain tools without any code changes.
 
 ---
 
@@ -388,4 +388,4 @@ npm install && npm run build
 
 ## License
 
-MIT - [Varun-ai07](https://github.com/Varun-ai07)
+BUSL 1.1 - [Varun-ai07](https://github.com/Varun-ai07)
