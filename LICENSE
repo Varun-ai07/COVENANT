@@ -1,21 +1,73 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2026 COVENANT Protocol
+License text copyright (c) 2020, MariaDB Corporation Ab, all rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+"Business Source License" is a trademark of MariaDB Corporation Ab.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Parameters
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Licensor: COVENANT Protocol
+
+Licensed Work: COVENANT
+
+The Licensed Work is © 2026 COVENANT Protocol.
+
+Additional Use Grant: You may make use of the Licensed Work in non-commercial applications.
+
+Change License Date: 2027-01-01
+
+Change License: MIT License
+
+Restrictions
+
+The Licensor hereby grants you the right, without obligation for you to assist in the performance of any of Licensor's obligations under this Agreement, to:
+
+(a) install and have one instance of the Licensed Work running for purposes of your internal, non-commercial use;
+
+(b) modify and maintain derivative works of the Licensed Work solely for purposes of your internal, non-commercial use;
+
+(c) allow your employees and contractors having a company relationship with you to utilize the Licensed Work.
+
+Conditions
+
+The conditions of this Business Source License are substantial. Failure of Licensee to comply with any condition of this License will immediately result in the termination of the license grants above, and will result in the immediate inalienability of any derivative works created by Licensee.
+
+1. Licensor, upon 30 days' notice, may change the Restrictions (including Additional Use Grants) prospectively effective upon the change notice date. If you do not agree to any such change, you may terminate this License.
+
+2. Licensor, upon notice to Licensee, may terminate the License immediately if:
+   (i) you materially breach any condition of this License and fail to cure it within 30 days;
+   (ii) you otherwise conflict with Licensor's exclusive use and enjoyment of the Licensed Work.
+
+3. All notices must be provided in writing and delivered in person, by overnight courier, or by certified or registered mail to the address in effect for Licensor at the date of such notice.
+
+4. Licensor reserves all rights not expressly granted to Licensee.
+
+Term
+
+The term of this License begins on the date you first use the Licensed Work and ends on the earlier of:
+
+(a) the Change License Date, at which time your License will automatically convert to the Change License;
+
+(b) the date of Licensor's notice of termination or;
+
+(c) your material breach of this License.
+
+Upon the term end, the rights granted to you under this License will cease and the provisions of the applicable Change License shall apply.
+
+Disclaimer of Warranties
+
+THE LICENSED WORK AND ANY RELATED INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NONINFRINGEMENT, AND ANY IMPLIED REPRESENTATIONS OR WARRANTIES RELATED TO THE LICENSED WORK, UNLESS EXPRESSLY PROVIDED TO THE CONTRARY IN WRITING BY LICENSOR.
+
+FURTHERMORE, LICENSOR DOES NOT REPRESENT OR WARRANT THAT THE LICENSED WORK WILL MEET LICENSEE'S REQUIREMENTS, WILL OPERATE IN AN UNINTERRUPTED OR ERROR-FREE MANNER, OR WILL BE FREE FROM DEFECTS OR VULNERABILITIES.
+
+Limitation of Liability
+
+IN NO EVENT WILL LICENSOR BE LIABLE FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, SPECIAL, INCIDENTAL, OR PUNITIVE DAMAGES, HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY (WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT, INCLUDING NEGLIGENCE), ARISING OUT OF OR RELATING TO THE LICENSED WORK, EVEN IF LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES AND NOTWITHSTANDING ANY FAILURE OF ESSENTIAL PURPOSE OF ANY LIMITED REMEDY, TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW.
+
+General
+
+If any provision or combination of provisions of this License is held by a court of competent jurisdiction to be invalid or unenforceable, then such provision(s) shall be reformed to the minimum extent necessary to make such provision(s) valid and enforceable. The remaining provisions of this License will continue in full force and effect.
+
+This License constitutes the entire license agreement between the parties with respect to the Licensed Work and supersedes all prior negotiations, representations, and agreements, whether written or oral, relating to the Licensed Work.
+
+For commercial use of the Licensed Work, please contact the Licensor.
