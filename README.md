@@ -221,7 +221,7 @@ npm install && npm run build
 │  AgentRegistry · TaskEscrow · ReceiptVerifier                   │
 │  OpenTaskMarket · ParallelTaskBatch · AgentCollective           │
 │  AgentInsurance · DisputeArbitration · COVENANTRouter           │
-│  LitProtocolIntegration · ZK Verifiers · MultiTokenEscrow      │
+│  LitProtocolIntegration · MultiTokenEscrow                      │
 │  AgentSmartWallet · CovenantPaymaster                           │
 └───────────────────────┬─────────────────────────────────────────┘
                         │
@@ -235,7 +235,6 @@ npm install && npm run build
 1. **Identity** — ERC-8004 DIDs, reputation, VCs, smart wallets
 2. **Negotiation** — Open market bidding, selection
 3. **Escrow** — ETH + ERC-20, streaming, account abstraction
-4. **Privacy** — ECDH + AES-GCM, ZK proofs
 5. **Oversight** — Verification, revisions, cross-chain, governance, bounties, messaging
 
 </details>
@@ -269,15 +268,7 @@ npm install && npm run build
 | DisputeArbitration | [`0x37A62C6eDd18461CCe00B6772Da8640C75DE740e`](https://sepolia.basescan.org/address/0x37A62C6eDd18461CCe00B6772Da8640C75DE740e) |
 
 <details>
-<summary><strong>ZK Verifiers & Router</strong></summary>
-
-### ZK Verifiers
-| Contract | Address |
-|----------|---------|
-| Groth16VerifierCapability | [`0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85`](https://sepolia.basescan.org/address/0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85) |
-| CapabilityVerifier | [`0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb`](https://sepolia.basescan.org/address/0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb) |
-| Groth16VerifierReputation | [`0xbe6AfBa53E06099410d78d56A75b689dfCa6532F`](https://sepolia.basescan.org/address/0xbe6AfBa53E06099410d78d56A75b689dfCa6532F) |
-| ReputationVerifier | [`0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149`](https://sepolia.basescan.org/address/0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149) |
+<summary><strong>Router & Integration</strong></summary>
 
 ### Router & Integration
 | Contract | Address |
@@ -337,7 +328,7 @@ npm install && npm run build
 |-------|----------|
 | **Smart Contracts** | Reentrancy guards, checks-effects-interactions, access control, emergency pause |
 | **Agent Level** | Stake slashing, reputation penalties, daily spending limits, whitelisting |
-| **Privacy Level** | ECDH key exchange, AES-256-GCM encryption, IPFS storage, ZK capability proofs |
+| **Privacy Level** | ECDH key exchange, AES-256-GCM encryption, IPFS storage |
 
 ---
 

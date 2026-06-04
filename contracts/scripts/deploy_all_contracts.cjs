@@ -75,20 +75,6 @@ async function main() {
 
   // Skip DisputeArbitrationMock for production deployment
   let disputeArbitrationAddress = ethers.ZeroAddress;
-  let groth16VerifierAddress = ethers.ZeroAddress;
-
-  // Try to deploy Groth16Verifier if available
-  try {
-    console.log("\n8. Deploying Groth16Verifier...");
-    const Groth16Verifier = await hre.ethers.getContractFactory("contracts/CapabilityVerifier.sol:Groth16Verifier");
-    const groth16Verifier = await Groth16Verifier.deploy();
-    await groth16Verifier.waitForDeployment();
-    groth16VerifierAddress = await groth16Verifier.getAddress();
-    console.log("Groth16Verifier deployed to:", groth16VerifierAddress);
-  } catch (e) {
-    console.log("Groth16Verifier not found, skipping...");
-  }
-
   // Get network info
   const provider = new hre.ethers.JsonRpcProvider(process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org");
   const { chainId } = await provider.getNetwork();

@@ -33,11 +33,6 @@ contract AgentRegistry is AccessControl, ReentrancyGuard {
     uint256 public agentCount;
     mapping(address => uint256) public lastReputationUpdate;
 
-    // ZK verifier references
-    address public groth16Verifier;
-    address public capabilityVerifier;
-    mapping(bytes32 => bool) public usedNullifiers;
-
     event AgentRegistered(address indexed agent, bytes32 indexed did, uint256 timestamp);
     event ReputationUpdated(address indexed agent, int256 delta, uint16 newReputation);
     event AgentDeactivated(address indexed agent, uint256 timestamp);
@@ -45,11 +40,9 @@ contract AgentRegistry is AccessControl, ReentrancyGuard {
     event StakeSlashed(address indexed agent, uint256 amount, string reason);
     event TaskRecorded(address indexed agent, uint256 value, bool success);
 
-    constructor(address _groth16Verifier, address _capabilityVerifier) {
+    constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(AUTHORIZED_ROLE, msg.sender);
-        groth16Verifier = _groth16Verifier;
-        capabilityVerifier = _capabilityVerifier;
     }
 
     // ─── Registration ──────────────────────────────────────────
@@ -173,14 +166,6 @@ contract AgentRegistry is AccessControl, ReentrancyGuard {
     }
 
     // ─── Admin ─────────────────────────────────────────────────
-
-    function setGroth16Verifier(address _verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        groth16Verifier = _verifier;
-    }
-
-    function setCapabilityVerifier(address _verifier) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        capabilityVerifier = _verifier;
-    }
 
     function addAuthorizedContract(address contractAddr) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(AUTHORIZED_ROLE, contractAddr);

@@ -68,12 +68,6 @@ async function main() {
       ],
       fullyQualifiedName: "contracts/DisputeArbitrationMock.sol:DisputeArbitrationMock",
     },
-    {
-      name: "Groth16Verifier",
-      address: deployed.Groth16Verifier,
-      constructorArgs: [],
-      fullyQualifiedName: "contracts/Groth16Verifier.sol:Groth16Verifier",
-    },
   ];
 
   let verified = 0;

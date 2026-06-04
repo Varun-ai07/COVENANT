@@ -1,7 +1,7 @@
 /**
  * COVENANT MCP Server — tool registration hub.
  *
- * 12 files, ~70 tools. Settlement onchain, coordination offchain.
+ * 29 files, ~130 tools. Settlement onchain, coordination offchain.
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAgentTools } from "./tools/registry.js";
@@ -51,7 +51,7 @@ export function createServer(): McpServer {
   registerCollectiveTools(server);  // AgentCollective
   registerDisputeTools(server);     // DisputeArbitration
   registerInsuranceTools(server);   // AgentInsurance
-  registerVerificationTools(server);// ZK + ERC-8004
+  registerVerificationTools(server);// ERC-8004 attestations
   registerRouterTools(server);      // COVENANTRouter
   registerMultiTokenTools(server);  // MultiTokenEscrow
   registerReputationVCTools(server); // Reputation VCs + DID

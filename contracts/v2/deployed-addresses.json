@@ -12,10 +12,6 @@
     "MultiTokenEscrow": "0xF55EFfBa88022Fb9C251B69e1934C4203c13b0e9",
     "CovenantPaymaster": "0x329Dacd266ec6e3784508F4098e0863F057491c1"
   },
-  "existing": {
-    "groth16Verifier": "0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85",
-    "capabilityVerifier": "0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb"
-  },
   "envVars": {
     "CONTRACT_VERSION": "v2",
     "AGENT_REGISTRY_V2": "0xA594E8Aab8d418a2AEF45E7B07E944D03EE524Db",

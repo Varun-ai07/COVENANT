@@ -137,11 +137,7 @@ export interface PartialContractAddresses {
   AgentInsurance?: Address;
   // Dispute Resolution
   DisputeArbitration?: Address;
-  // ZK Verifiers
-  Groth16VerifierCapability?: Address;
-  CapabilityVerifier?: Address;
-  Groth16VerifierReputation?: Address;
-  ReputationVerifier?: Address;
+
   // Router & Integration
   COVENANTRouter?: Address;
   LitProtocolIntegration?: Address;

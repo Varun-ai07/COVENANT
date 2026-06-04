@@ -60,32 +60,6 @@ async function main() {
       address: deployed.AgentInsurance,
       constructorArgs: [deployed.AgentRegistry, deployed.TaskEscrow],
     },
-    // ZK Verifiers - Capability
-    {
-      name: "Groth16VerifierCapability",
-      address: deployed.Groth16VerifierCapability,
-      constructorArgs: [],
-      fullyQualifiedName: "contracts/CapabilityVerifier.sol:Groth16Verifier",
-    },
-    {
-      name: "CapabilityVerifier",
-      address: deployed.CapabilityVerifier,
-      constructorArgs: [deployed.Groth16VerifierCapability],
-      fullyQualifiedName: "contracts/CapabilityVerifierWrapper.sol:CapabilityVerifier",
-    },
-    // ZK Verifiers - Reputation
-    {
-      name: "Groth16VerifierReputation",
-      address: deployed.Groth16VerifierReputation,
-      constructorArgs: [],
-      fullyQualifiedName: "contracts/ReputationVerifier.sol:Groth16Verifier",
-    },
-    {
-      name: "ReputationVerifier",
-      address: deployed.ReputationVerifier,
-      constructorArgs: [deployed.Groth16VerifierReputation],
-      fullyQualifiedName: "contracts/ReputationVerifierWrapper.sol:ReputationVerifier",
-    },
     // Router
     {
       name: "COVENANTRouter",

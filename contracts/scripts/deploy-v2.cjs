@@ -4,11 +4,7 @@
 const hre = require("hardhat");
 const { ethers } = hre;
 
-// Existing deployed contract addresses (Base Sepolia)
-const EXISTING = {
-  groth16Verifier: "0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85",
-  capabilityVerifier: "0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb",
-};
+
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -18,7 +14,7 @@ async function main() {
   // 1. AgentRegistry
   console.log("\n1. Deploying AgentRegistry v2...");
   const AgentRegistry = await ethers.getContractFactory("contracts/v2/core/AgentRegistry.sol:AgentRegistry");
-  const registry = await AgentRegistry.deploy(EXISTING.groth16Verifier, EXISTING.capabilityVerifier);
+  const registry = await AgentRegistry.deploy();
   await registry.waitForDeployment();
   const registryAddr = await registry.getAddress();
   console.log("   AgentRegistry v2:", registryAddr);
@@ -90,7 +86,6 @@ async function main() {
       DisputeResolution: disputeAddr,
       MultiTokenEscrow: multiTokenAddr,
     },
-    existing: EXISTING,
   };
 
   const fs = require("fs");
@@ -127,7 +122,7 @@ async function main() {
 
     console.log("\nVerifying on Basescan...");
     const contracts = [
-      ["AgentRegistry", registryAddr, [EXISTING.groth16Verifier, EXISTING.capabilityVerifier]],
+      ["AgentRegistry", registryAddr, []],
       ["ReceiptVerifier", verifierAddr, []],
       ["TaskEscrow", escrowAddr, [registryAddr, verifierAddr, deployer.address]],
       ["InsurancePool", insuranceAddr, []],

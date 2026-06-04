@@ -53,10 +53,6 @@ const _v1: ContractConfig = {
   AgentCollective: (process.env.COLLECTIVE_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentCollective) as Address,
   AgentInsurance: (process.env.INSURANCE_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentInsurance) as Address,
   DisputeArbitration: (process.env.DISPUTE_ADDRESS || BASE_SEPOLIA_ADDRESSES.DisputeArbitration) as Address,
-  Groth16VerifierCapability: (process.env.CAPABILITY_VERIFIER_ADDRESS || BASE_SEPOLIA_ADDRESSES.Groth16VerifierCapability) as Address,
-  CapabilityVerifier: (process.env.CAPABILITY_WRAPPER_ADDRESS || BASE_SEPOLIA_ADDRESSES.CapabilityVerifier) as Address,
-  Groth16VerifierReputation: (process.env.REPUTATION_VERIFIER_ADDRESS || BASE_SEPOLIA_ADDRESSES.Groth16VerifierReputation) as Address,
-  ReputationVerifier: (process.env.REPUTATION_WRAPPER_ADDRESS || BASE_SEPOLIA_ADDRESSES.ReputationVerifier) as Address,
   COVENANTRouter: (process.env.ROUTER_ADDRESS || BASE_SEPOLIA_ADDRESSES.COVENANTRouter) as Address,
   LitProtocolIntegration: (process.env.LIT_ADDRESS || BASE_SEPOLIA_ADDRESSES.LitProtocolIntegration) as Address,
   AgentWallet: (process.env.WALLET_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentWallet) as Address,
@@ -220,12 +216,6 @@ import COVENANTRouterAbi from "./abis/COVENANTRouter.json" with { type: "json" }
 import LitProtocolIntegrationAbi from "./abis/LitProtocolIntegration.json" with { type: "json" };
 import AgentWalletAbi from "./abis/AgentWallet.json" with { type: "json" };
 import MultiTokenEscrowAbi from "./abis/MultiTokenEscrow.json" with { type: "json" };
-// ZK Verifiers
-import Groth16VerifierCapabilityAbi from "./abis/Groth16VerifierCapability.json" with { type: "json" };
-import CapabilityVerifierAbi from "./abis/CapabilityVerifier.json" with { type: "json" };
-import Groth16VerifierReputationAbi from "./abis/Groth16VerifierReputation.json" with { type: "json" };
-import ReputationVerifierAbi from "./abis/ReputationVerifier.json" with { type: "json" };
-
 // V2 ABIs — loaded dynamically via loadAbiV2(); static imports added as v2 artifacts are compiled
 import fs from "node:fs";
 import path from "node:path";
@@ -249,11 +239,6 @@ const ABIS: Record<string, any> = {
   LitProtocolIntegration: LitProtocolIntegrationAbi,
   // Wallet
   AgentWallet: AgentWalletAbi,
-  // ZK Verifiers
-  Groth16VerifierCapability: Groth16VerifierCapabilityAbi,
-  CapabilityVerifier: CapabilityVerifierAbi,
-  Groth16VerifierReputation: Groth16VerifierReputationAbi,
-  ReputationVerifier: ReputationVerifierAbi,
   // Multi-Token Escrow
   MultiTokenEscrow: MultiTokenEscrowAbi,
 };

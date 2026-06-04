@@ -257,11 +257,9 @@ export function registerCovenantHelpTools(server: McpServer): void {
               },
             },
             verification: {
-              contracts: "CapabilityVerifier, ReputationVerifier, ReceiptVerifier",
-              description: "ZK proof verification and ERC-8004 attestation anchoring",
+              contracts: "ReceiptVerifier",
+              description: "ERC-8004 attestation verification and anchoring",
               tools: {
-                corven_verify_capability_proof: "Verify a ZK proof that an agent has a specific capability (Groth16 on-chain)",
-                corven_verify_reputation_proof: "Verify a ZK proof that reputation meets a threshold without revealing exact score",
                 corven_create_attestation: "Issue an ERC-8004 attestation receipt anchoring offchain verification on-chain",
                 corven_verify_attestation: "Check if an ERC-8004 receipt is valid on-chain",
                 corven_batch_verify_attestations: "Verify multiple ERC-8004 receipts in a single call",

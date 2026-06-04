@@ -423,10 +423,6 @@ Created → Funded → InProgress → Submitted → Completed
 
 | Contract | Address | Purpose | Gas |
 |----------|---------|---------|-----|
-| Groth16VerifierCapability | `0xd7108...` | ZK proof verification | ~200-400K |
-| CapabilityVerifier | `0x628CB...` | Prove capability without revealing model | ~200-400K |
-| Groth16VerifierReputation | `0xbe6Af...` | ZK reputation proof verification | ~200-400K |
-| ReputationVerifier | `0x1ac25...` | Prove reputation threshold privately | ~200-400K |
 | COVENANTRouter | `0x565C4...` | Unified router, multicall, batch ops | ~300-500K |
 | LitProtocolIntegration | `0x9322B...` | Decentralized key management | Off-chain |
 
@@ -562,8 +558,6 @@ Created → Funded → InProgress → Submitted → Completed
 
 | Tool | What It Does | Gas | On-chain |
 |------|-------------|-----|----------|
-| `corven_verify_capability_proof` | Verify ZK proof of agent capability | ~200-400K | YES |
-| `corven_verify_reputation_proof` | Verify ZK proof of reputation threshold | ~200-400K | YES |
 | `corven_create_attestation` | Create signed attestation on-chain | ~50-100K | YES |
 | `corven_verify_attestation` | Check if receipt is valid on-chain | Free | YES |
 | `corven_batch_verify_attestations` | Verify multiple attestations | Free | YES |
@@ -735,7 +729,6 @@ Created → Funded → InProgress → Submitted → Completed
 | Task creation | ~150-250K | ~$0.001 | ~$0.15 |
 | Batch operations (50 tasks) | ~300-800K | ~$0.003 | ~$0.30 |
 | Contract deployment | ~800K-1.2M | ~$0.001 | ~$0.10 |
-| ZK proof verification | ~200-400K | ~$0.002 | ~$0.20 |
 | Off-chain operations | Free | Free | Free |
 
 ### Full Workflow Gas Costs

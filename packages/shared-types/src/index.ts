@@ -20,10 +20,6 @@ export interface ContractAddresses {
   AgentCollective: Address;
   AgentInsurance: Address;
   DisputeArbitration: Address;
-  Groth16VerifierCapability: Address;
-  CapabilityVerifier: Address;
-  Groth16VerifierReputation: Address;
-  ReputationVerifier: Address;
   COVENANTRouter: Address;
   LitProtocolIntegration: Address;
   MultiTokenEscrow: Address;
@@ -243,11 +239,7 @@ export const BASE_SEPOLIA_ADDRESSES: ContractAddresses = {
   AgentCollective: "0x0CDE9560D2E95338922c40A52A2c81cdd20613d1",
   AgentInsurance: "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55",
   DisputeArbitration: "0x37A62C6eDd18461CCe00B6772Da8640C75DE740e",
-  Groth16VerifierCapability: "0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85",
-  CapabilityVerifier: "0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb",
-  Groth16VerifierReputation: "0xbe6AfBa53E06099410d78d56A75b689dfCa6532F",
-  ReputationVerifier: "0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149",
-  COVENANTRouter: "0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09",
+    COVENANTRouter: "0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09",
   LitProtocolIntegration: "0x9322B12111699Dd05DD3d0c5D8D08b764051A89f",
   MultiTokenEscrow: "0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e",
   AgentSmartWallet: "0x3c857aADAcFb62F94F121813000E072E788f4d21",
@@ -272,10 +264,6 @@ export const POLYGON_ADDRESSES: ContractAddresses = {
   AgentCollective: ZERO_ADDRESS,
   AgentInsurance: ZERO_ADDRESS,
   DisputeArbitration: ZERO_ADDRESS,
-  Groth16VerifierCapability: ZERO_ADDRESS,
-  CapabilityVerifier: ZERO_ADDRESS,
-  Groth16VerifierReputation: ZERO_ADDRESS,
-  ReputationVerifier: ZERO_ADDRESS,
   COVENANTRouter: ZERO_ADDRESS,
   LitProtocolIntegration: ZERO_ADDRESS,
   MultiTokenEscrow: ZERO_ADDRESS,
@@ -301,10 +289,6 @@ export const ARBITRUM_ADDRESSES: ContractAddresses = {
   AgentCollective: ZERO_ADDRESS,
   AgentInsurance: ZERO_ADDRESS,
   DisputeArbitration: ZERO_ADDRESS,
-  Groth16VerifierCapability: ZERO_ADDRESS,
-  CapabilityVerifier: ZERO_ADDRESS,
-  Groth16VerifierReputation: ZERO_ADDRESS,
-  ReputationVerifier: ZERO_ADDRESS,
   COVENANTRouter: ZERO_ADDRESS,
   LitProtocolIntegration: ZERO_ADDRESS,
   MultiTokenEscrow: ZERO_ADDRESS,
@@ -330,10 +314,6 @@ export const BASE_MAINNET_ADDRESSES: ContractAddresses = {
   AgentCollective: ZERO_ADDRESS,
   AgentInsurance: ZERO_ADDRESS,
   DisputeArbitration: ZERO_ADDRESS,
-  Groth16VerifierCapability: ZERO_ADDRESS,
-  CapabilityVerifier: ZERO_ADDRESS,
-  Groth16VerifierReputation: ZERO_ADDRESS,
-  ReputationVerifier: ZERO_ADDRESS,
   COVENANTRouter: ZERO_ADDRESS,
   LitProtocolIntegration: ZERO_ADDRESS,
   MultiTokenEscrow: ZERO_ADDRESS,

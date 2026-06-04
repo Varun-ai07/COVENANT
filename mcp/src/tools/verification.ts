@@ -1,11 +1,12 @@
 /**
- * Capability & Reputation Verification MCP Tools
+ * Attestation & ERC-8004 Verification MCP Tools
  *
- * Exposes the deployed ZK verifier contracts (CapabilityVerifier, ReputationVerifier)
- * and the ERC-8004 receipt system for on-chain attestation anchoring.
+ * Exposes on-chain ERC-8004 receipt verification and batch attestation tools.
+ * ZK proof verification (Groth16) has been removed — capabilities are verified
+ * via on-chain agent registry lookups and ERC-8004 attestations instead.
  */
 import { z } from "zod";
-import { isAddress, type Address, keccak256, toBytes } from "viem";
+import { isAddress, type Address } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
@@ -13,26 +14,9 @@ import { parseContractError, formatStructuredError } from "../lib/formatResponse
 import { ethAddress } from "../lib/schemaHelpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const REGISTRY_ABI = loadAbi("AgentRegistry");
-const CAPABILITY_VERIFIER_ABI = loadAbi("CapabilityVerifier");
-const REPUTATION_VERIFIER_ABI = loadAbi("ReputationVerifier");
 const RECEIPT_ABI = loadAbi("ReceiptVerifier");
 
 // ─── Input Schemas ─────────────────────────────────────────────────
-
-const verifyCapabilitySchema = z.object({
-  agent: z.string().refine(isAddress, { message: "Invalid agent address" }).describe("Agent address to verify"),
-  capability: z.string().min(1).max(50).describe("Capability to verify (e.g. 'python', 'security')"),
-  proof: z.string().min(1).describe("ZK proof data (hex-encoded)"),
-  publicSignals: z.array(z.string()).min(1).describe("Public signals for the proof"),
-});
-
-const verifyReputationSchema = z.object({
-  agent: z.string().refine(isAddress, { message: "Invalid agent address" }).describe("Agent address"),
-  threshold: z.number().int().min(0).max(1000).describe("Minimum reputation threshold to verify"),
-  proof: z.string().min(1).describe("ZK proof data (hex-encoded)"),
-  publicSignals: z.array(z.string()).min(1).describe("Public signals for the proof"),
-});
 
 const createAttestationSchema = z.object({
   counterparty: z.string().refine(isAddress, { message: "Invalid address" }).describe("Counterparty address"),
@@ -51,99 +35,6 @@ const batchVerifySchema = z.object({
 // ─── Tool Registration ─────────────────────────────────────────────
 
 export function registerVerificationTools(server: McpServer): void {
-  // ──────────────────────────────────────────────────────────────
-  // corven_verify_capability_proof
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_verify_capability_proof",
-    {
-      title: "Verify Capability Proof",
-      description:
-        "Verify a ZK proof that an agent possesses a specific capability. Uses the deployed Groth16 verifier. On-chain verification with cryptographic guarantee.\n" +
-        "USE WHEN: You need to cryptographically verify that an agent has a claimed capability without trusting their self-report.\n" +
-        "REQUIRES: A valid ZK proof generated off-chain for the capability. The agent must be registered.\n" +
-        "RETURNS: Transaction hash. The verification result is stored on-chain.\n" +
-        "COMES AFTER: The agent generated a ZK proof off-chain using their capability credentials.\n" +
-        "COMES BEFORE: Use the verification result in task assignment decisions or reputation checks.\n" +
-        "NOTE: Uses Groth16 proof system. The proof is verified on-chain with zero knowledge — the capability details remain private.",
-      inputSchema: {
-        agent: ethAddress,
-        capability: z.string().describe("Capability to verify (e.g. 'python', 'security')"),
-        proof: z.string().describe("ZK proof data (hex-encoded)"),
-        publicSignals: z.array(z.string()).describe("Public signals for the proof"),
-      },
-    },
-    async (params) => {
-      try {
-        const parsed = verifyCapabilitySchema.safeParse(params);
-        if (!parsed.success) return formatError(parsed.error);
-
-        const { agent, capability, proof, publicSignals } = parsed.data;
-        const account = getAccount();
-        if (!account) return formatError(new Error("No wallet configured."));
-
-        // Call the capability verifier contract
-        const proofHash = keccak256(toBytes(proof));
-
-        const result = await executeOrPrepare(
-          CONTRACTS.AgentRegistry as Address,
-          REGISTRY_ABI,
-          "verifyCapabilityProof",
-          [agent as Address, capability, proof, publicSignals]
-        );
-
-        return formatTxResult(result);
-      } catch (e: unknown) {
-        const parsed = parseContractError(e);
-        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
-      }
-    }
-  );
-
-  // ──────────────────────────────────────────────────────────────
-  // corven_verify_reputation_proof
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_verify_reputation_proof",
-    {
-      title: "Verify Reputation Proof",
-      description:
-        "Verify a ZK proof that an agent's reputation meets a threshold without revealing the exact score. On-chain verification.\n" +
-        "USE WHEN: You need to verify an agent meets a minimum reputation score for task eligibility without learning their exact score.\n" +
-        "REQUIRES: A valid ZK proof generated off-chain. The agent must be registered with a reputation score.\n" +
-        "RETURNS: Transaction hash. The verification result is stored on-chain.\n" +
-        "COMES AFTER: The agent generated a ZK reputation proof off-chain.\n" +
-        "COMES BEFORE: Task assignment based on verified reputation thresholds.\n" +
-        "NOTE: Zero-knowledge — proves the score is above the threshold without revealing the exact value.",
-      inputSchema: {
-        agent: ethAddress,
-        threshold: z.number().describe("Minimum reputation threshold (0-1000)"),
-        proof: z.string().describe("ZK proof data (hex-encoded)"),
-        publicSignals: z.array(z.string()).describe("Public signals for the proof"),
-      },
-    },
-    async (params) => {
-      try {
-        const parsed = verifyReputationSchema.safeParse(params);
-        if (!parsed.success) return formatError(parsed.error);
-
-        const { agent, threshold, proof, publicSignals } = parsed.data;
-
-        const result = await executeOrPrepare(
-          CONTRACTS.ReputationVerifier as Address,
-          REPUTATION_VERIFIER_ABI,
-          "verifyReputation",
-          [agent as Address, BigInt(threshold), proof, publicSignals]
-        );
-
-        return formatTxResult(result);
-      } catch (e: unknown) {
-        const parsed = parseContractError(e);
-        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
-      }
-    }
-  );
-
   // ──────────────────────────────────────────────────────────────
   // corven_create_attestation
   // ──────────────────────────────────────────────────────────────

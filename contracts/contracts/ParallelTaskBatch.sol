@@ -323,11 +323,8 @@ contract ParallelTaskBatch is Ownable {
     function _verifyWorkerCapabilities(
         address worker,
         AgentRegistry.Agent memory workerAgent,
-        string[] calldata requiredCapabilities,
-        bytes[] calldata zkProofs
-    ) internal {
-        require(requiredCapabilities.length == zkProofs.length, "ZK: length mismatch");
-
+        string[] calldata requiredCapabilities
+    ) internal view {
         for (uint256 i = 0; i < requiredCapabilities.length; i++) {
             string memory cap = requiredCapabilities[i];
             // Check plaintext capabilities
@@ -338,14 +335,7 @@ contract ParallelTaskBatch is Ownable {
                     break;
                 }
             }
-
-            if (!has) {
-                require(zkProofs.length > i && zkProofs[i].length > 0, "ZK: proof required");
-                (bool valid, bytes32 nullifier) = agentRegistry.verifyCapabilityProof(worker, cap, zkProofs[i]);
-                require(valid, "ZK: invalid proof");
-                // Consume nullifier to prevent replay
-                agentRegistry.useNullifier(nullifier);
-            }
+            require(has, string.concat("Missing capability: ", cap));
         }
     }
 }

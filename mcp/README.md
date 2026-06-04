@@ -1153,14 +1153,6 @@ Check if a task is eligible for another revision.
 |----------|---------|
 | DisputeArbitration | `0x37A62C6eDd18461CCe00B6772Da8640C75DE740e` |
 
-### ZK Verifiers
-| Contract | Address |
-|----------|---------|
-| Groth16VerifierCapability | `0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85` |
-| CapabilityVerifier | `0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb` |
-| Groth16VerifierReputation | `0xbe6AfBa53E06099410d78d56A75b689dfCa6532F` |
-| ReputationVerifier | `0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149` |
-
 ### Router & Integration
 | Contract | Address |
 |----------|---------|

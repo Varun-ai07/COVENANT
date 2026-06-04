@@ -2,7 +2,6 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./ReputationVerifier.sol";
 
 contract AgentRegistry is Ownable {
     // Events
@@ -61,29 +60,6 @@ contract AgentRegistry is Ownable {
 
     // Authorized contracts that can update reputation (e.g., TaskEscrow)
     mapping(address => bool) public authorizedContracts;
-
-    // Nullifier tracking for ZK capability proofs
-    mapping(bytes32 => bool) public usedNullifiers;
-
-    // Addresses of ZK verifiers
-    address public reputationVerifier;
-    address public capabilityVerifier;
-
-    /**
-     * @notice Set the reputation verifier address (owner only)
-     * @param verifier Address of the reputation verifier contract
-     */
-    function setGroth16Verifier(address verifier) external onlyOwner {
-        reputationVerifier = verifier;
-    }
-
-    /**
-     * @notice Set the capability verifier address (owner only)
-     * @param verifier Address of the capability verifier contract
-     */
-    function setCapabilityVerifier(address verifier) external onlyOwner {
-        capabilityVerifier = verifier;
-    }
 
     constructor() Ownable(msg.sender) {}
 
@@ -308,53 +284,4 @@ contract AgentRegistry is Ownable {
         }
     }
 
-    /**
-     * @notice Verify a ZK reputation range proof
-     * @param agent The agent address
-     * @param threshold The minimum reputation threshold required
-     * @param proofA The first proof component [A, B, C, publicSignals]
-     * @return valid Whether the proof is valid
-     */
-    function verifyProof(
-        address agent,
-        uint256 threshold,
-        uint[2] calldata proofA,
-        uint[2][2] calldata proofB,
-        uint[2] calldata proofC,
-        uint[4] calldata proofPublicSignals
-    ) external view returns (bool) {
-        require(address(reputationVerifier) != address(0), "Reputation verifier not set");
-        
-        // Call the reputation verifier contract
-        return Groth16Verifier(reputationVerifier).verifyProof(
-            proofA, proofB, proofC, proofPublicSignals
-        );
-    }
-
-    /**
-     * @notice Verify a ZK capability proof (stub - integrate real ZK verifier)
-     * @param agent The agent address
-     * @param capability The capability to verify
-     * @param proof The proof data
-     * @return valid Whether the proof is valid
-     * @return nullifier The nullifier to prevent replay attacks
-     */
-    function verifyCapabilityProof(
-        address agent,
-        string calldata capability,
-        bytes calldata proof
-    ) external view returns (bool valid, bytes32 nullifier) {
-        // Stub placeholder - in production, integrate with a real ZK verifier
-        // Compute nullifier from agent, capability, and proof
-        nullifier = keccak256(abi.encodePacked(agent, capability, proof));
-        valid = !usedNullifiers[nullifier];
-    }
-
-    /**
-     * @notice Consume a nullifier to prevent replay attacks
-     * @param nullifier The nullifier to mark as used
-     */
-    function useNullifier(bytes32 nullifier) external onlyAuthorized {
-        usedNullifiers[nullifier] = true;
-    }
 }

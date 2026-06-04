@@ -23,66 +23,10 @@ async function main() {
   const deployments = { ...deployed };
 
   // ========================================
-  // 1. CapabilityVerifier (Groth16 Verifier)
-  // ========================================
-  if (!deployments.Groth16VerifierCapability) {
-    console.log("\n1. Deploying Groth16Verifier (Capability)...");
-    const Groth16VerifierCapability = await ethers.getContractFactory("contracts/CapabilityVerifier.sol:Groth16Verifier");
-    const capabilityVerifierBase = await Groth16VerifierCapability.deploy();
-    await capabilityVerifierBase.waitForDeployment();
-    const capabilityVerifierBaseAddr = await capabilityVerifierBase.getAddress();
-    console.log("Groth16Verifier (Capability) deployed to:", capabilityVerifierBaseAddr);
-    deployments.Groth16VerifierCapability = capabilityVerifierBaseAddr;
-  } else {
-    console.log("\n1. Groth16VerifierCapability already deployed at:", deployments.Groth16VerifierCapability);
-  }
-
-  // 1b. CapabilityVerifierWrapper
-  if (!deployments.CapabilityVerifier) {
-    console.log("\n2. Deploying CapabilityVerifierWrapper...");
-    const CapabilityVerifier = await ethers.getContractFactory("contracts/CapabilityVerifierWrapper.sol:CapabilityVerifier");
-    const capabilityVerifier = await CapabilityVerifier.deploy(deployments.Groth16VerifierCapability);
-    await capabilityVerifier.waitForDeployment();
-    const capabilityVerifierAddr = await capabilityVerifier.getAddress();
-    console.log("CapabilityVerifier deployed to:", capabilityVerifierAddr);
-    deployments.CapabilityVerifier = capabilityVerifierAddr;
-  } else {
-    console.log("\n2. CapabilityVerifier already deployed at:", deployments.CapabilityVerifier);
-  }
-
-  // ========================================
-  // 2. ReputationVerifier (Groth16 Verifier)
-  // ========================================
-  if (!deployments.Groth16VerifierReputation) {
-    console.log("\n3. Deploying Groth16Verifier (Reputation)...");
-    const Groth16VerifierReputation = await ethers.getContractFactory("contracts/ReputationVerifier.sol:Groth16Verifier");
-    const reputationVerifierBase = await Groth16VerifierReputation.deploy();
-    await reputationVerifierBase.waitForDeployment();
-    const reputationVerifierBaseAddr = await reputationVerifierBase.getAddress();
-    console.log("Groth16Verifier (Reputation) deployed to:", reputationVerifierBaseAddr);
-    deployments.Groth16VerifierReputation = reputationVerifierBaseAddr;
-  } else {
-    console.log("\n3. Groth16VerifierReputation already deployed at:", deployments.Groth16VerifierReputation);
-  }
-
-  // 2b. ReputationVerifierWrapper
-  if (!deployments.ReputationVerifier) {
-    console.log("\n4. Deploying ReputationVerifierWrapper...");
-    const ReputationVerifier = await ethers.getContractFactory("contracts/ReputationVerifierWrapper.sol:ReputationVerifier");
-    const reputationVerifier = await ReputationVerifier.deploy(deployments.Groth16VerifierReputation);
-    await reputationVerifier.waitForDeployment();
-    const reputationVerifierAddr = await reputationVerifier.getAddress();
-    console.log("ReputationVerifier deployed to:", reputationVerifierAddr);
-    deployments.ReputationVerifier = reputationVerifierAddr;
-  } else {
-    console.log("\n4. ReputationVerifier already deployed at:", deployments.ReputationVerifier);
-  }
-
-  // ========================================
-  // 3. COVENANTRouter
+  // 1. COVENANTRouter
   // ========================================
   if (!deployments.COVENANTRouter) {
-    console.log("\n5. Deploying COVENANTRouter...");
+    console.log("\n1. Deploying COVENANTRouter...");
     const Router = await ethers.getContractFactory("COVENANTRouter");
     const router = await Router.deploy(
       deployments.AgentRegistry,
@@ -94,14 +38,14 @@ async function main() {
     console.log("COVENANTRouter deployed to:", routerAddr);
     deployments.COVENANTRouter = routerAddr;
   } else {
-    console.log("\n5. COVENANTRouter already deployed at:", deployments.COVENANTRouter);
+    console.log("\n1. COVENANTRouter already deployed at:", deployments.COVENANTRouter);
   }
 
   // ========================================
-  // 4. LitProtocolIntegration
+  // 2. LitProtocolIntegration
   // ========================================
   if (!deployed.LitProtocolIntegration) {
-    console.log("\n6. Deploying LitProtocolIntegration...");
+    console.log("\n2. Deploying LitProtocolIntegration...");
     const Lit = await ethers.getContractFactory("LitProtocolIntegration");
     const lit = await Lit.deploy(deployments.TaskEscrow, deployments.AgentRegistry);
     await lit.waitForDeployment();
@@ -111,10 +55,10 @@ async function main() {
   }
 
   // ========================================
-  // 5. DisputeArbitration (VRF)
+  // 3. DisputeArbitration (VRF)
   // ========================================
   if (!deployed.DisputeArbitration) {
-    console.log("\n7. Deploying DisputeArbitration...");
+    console.log("\n3. Deploying DisputeArbitration...");
     console.log("Note: Requires Chainlink VRF subscription on Base Sepolia");
     console.log("VRF Coordinator:", VRF_COORDINATOR);
     console.log("Key Hash:", VRF_KEY_HASH);
@@ -139,10 +83,10 @@ async function main() {
   }
 
   // ========================================
-  // 6. AgentWallet (sample deploy)
+  // 4. AgentWallet (sample deploy)
   // ========================================
   if (!deployed.AgentWallet) {
-    console.log("\n8. Deploying AgentWallet...");
+    console.log("\n4. Deploying AgentWallet...");
     const Wallet = await ethers.getContractFactory("AgentWallet");
     // Deploy with deployer as owner and human controller
     const wallet = await Wallet.deploy(deployer.address, deployer.address);

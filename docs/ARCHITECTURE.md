@@ -40,10 +40,10 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 ┌─────────────────────────────────────────────────────────┐
 │              PROOF LAYER (CRYPTOGRAPHIC ANCHORS)          │
 │                                                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│  │ ZK Proofs│  │ Merkle   │  │ EIP-712  │              │
-│  │(cap/rep) │  │ Roots    │  │Signatures│              │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘              │
+│  ┌──────────┐  ┌──────────┐                              │
+│  │ Merkle   │  │ EIP-712  │                              │
+│  │ Roots    │  │Signatures│                              │
+│  └────┬─────┘  └────┬─────┘                              │
 │       │              │             │                     │
 │  ┌──────────┐  ┌──────────┐                              │
 │  │The Graph │  │ ERC-8004 │                              │
@@ -65,13 +65,13 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 │  │ Rep Cooldown │  │ Priority Fee │  │ Deterministic │   │
 │  └──────────────┘  └──────────────┘  └──────────────┘   │
 │                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │InsurancePool │  │  Dispute     │  │ ZK Verifiers  │   │
-│  │              │  │ Resolution   │  │               │   │
-│  │ ETH Pool     │  │ Bonds        │  │ Groth16       │   │
-│  │ Offchain Gov │  │ Offchain     │  │ Capability    │   │
-│  │ 80% Coverage │  │ Jurors       │  │ Reputation    │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘   │
+│  ┌──────────────┐  ┌──────────────┐   │
+│  │InsurancePool │  │  Dispute     │   │
+│  │              │  │ Resolution   │   │
+│  │ ETH Pool     │  │ Bonds        │   │
+│  │ Offchain Gov │  │ Offchain     │   │
+│  │ 80% Coverage │  │ Jurors       │   │
+│  └──────────────┘  └──────────────┘   │
 │                                                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
 │  │MultiToken    │  │ AgentSmart   │  │ Covenant     │   │
@@ -119,14 +119,6 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 | AgentSmartWallet | `0x3c857aADAcFb62F94F121813000E072E788f4d21` | ERC-4337 account abstraction wallet |
 | CovenantPaymaster | `0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1` | Gas sponsorship for registered agents |
 
-### ZK Verifiers
-| Contract | Address | Purpose |
-|----------|---------|---------|
-| Groth16VerifierCapability | `0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85` | Groth16 ZK capability proof |
-| CapabilityVerifier | `0x628CB2cA13f6FeAc48e0f24f45C3AF2Dbb1c02Fb` | ZK capability proof verification |
-| Groth16VerifierReputation | `0xbe6AfBa53E06099410d78d56A75b689dfCa6532F` | Groth16 ZK reputation proof |
-| ReputationVerifier | `0x1ac2532e39591cdb5E00Fb9d7C0f47E082d0F149` | ZK reputation proof verification |
-
 ### Router & Integration
 | Contract | Address | Purpose |
 |----------|---------|---------|
@@ -165,7 +157,6 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 | Governance | 4 | create_proposal, vote_proposal, get_proposal, list_proposals |
 | Bounties | 5 | post_bounty, claim_bounty, list_bounties, get_bounty, select_bounty_winner |
 | Protocol | 2 | stats, leaderboard |
-| Verification | 5 | ZK proofs + attestations |
 
 ---
 
@@ -179,8 +170,7 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 | AgentCollective | Per-member storage O(n) | Offchain + Merkle root |
 | ParallelTaskBatch | Gas-prohibitive at scale | Offchain batcher |
 | OpenTaskMarket | Bidding is coordination | Offchain matching |
-| CapabilityVerifierWrapper | Redundant | Merged into AgentRegistry |
-| ReputationVerifierWrapper | Redundant | Merged into AgentRegistry |
+
 
 ---
 
