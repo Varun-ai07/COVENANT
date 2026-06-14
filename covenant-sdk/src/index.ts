@@ -15,6 +15,27 @@ import type {
 export * from "./types.js";
 export * from "./config.js";
 
+// Re-export V4
+export { CovenantSDKV4 } from "./v4.js";
+export type {
+  V4Config,
+  V4ContractAddresses,
+} from "./types.js";
+export {
+  V4_SEPOLIA_ADDRESSES,
+  V4_TASK_STATUS,
+  V4_RULING,
+} from "@covenant/shared-types";
+export type {
+  V4AgentIdentity,
+  V4Task,
+  V4Dispute,
+  V4Attestation,
+  V4Proposal,
+  V4TaskStatus,
+  V4Ruling,
+} from "@covenant/shared-types";
+
 /**
  * COVENANT SDK - TypeScript client for the Autonomous Agent Enforcement Protocol
  *

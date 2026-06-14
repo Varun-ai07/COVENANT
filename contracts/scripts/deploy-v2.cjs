@@ -35,41 +35,37 @@ async function main() {
   const escrowAddr = await escrow.getAddress();
   console.log("   TaskEscrow v2:", escrowAddr);
 
-  // 4. InsurancePool
-  console.log("\n4. Deploying InsurancePool...");
-  const InsurancePool = await ethers.getContractFactory("contracts/v2/extensions/InsurancePool.sol:InsurancePool");
-  const insurance = await InsurancePool.deploy();
-  await insurance.waitForDeployment();
-  const insuranceAddr = await insurance.getAddress();
-  console.log("   InsurancePool:", insuranceAddr);
+  // 4. AgentSmartWallet
+  console.log("\n4. Deploying AgentSmartWallet...");
+  const AgentSmartWallet = await ethers.getContractFactory("contracts/v2/core/AgentSmartWallet.sol:AgentSmartWallet");
+  const wallet = await AgentSmartWallet.deploy(deployer.address, ethers.parseEther("1"), ethers.parseEther("0.1"));
+  await wallet.waitForDeployment();
+  const walletAddr = await wallet.getAddress();
+  console.log("   AgentSmartWallet:", walletAddr);
 
-  // 5. DisputeResolution
-  console.log("\n5. Deploying DisputeResolution...");
-  const DisputeResolution = await ethers.getContractFactory("contracts/v2/extensions/DisputeResolution.sol:DisputeResolution");
-  const dispute = await DisputeResolution.deploy();
-  await dispute.waitForDeployment();
-  const disputeAddr = await dispute.getAddress();
-  console.log("   DisputeResolution:", disputeAddr);
+  // 5. CovenantPaymaster
+  console.log("\n5. Deploying CovenantPaymaster...");
+  const CovenantPaymaster = await ethers.getContractFactory("contracts/v2/core/CovenantPaymaster.sol:CovenantPaymaster");
+  const paymaster = await CovenantPaymaster.deploy();
+  await paymaster.waitForDeployment();
+  const paymasterAddr = await paymaster.getAddress();
+  console.log("   CovenantPaymaster:", paymasterAddr);
 
-  // 6. Authorize escrow on registry + receipt verifier
-  console.log("\n6. Authorizing TaskEscrow on AgentRegistry...");
+  // 6. StakeSlashing
+  console.log("\n6. Deploying StakeSlashing...");
+  const StakeSlashing = await ethers.getContractFactory("contracts/v2/extensions/StakeSlashing.sol:StakeSlashing");
+  const slashing = await StakeSlashing.deploy();
+  await slashing.waitForDeployment();
+  const slashingAddr = await slashing.getAddress();
+  console.log("   StakeSlashing:", slashingAddr);
+
+  // 7. Authorize escrow on registry + receipt verifier
+  console.log("\n7. Authorizing TaskEscrow on AgentRegistry...");
   await registry.addAuthorizedContract(escrowAddr);
   console.log("   Done.");
 
-  console.log("\n7. Authorizing TaskEscrow as receipt issuer on ReceiptVerifier...");
+  console.log("\n8. Authorizing TaskEscrow as receipt issuer on ReceiptVerifier...");
   await verifier.addAuthorizedIssuer(escrowAddr);
-  console.log("   Done.");
-
-  // 8. MultiTokenEscrow
-  console.log("\n8. Deploying MultiTokenEscrow...");
-  const MultiTokenEscrow = await ethers.getContractFactory("contracts/MultiTokenEscrow.sol:MultiTokenEscrow");
-  const multiToken = await MultiTokenEscrow.deploy(registryAddr, deployer.address);
-  await multiToken.waitForDeployment();
-  const multiTokenAddr = await multiToken.getAddress();
-  console.log("   MultiTokenEscrow:", multiTokenAddr);
-
-  console.log("\n9. Authorizing MultiTokenEscrow on AgentRegistry...");
-  await (await registry.addAuthorizedContract(multiTokenAddr)).wait();
   console.log("   Done.");
 
   // Save addresses
@@ -82,15 +78,17 @@ async function main() {
       AgentRegistry: registryAddr,
       TaskEscrow: escrowAddr,
       ReceiptVerifier: verifierAddr,
-      InsurancePool: insuranceAddr,
-      DisputeResolution: disputeAddr,
-      MultiTokenEscrow: multiTokenAddr,
+      AgentSmartWallet: walletAddr,
+      CovenantPaymaster: paymasterAddr,
+      StakeSlashing: slashingAddr,
     },
   };
 
   const fs = require("fs");
+  const outDir = __dirname + "/../v2";
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(
-    __dirname + "/../v2/deployed-addresses.json",
+    outDir + "/deployed-addresses.json",
     JSON.stringify(addresses, null, 2)
   );
   console.log("\n✅ All v2 contracts deployed! Addresses saved to v2/deployed-addresses.json");
@@ -100,57 +98,18 @@ async function main() {
   console.log("AgentRegistry v2:   ", registryAddr);
   console.log("TaskEscrow v2:      ", escrowAddr);
   console.log("ReceiptVerifier v2: ", verifierAddr);
-  console.log("InsurancePool:      ", insuranceAddr);
-  console.log("DisputeResolution:  ", disputeAddr);
-  console.log("MultiTokenEscrow:   ", multiTokenAddr);
+  console.log("AgentSmartWallet:   ", walletAddr);
+  console.log("CovenantPaymaster:  ", paymasterAddr);
+  console.log("StakeSlashing:      ", slashingAddr);
 
   console.log("\n=== ENV VARS FOR MCP ===");
   console.log(`CONTRACT_VERSION=v2`);
   console.log(`AGENT_REGISTRY_V2=${registryAddr}`);
   console.log(`TASK_ESCROW_V2=${escrowAddr}`);
   console.log(`RECEIPT_VERIFIER_V2=${verifierAddr}`);
-  console.log(`INSURANCE_POOL=${insuranceAddr}`);
-  console.log(`DISPUTE_RESOLUTION=${disputeAddr}`);
-  console.log(`MULTI_TOKEN_ESCROW=${multiTokenAddr}`);
-
-  // Verify on Basescan (skip for localhost/hardhat)
-  if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {
-    console.log("\nWaiting for block confirmations...");
-    for (const contract of [registry, verifier, escrow, insurance, dispute, multiToken]) {
-      await contract.deploymentTransaction().wait(5);
-    }
-
-    console.log("\nVerifying on Basescan...");
-    const contracts = [
-      ["AgentRegistry", registryAddr, []],
-      ["ReceiptVerifier", verifierAddr, []],
-      ["TaskEscrow", escrowAddr, [registryAddr, verifierAddr, deployer.address]],
-      ["InsurancePool", insuranceAddr, []],
-      ["DisputeResolution", disputeAddr, []],
-      ["MultiTokenEscrow", multiTokenAddr, [registryAddr, deployer.address]],
-    ];
-    const contractPaths = [
-      "contracts/v2/core/AgentRegistry.sol:AgentRegistry",
-      "contracts/v2/core/ReceiptVerifier.sol:ReceiptVerifier",
-      "contracts/v2/core/TaskEscrow.sol:TaskEscrow",
-      "contracts/v2/extensions/InsurancePool.sol:InsurancePool",
-      "contracts/v2/extensions/DisputeResolution.sol:DisputeResolution",
-      "contracts/MultiTokenEscrow.sol:MultiTokenEscrow",
-    ];
-    for (let i = 0; i < contracts.length; i++) {
-      const [name, address, args] = contracts[i];
-      try {
-        await hre.run("verify:verify", {
-          address,
-          constructorArguments: args,
-          contract: contractPaths[i],
-        });
-        console.log("  " + name + " verified!");
-      } catch (e) {
-        console.log("  " + name + " verification: " + e.message.substring(0, 120));
-      }
-    }
-  }
+  console.log(`AGENT_SMART_WALLET=${walletAddr}`);
+  console.log(`COVENANT_PAYMASTER=${paymasterAddr}`);
+  console.log(`STAKE_SLASHING=${slashingAddr}`);
 }
 
 main()

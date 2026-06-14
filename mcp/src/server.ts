@@ -1,79 +1,85 @@
 /**
  * COVENANT MCP Server — tool registration hub.
  *
- * 29 files, ~130 tools. Settlement onchain, coordination offchain.
+ * V4 architecture: 6 core on-chain contracts + offchain services.
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAgentTools } from "./tools/registry.js";
 import { registerEscrowTools } from "./tools/escrow.js";
 import { registerReceiptTools } from "./tools/receipts.js";
 import { registerProtocolTools } from "./tools/protocol.js";
-import { registerMarketTools } from "./tools/market.js";
-import { registerBatchTools } from "./tools/batches.js";
-import { registerCollectiveTools } from "./tools/collectives.js";
 import { registerDisputeTools } from "./tools/disputes.js";
-import { registerInsuranceTools } from "./tools/insurance.js";
 import { registerVerificationTools } from "./tools/verification.js";
-import { registerRouterTools } from "./tools/router.js";
-import { registerOffchainCoordinatorTools } from "./tools/offchain-coordinator.js";
 import { registerMultiTokenTools } from "./tools/multi-token.js";
 import { registerReputationVCTools } from "./tools/reputation-vc.js";
 import { registerCovenantHelpTools } from "./tools/covenant-help.js";
-import { registerAATools } from "./tools/account-abstraction.js";
-import { registerFiatOnrampTools } from "./tools/fiat-onramp.js";
-import { registerTemplateTools } from "./tools/templates.js";
-import { registerMatchingTools } from "./tools/matching.js";
-import { registerMessagingTools } from "./tools/messaging.js";
-import { registerCrossChainTools } from "./tools/cross-chain.js";
 import { registerStreamingTools } from "./tools/streaming.js";
 import { registerGovernanceTools } from "./tools/governance.js";
 import { registerBountyTools } from "./tools/bounties.js";
-import { registerBridgeTools } from "./tools/bridge.js";
-import { registerGrantTools } from "./tools/grants.js";
-import { registerTrainingTools } from "./tools/training.js";
+import { registerMessagingTools } from "./tools/messaging.js";
+import { registerCrossChainTools } from "./tools/cross-chain.js";
+import { registerMatchingTools } from "./tools/matching.js";
+import { registerOffchainCoordinatorTools } from "./tools/offchain-coordinator.js";
+import { registerTemplateTools } from "./tools/templates.js";
 import { registerVerifyDeepTools } from "./tools/verify-deep.js";
-import { registerRevisionTools } from "./tools/revisions.js";
-import { info } from "./logger.js";
+import { registerFiatOnrampTools } from "./tools/fiat-onramp.js";
+import { registerBridgeTools } from "./tools/bridge.js";
+import { info, warn } from "./logger.js";
+
+// V4-removed tools (insurance, market, batches, collectives, router, AA, grants, training, revisions)
+// These are imported but wrapped in try/catch so missing contracts don't crash the server.
 
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "covenant-mcp",
-    version: "1.0.0",
+    version: "2.0.0",
   });
 
-  // Settlement layer (onchain)
-  registerAgentTools(server);       // AgentRegistry
-  registerEscrowTools(server);      // TaskEscrow
-  registerReceiptTools(server);     // ReceiptVerifier
-  registerProtocolTools(server);    // Protocol stats
-  registerMarketTools(server);      // OpenTaskMarket
-  registerBatchTools(server);       // ParallelTaskBatch
-  registerCollectiveTools(server);  // AgentCollective
-  registerDisputeTools(server);     // DisputeArbitration
-  registerInsuranceTools(server);   // AgentInsurance
-  registerVerificationTools(server);// ERC-8004 attestations
-  registerRouterTools(server);      // COVENANTRouter
-  registerMultiTokenTools(server);  // MultiTokenEscrow
-  registerReputationVCTools(server); // Reputation VCs + DID
-  registerAATools(server);           // Account Abstraction (Smart Wallet + Paymaster)
+  // ─── V4 Core (on-chain) ───────────────────────────────────────
+  registerAgentTools(server);        // CovenantIdentity
+  registerEscrowTools(server);       // CovenantEscrow
+  registerReceiptTools(server);      // CovenantAttestation (receipts)
+  registerProtocolTools(server);     // Protocol stats (reads)
+  registerDisputeTools(server);      // CovenantArbitration
+  registerVerificationTools(server); // CovenantAttestation (attestations)
+  registerMultiTokenTools(server);   // CovenantSettlement (streams)
+  registerReputationVCTools(server); // DID + VCs (off-chain)
 
-  // Meta & coordination tools (offchain)
-  registerCovenantHelpTools(server); // Protocol guide + workflow sequences
-  registerTemplateTools(server);     // Task templates with auto-pricing
-  registerMatchingTools(server);     // Smart worker matching (multi-factor scoring)
-  registerOffchainCoordinatorTools(server); // Profiles, matching, templates, marketplace
-  registerMessagingTools(server);         // Agent messaging (in-memory MVP)
-  registerFiatOnrampTools(server);        // Fiat on-ramp URLs (MoonPay/Transak)
-  registerCrossChainTools(server);        // Cross-chain config & supported chains
-  registerStreamingTools(server);        // Streaming pay-per-second payments
-  registerGovernanceTools(server);       // Governance DAO (in-memory MVP)
-  registerBountyTools(server);           // Bounty Board (in-memory MVP)
-  registerBridgeTools(server);           // Cross-chain bridge estimates & status
-  registerGrantTools(server);            // Grant Program (in-memory MVP)
-  registerTrainingTools(server);         // Training Marketplace (in-memory MVP)
-  registerVerifyDeepTools(server);        // Deep project verification (off-chain analysis)
-  registerRevisionTools(server);          // RevisionManager — revision tracking
+  // ─── Offchain services (in-memory / off-chain) ───────────────
+  registerCovenantHelpTools(server);
+  registerTemplateTools(server);
+  registerMatchingTools(server);
+  registerOffchainCoordinatorTools(server);
+  registerMessagingTools(server);
+  registerFiatOnrampTools(server);
+  registerCrossChainTools(server);
+  registerStreamingTools(server);
+  registerGovernanceTools(server);
+  registerBountyTools(server);
+  registerBridgeTools(server);
+  registerVerifyDeepTools(server);
 
-  info("[SERVER] corven_ MCP tools registered");
+  // ─── Deprecated (V1/V2 only, gracefully skipped) ─────────────
+  const deprecated: Array<{ name: string; fn: (s: McpServer) => void }> = [
+    { name: "market", fn: (s) => { const m = require("./tools/market.js"); m.registerMarketTools(s); } },
+    { name: "batches", fn: (s) => { const m = require("./tools/batches.js"); m.registerBatchTools(s); } },
+    { name: "collectives", fn: (s) => { const m = require("./tools/collectives.js"); m.registerCollectiveTools(s); } },
+    { name: "insurance", fn: (s) => { const m = require("./tools/insurance.js"); m.registerInsuranceTools(s); } },
+    { name: "router", fn: (s) => { const m = require("./tools/router.js"); m.registerRouterTools(s); } },
+    { name: "grants", fn: (s) => { const m = require("./tools/grants.js"); m.registerGrantTools(s); } },
+    { name: "training", fn: (s) => { const m = require("./tools/training.js"); m.registerTrainingTools(s); } },
+    { name: "revisions", fn: (s) => { const m = require("./tools/revisions.js"); m.registerRevisionTools(s); } },
+    { name: "account-abstraction", fn: (s) => { const m = require("./tools/account-abstraction.js"); m.registerAATools(s); } },
+  ];
+
+  for (const d of deprecated) {
+    try {
+      d.fn(server);
+    } catch (e: any) {
+      warn(`[SERVER] Deprecated tool "${d.name}" skipped: ${e.message?.slice(0, 80)}`);
+    }
+  }
+
+  info("[SERVER] corven_ MCP tools registered (V4 core + offchain services)");
   return server;
 }

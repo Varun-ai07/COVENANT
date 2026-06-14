@@ -1,6 +1,14 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
+const accounts = [
+  process.env.PRIVATE_KEY,
+  process.env.PRIVATE_KEY_1,
+  process.env.PRIVATE_KEY_2,
+  process.env.PRIVATE_KEY_3,
+  process.env.PRIVATE_KEY_4,
+].filter(Boolean);
+
 /** @type import('hardhat/config').HardhatUserConfig */
 const config = {
   solidity: {
@@ -8,7 +16,7 @@ const config = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1,  // Maximize bytecode size optimization for large contracts
+        runs: 1,
       },
       viaIR: true,
     },
@@ -20,12 +28,12 @@ const config = {
     },
     baseSepolia: {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts,
       chainId: 84532,
     },
     base: {
       url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts,
       chainId: 8453,
     },
   },

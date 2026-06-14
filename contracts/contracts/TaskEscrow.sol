@@ -2,10 +2,11 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./AgentRegistry.sol";
 import "./ReceiptVerifier.sol";
 
-contract TaskEscrow is Ownable {
+contract TaskEscrow is Ownable, ReentrancyGuard {
     // Events
     event TaskCreated(
         uint256 indexed taskId,
@@ -34,6 +35,7 @@ contract TaskEscrow is Ownable {
         Urgent
     }
 
+    address public AgentCollective;
     uint256 public constant PRIORITY_FEE_BPS_LOW = 50;     // 0.5%
     uint256 public constant PRIORITY_FEE_BPS_MEDIUM = 100; // 1%
     uint256 public constant PRIORITY_FEE_BPS_HIGH = 200;   // 2%
@@ -111,7 +113,7 @@ contract TaskEscrow is Ownable {
 
     // Reputation changes
     int256 public constant REPUTATION_SUCCESS = 10;
-    int256 public constant REPUTATION_FAILURE = -50;
+    int256 public constant REPUTATION_FAILURE = -20;
 
     // Storage
     mapping(uint256 => Task) public tasks;
@@ -131,10 +133,14 @@ contract TaskEscrow is Ownable {
 
     // Event emitted when fee recipient is updated
     event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+    event AgentCollectiveUpdated(address indexed oldCollective, address indexed newCollective);
 
     constructor(address _agentRegistry, address _receiptVerifier) Ownable(msg.sender) {
+        require(_agentRegistry != address(0), "!registry");
+        require(_receiptVerifier != address(0), "!verifier");
         agentRegistry = AgentRegistry(_agentRegistry);
         receiptVerifier = ReceiptVerifier(_receiptVerifier);
+        AgentCollective = msg.sender;
         feeRecipient = msg.sender; // Default to owner
     }
 
@@ -148,8 +154,22 @@ contract TaskEscrow is Ownable {
         feeRecipient = newRecipient;
     }
 
+    /**
+     * @notice Update the collective contract allowed to create collective-funded tasks.
+     */
+    function setAgentCollective(address newCollective) external onlyOwner {
+        require(newCollective != address(0), "!zero addr");
+        emit AgentCollectiveUpdated(AgentCollective, newCollective);
+        AgentCollective = newCollective;
+    }
+
     modifier onlyClient(uint256 taskId) {
         require(tasks[taskId].client == msg.sender, "!client");
+        _;
+    }
+
+    modifier onlyCollective () {
+        require(AgentCollective == msg.sender, "Not Authorized");
         _;
     }
 
@@ -195,7 +215,7 @@ contract TaskEscrow is Ownable {
         // Calculate priority fee
         uint256 priorityFee = (payment * getPriorityFeeBps(priority)) / BPS_DENOMINATOR;
         uint256 requiredTotal = payment + priorityFee;
-        require(msg.value >= requiredTotal, "!funds");
+        require(msg.value == requiredTotal, "!funds");
 
         // Verify both client and worker are registered agents
         AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(msg.sender);
@@ -225,7 +245,7 @@ contract TaskEscrow is Ownable {
         accumulatedFees += priorityFee;
 
         emit TaskCreated(taskCounter, msg.sender, worker, payment, deadline);
-        emit TaskFunded(taskCounter, msg.value);
+        emit TaskFunded(taskCounter, requiredTotal);
         emit TaskInProgress(taskCounter);
 
         return taskCounter;
@@ -253,7 +273,7 @@ contract TaskEscrow is Ownable {
         uint256 deadline,
         string calldata descriptionHash,
         Priority priority
-    ) public payable returns (uint256) {
+    ) public payable onlyCollective returns (uint256) {
         require(payment > 0, "!payment");
         require(deadline > block.timestamp, "!deadline");
         require(bytes(descriptionHash).length > 0, "!desc");
@@ -261,7 +281,7 @@ contract TaskEscrow is Ownable {
 
         uint256 priorityFee = (payment * getPriorityFeeBps(priority)) / BPS_DENOMINATOR;
         uint256 requiredTotal = payment + priorityFee;
-        require(msg.value >= requiredTotal, "!funds");
+        require(msg.value == requiredTotal, "!funds");
 
         // Only verify the worker is a registered agent (skip client check for collectives)
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
@@ -287,7 +307,7 @@ contract TaskEscrow is Ownable {
         accumulatedFees += priorityFee;
 
         emit TaskCreated(taskCounter, client, worker, payment, deadline);
-        emit TaskFunded(taskCounter, msg.value);
+        emit TaskFunded(taskCounter, requiredTotal);
         emit TaskInProgress(taskCounter);
 
         return taskCounter;
@@ -341,7 +361,7 @@ contract TaskEscrow is Ownable {
     function fundTask(uint256 taskId) external payable onlyClient(taskId) {
         Task storage task = tasks[taskId];
         require(task.status == TaskStatus.Created, "Not in Created status");
-        require(msg.value >= task.payment, "Insufficient funding");
+        require(msg.value == task.payment, "Insufficient funding");
 
         task.status = TaskStatus.Funded;
 
@@ -394,7 +414,7 @@ contract TaskEscrow is Ownable {
         require(workerAgent.isActive == 1, "!worker reg");
         require(workerAgent.reputation > 0, "!rep");
 
-        require(msg.value >= totalPayment, "!funds");
+        require(msg.value == totalPayment, "!funds");
 
         taskCounter++;
 
@@ -424,7 +444,7 @@ contract TaskEscrow is Ownable {
         }
 
         emit TaskCreated(taskCounter, msg.sender, worker, totalPayment, deadline);
-        emit TaskFunded(taskCounter, msg.value);
+        emit TaskFunded(taskCounter, totalPayment);
         emit TaskInProgress(taskCounter);
         emit TaskWithMilestonesCreated(taskCounter, msg.sender, worker, totalPayment, milestoneDescriptions.length);
 
@@ -472,7 +492,7 @@ contract TaskEscrow is Ownable {
         uint256 taskId,
         uint256 milestoneIndex,
         bool success
-    ) external onlyClient(taskId) {
+    ) external onlyClient(taskId) nonReentrant {
         Task storage task = tasks[taskId];
         require(task.usesMilestones, "Task does not use milestones");
         require(milestoneIndex < task.milestones.length, "Invalid milestone index");
@@ -593,7 +613,7 @@ contract TaskEscrow is Ownable {
         // Medium priority fee for subtask
         uint256 priorityFee = (payment * getPriorityFeeBps(Priority.Medium)) / BPS_DENOMINATOR;
         uint256 requiredTotal = payment + priorityFee;
-        require(msg.value >= requiredTotal, "!funds");
+        require(msg.value == requiredTotal, "!funds");
 
         taskCounter++;
 
@@ -618,7 +638,7 @@ contract TaskEscrow is Ownable {
         accumulatedFees += priorityFee;
 
         emit TaskCreated(taskCounter, msg.sender, worker, payment, deadline);
-        emit TaskFunded(taskCounter, msg.value);
+        emit TaskFunded(taskCounter, requiredTotal);
         emit TaskInProgress(taskCounter);
         emit SubtaskCreated(parentTaskId, taskCounter, msg.sender, worker);
 
@@ -679,7 +699,7 @@ contract TaskEscrow is Ownable {
     function verifyBatch(
         uint256[] calldata taskIds,
         bool[] calldata results
-    ) external returns (uint256 successCount, uint256 failureCount) {
+    ) external nonReentrant returns (uint256 successCount, uint256 failureCount) {
         require(taskIds.length > 0, "No tasks to verify");
         require(taskIds.length == results.length, "Task/result length mismatch");
 
@@ -733,7 +753,7 @@ contract TaskEscrow is Ownable {
      * @param taskId The task ID
      * @param success Whether the work meets requirements
      */
-    function verifyTask(uint256 taskId, bool success) external onlyClient(taskId) {
+    function verifyTask(uint256 taskId, bool success) external onlyClient(taskId) nonReentrant {
         Task storage task = tasks[taskId];
         require(task.status == TaskStatus.Submitted, "Not submitted");
         require(!task.usesMilestones, "Milestone tasks must use verifyMilestone");
@@ -766,7 +786,7 @@ contract TaskEscrow is Ownable {
     function resolveDispute(
         uint256 taskId,
         bool workerWins
-    ) external onlyOwner {
+    ) external onlyOwner nonReentrant {
         Task storage task = tasks[taskId];
         require(task.status == TaskStatus.Disputed, "Not disputed");
 
@@ -836,7 +856,7 @@ contract TaskEscrow is Ownable {
     /**
      * @notice Check if a task has passed its deadline
      */
-    function checkDeadline(uint256 taskId) external {
+    function checkDeadline(uint256 taskId) external nonReentrant {
         Task storage task = tasks[taskId];
         require(
             task.status == TaskStatus.InProgress ||
@@ -916,9 +936,10 @@ contract TaskEscrow is Ownable {
     /**
      * @notice Withdraw accumulated protocol fees to feeRecipient
      */
-    function withdrawFees() external {
+    function withdrawFees() external nonReentrant {
         require(msg.sender == feeRecipient || msg.sender == owner(), "!authorized");
         uint256 fees = accumulatedFees;
+        require(fees > 0, "!fees");
         accumulatedFees = 0;
 
         (bool sent, ) = feeRecipient.call{value: fees}("");
@@ -972,7 +993,7 @@ contract TaskEscrow is Ownable {
         (bool sent, ) = payable(task.client).call{value: refundAmount}("");
         require(sent, "!refund");
 
-        // Penalize worker reputation (-50 for failure)
+        // Penalize worker reputation for failure.
         agentRegistry.updateReputation(task.worker, REPUTATION_FAILURE);
         agentRegistry.recordTaskCompletion(task.worker, false, 0);
 

@@ -69,17 +69,39 @@ const _v2: ContractConfigV2 = {
   RevisionManager: (process.env.REVISION_MANAGER_V2 || ZERO_ADDRESS) as Address,
 };
 
+// V4 addresses (redesigned minimal trust layer — latest deploy)
+const _v4 = {
+  CovenantIdentity: "0xB93eCF2bD8DE0e35ddAD13D9F00E70b938C18FdF" as Address,
+  CovenantEscrow: "0xDb9F26155192c685BEC75E86A7c70A3ca0F80Ac3" as Address,
+  CovenantSettlement: "0xBB3deBA10b0bDaa79c9384E39cDd899116082939" as Address,
+  CovenantArbitration: "0x874d2D6Aa857685D1B7786db2eF9C32C0AcfB614" as Address,
+  CovenantGovernance: "0xd505b5CA3dB39d04592D51DB51507550e0d878DF" as Address,
+  CovenantAttestation: "0x65804fb982Be86C48E03107963FDAcd285f21540" as Address,
+};
+
 export const CONTRACT_VERSION: ContractVersion =
-  (process.env.CONTRACT_VERSION as ContractVersion) || "v1";
+  (process.env.CONTRACT_VERSION as ContractVersion) || "v4";
 
 /**
- * Active contract addresses. When CONTRACT_VERSION=v2:
- * - AgentRegistry, TaskEscrow, ReceiptVerifier → v2 addresses
- * - AgentInsurance → InsurancePool v2 address
- * - DisputeArbitration → DisputeResolution v2 address
- * - All other v1 contracts (market, batches, collective, router, etc.) unchanged
+ * Active contract addresses. When CONTRACT_VERSION=v4:
+ * - Uses the new minimal 6-contract architecture
  */
-export const CONTRACTS: ContractConfig = CONTRACT_VERSION === "v2"
+export const CONTRACTS: ContractConfig = CONTRACT_VERSION === "v4"
+  ? {
+      AgentRegistry: _v4.CovenantIdentity,
+      TaskEscrow: _v4.CovenantEscrow,
+      ReceiptVerifier: _v4.CovenantAttestation,
+      OpenTaskMarket: ZERO_ADDRESS,
+      ParallelTaskBatch: ZERO_ADDRESS,
+      AgentCollective: ZERO_ADDRESS,
+      AgentInsurance: ZERO_ADDRESS,
+      DisputeArbitration: _v4.CovenantArbitration,
+      COVENANTRouter: ZERO_ADDRESS,
+      LitProtocolIntegration: ZERO_ADDRESS,
+      AgentWallet: ZERO_ADDRESS,
+      MultiTokenEscrow: _v4.CovenantSettlement,
+    } as ContractConfig
+  : CONTRACT_VERSION === "v2"
   ? {
       ..._v1,
       AgentRegistry: _v2.AgentRegistry,
@@ -251,7 +273,39 @@ const V1_TO_V2_ABI_MAP: Record<string, string> = {
   DisputeArbitration: "DisputeResolution",
 };
 
+// ============================================================
+// V4 ABI Loader
+// ============================================================
+
+const V4_ABI_DIR = path.resolve(_dirname, "abis", "v4");
+
+function loadAbiV4(contractName: string): any {
+  try {
+    const filePath = path.join(V4_ABI_DIR, `${contractName}.json`);
+    if (fs.existsSync(filePath)) {
+      const artifact = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      return artifact.abi ?? artifact;
+    }
+  } catch { /* fall through */ }
+  return null;
+}
+
+// V4 contract name mapping
+const V4_ABI_MAP: Record<string, string> = {
+  AgentRegistry: "CovenantIdentity",
+  TaskEscrow: "CovenantEscrow",
+  ReceiptVerifier: "CovenantAttestation",
+  DisputeArbitration: "CovenantArbitration",
+  MultiTokenEscrow: "CovenantSettlement",
+};
+
 export function loadAbi(contractName: string): any {
+  // When v4 is active, try v4 ABI first
+  if (CONTRACT_VERSION === "v4") {
+    const v4Name = V4_ABI_MAP[contractName] || contractName;
+    const v4Abi = loadAbiV4(v4Name);
+    if (v4Abi) return v4Abi;
+  }
   // When v2 is active, try v2 ABI first
   if (CONTRACT_VERSION === "v2") {
     const v2Name = V1_TO_V2_ABI_MAP[contractName] || contractName;
@@ -306,3 +360,9 @@ export function getExplorerAddressUrl(address: string): string {
   }
   return address;
 }
+
+// ============================================================
+// V4 Contract Addresses (exported for direct access)
+// ============================================================
+
+export const V4_ADDRESSES = _v4;

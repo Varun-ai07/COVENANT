@@ -4,7 +4,17 @@ import type { Address, Hash, Abi } from "viem";
 // Re-export canonical types from @covenant/shared-types
 // ============================================================
 
-export { TASK_STATUS, PRIORITY_LEVEL, RECEIPT_TYPE, BASE_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
+export { TASK_STATUS, PRIORITY_LEVEL, RECEIPT_TYPE, BASE_SEPOLIA_ADDRESSES, V4_SEPOLIA_ADDRESSES, V4_TASK_STATUS, V4_RULING } from "@covenant/shared-types";
+export type {
+  V4ContractAddresses,
+  V4AgentIdentity,
+  V4Task,
+  V4Dispute,
+  V4Attestation,
+  V4Proposal,
+  V4TaskStatus,
+  V4Ruling,
+} from "@covenant/shared-types";
 
 // ============================================================
 // Wallet & Transaction Types
@@ -141,9 +151,9 @@ export interface ContractConfigV2 {
   RevisionManager: Address;
 }
 
-export type ContractVersion = "v1" | "v2";
+export type ContractVersion = "v1" | "v2" | "v4";
 
-/** Merged contract config: v1 base + v2 overrides for core contracts */
+/** Merged contract config: v1 base + v2/v4 overrides for core contracts */
 export type ContractConfigMerged = ContractConfig & Partial<ContractConfigV2>;
 
 // ============================================================

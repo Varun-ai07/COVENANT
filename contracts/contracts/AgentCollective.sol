@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./TaskEscrow.sol";
 import "./AgentRegistry.sol";
 
@@ -10,7 +11,7 @@ import "./AgentRegistry.sol";
  * @notice Enables many-to-one task pooling where multiple clients fund a task none could afford alone.
  * @notice Implements 2D enhancement: Many-to-One (Agent Collective - Pooling Resources)
  */
-contract AgentCollective is Ownable {
+contract AgentCollective is Ownable,ReentrancyGuard {
     // ============ Custom Errors ============
     error InvalidContribution();
     error NotEnoughFunds();
@@ -139,7 +140,7 @@ contract AgentCollective is Ownable {
     function createCollective(
         uint256 minContribution,
         uint256 maxMembers
-    ) external payable returns (uint256) {
+    ) external payable nonReentrant returns (uint256) {
         if (minContribution == 0) revert InvalidContribution();
         if (maxMembers == 0) revert InvalidContribution();
         if (msg.value < minContribution) revert InvalidContribution();
@@ -175,7 +176,7 @@ contract AgentCollective is Ownable {
      * @notice Join an existing collective by contributing funds
      * @param collectiveId The ID of the collective to join
      */
-    function joinCollective(uint256 collectiveId) external payable collectiveExists(collectiveId) notLaunched(collectiveId) {
+    function joinCollective(uint256 collectiveId) external payable collectiveExists(collectiveId) notLaunched(collectiveId) nonReentrant {
         Collective storage collective = collectives[collectiveId];
 
         // Verify member is a registered and active agent
@@ -223,18 +224,8 @@ contract AgentCollective is Ownable {
         uint256 payment,
         uint256 deadline,
         bytes32 descriptionHash
-    ) external collectiveExists(collectiveId) notLaunched(collectiveId) returns (uint256) {
+    ) external isMember(collectiveId, msg.sender) collectiveExists(collectiveId) notLaunched(collectiveId) returns (uint256) {
         Collective storage collective = collectives[collectiveId];
-
-        // Verify caller is a member
-        bool isMem = false;
-        for (uint256 i = 0; i < collective.members.length; i++) {
-            if (collective.members[i] == msg.sender) {
-                isMem = true;
-                break;
-            }
-        }
-        if (!isMem) revert NotCollectiveMember(msg.sender);
 
         // Verify worker is a registered and active agent with reputation
         AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(workerAddress);
@@ -244,7 +235,7 @@ contract AgentCollective is Ownable {
         // Include Medium priority fee (100 bps) in the value sent to TaskEscrow
         uint256 priorityFee = (payment * 100) / 10000;
         uint256 totalRequired = payment + priorityFee;
-        if (address(this).balance < totalRequired) revert NotEnoughFunds();
+        if (collective.totalFund < totalRequired) revert NotEnoughFunds();
 
         // Create and fund the task using collective's balance (client = collective itself)
         uint256 taskId = taskEscrow.createAndFundTaskForCollectiveWithPriority{value: totalRequired}(

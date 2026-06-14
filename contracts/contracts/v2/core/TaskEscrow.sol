@@ -46,7 +46,7 @@ contract TaskEscrow is ReentrancyGuard {
     uint256 public constant PROTOCOL_FEE_BPS = 100;  // 1%
     uint256 public constant BPS_DENOMINATOR = 10000;
     int256 public constant REPUTATION_SUCCESS = 10;
-    int256 public constant REPUTATION_FAILURE = -50;
+    int256 public constant REPUTATION_FAILURE = -20;
     uint256 public constant MIN_DEADLINE_DURATION = 1 hours;
     uint256 public constant MAX_DEADLINE_DURATION = 365 days;
 

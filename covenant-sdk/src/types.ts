@@ -146,6 +146,22 @@ export interface PartialContractAddresses {
 }
 
 // ============================================================================
+// V4 Types
+// ============================================================================
+
+export type { V4ContractAddresses } from "@covenant/shared-types";
+
+/**
+ * V4 SDK configuration — extends base config with version selection
+ */
+export interface V4Config extends CovenantConfig {
+  /** SDK version — "v4" enables v4 contract methods */
+  version: "v4";
+  /** Custom v4 contract addresses (optional - uses defaults if not provided) */
+  v4ContractAddresses?: Partial<import("@covenant/shared-types").V4ContractAddresses>;
+}
+
+// ============================================================================
 // Viem Type Re-exports
 // ============================================================================
 

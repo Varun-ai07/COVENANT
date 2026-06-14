@@ -1,7 +1,8 @@
 """COVENANT Python SDK - Autonomous Agent Enforcement Protocol client."""
 
-from .config import DEFAULT_ADDRESSES, DEFAULT_RPC_URLS, SDKConfig
+from .config import DEFAULT_ADDRESSES, DEFAULT_RPC_URLS, V4_ADDRESSES, SDKConfig
 from .sdk import CovenantSDK
+from .v4 import CovenantSDKV4
 from .types import (
     AgentData,
     BatchData,
@@ -21,6 +22,7 @@ from .types import (
 
 __all__ = [
     "CovenantSDK",
+    "CovenantSDKV4",
     "SDKConfig",
     "AgentData",
     "BatchData",
@@ -38,6 +40,7 @@ __all__ = [
     "TaskStatus",
     "DEFAULT_ADDRESSES",
     "DEFAULT_RPC_URLS",
+    "V4_ADDRESSES",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

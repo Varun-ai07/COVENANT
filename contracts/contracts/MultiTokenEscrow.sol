@@ -50,7 +50,7 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
     uint256 public constant PROTOCOL_FEE_BPS = 100; // 1%
     uint256 public constant BPS_DENOMINATOR = 10000;
     int256 public constant REPUTATION_SUCCESS = 10;
-    int256 public constant REPUTATION_FAILURE = -50;
+    int256 public constant REPUTATION_FAILURE = -20;
 
     // ============ Storage ============
 
@@ -92,6 +92,8 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
     // ============ Constructor ============
 
     constructor(address _agentRegistry, address _feeRecipient) Ownable(msg.sender) {
+        require(_agentRegistry != address(0), "Invalid registry");
+        require(_feeRecipient != address(0), "Invalid recipient");
         agentRegistry = AgentRegistry(_agentRegistry);
         feeRecipient = _feeRecipient;
     }
@@ -124,7 +126,9 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
         require(worker != address(0), "Invalid worker");
         require(payment > 0, "Payment must be > 0");
         require(deadline > block.timestamp, "Deadline must be future");
+        require(bytes(descriptionHash).length > 0, "Description required");
         require(msg.value == payment, "Must send exact payment");
+        _requireActiveAgents(msg.sender, worker);
 
         uint256 taskId = taskCounter++;
         tasks[taskId] = Task({
@@ -158,8 +162,10 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
         require(worker != address(0), "Invalid worker");
         require(payment > 0, "Payment must be > 0");
         require(deadline > block.timestamp, "Deadline must be future");
+        require(bytes(descriptionHash).length > 0, "Description required");
         require(token != address(0), "Use ETH function for native token");
         require(acceptedTokens[token], "Token not accepted");
+        _requireActiveAgents(msg.sender, worker);
 
         // Transfer tokens from sender to this contract
         IERC20(token).safeTransferFrom(msg.sender, address(this), payment);
@@ -191,6 +197,7 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
         require(msg.sender == task.worker, "Only worker");
         require(task.status == TaskStatus.Funded || task.status == TaskStatus.InProgress, "Invalid status");
         require(block.timestamp <= task.deadline, "Deadline passed");
+        require(bytes(deliverableHash).length > 0, "Deliverable required");
 
         task.deliverableHash = deliverableHash;
         task.status = TaskStatus.Submitted;
@@ -224,6 +231,7 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
 
             // Update reputation
             agentRegistry.recordTaskCompletion(task.worker, true, task.payment);
+            agentRegistry.updateReputation(task.worker, REPUTATION_SUCCESS);
             emit TaskCompleted(taskId, workerPayment, task.token);
         } else {
             task.status = TaskStatus.Failed;
@@ -239,6 +247,7 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
 
             // Slash reputation
             agentRegistry.recordTaskCompletion(task.worker, false, task.payment);
+            agentRegistry.updateReputation(task.worker, REPUTATION_FAILURE);
             emit TaskFailed(taskId, task.payment, task.token);
         }
     }
@@ -260,13 +269,15 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
         emit TaskDisputed(taskId, msg.sender);
     }
 
-    function resolveDispute(uint256 taskId, bool workerWins, uint256 workerShare) external onlyOwner {
+    function resolveDispute(uint256 taskId, bool workerWins, uint256 workerShare) external onlyOwner nonReentrant {
         Task storage task = tasks[taskId];
         require(task.status == TaskStatus.Disputed, "Not disputed");
+        require(workerShare <= BPS_DENOMINATOR, "Invalid share");
 
         if (workerWins) {
             task.status = TaskStatus.Completed;
             task.completedAt = block.timestamp;
+            agentRegistry.updateReputation(task.worker, 50);
             uint256 workerPayment = (task.payment * workerShare) / BPS_DENOMINATOR;
             uint256 clientRefund = task.payment - workerPayment;
 
@@ -290,6 +301,7 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
             }
         } else {
             task.status = TaskStatus.Failed;
+            agentRegistry.updateReputation(task.client, 25);
             if (task.token == address(0)) {
                 (bool sent, ) = payable(task.client).call{value: task.payment}("");
                 require(sent, "Client refund failed");
@@ -302,7 +314,7 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
 
     // ============ Deadline Check ============
 
-    function checkDeadline(uint256 taskId) external {
+    function checkDeadline(uint256 taskId) external nonReentrant {
         Task storage task = tasks[taskId];
         require(block.timestamp > task.deadline, "Deadline not passed");
         require(task.status == TaskStatus.Funded || task.status == TaskStatus.InProgress, "Already processed");
@@ -318,12 +330,15 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
             IERC20(task.token).safeTransfer(task.client, task.payment);
         }
 
+        agentRegistry.recordTaskCompletion(task.worker, false, task.payment);
+        agentRegistry.updateReputation(task.worker, -int256(uint256(task.payment)) / 1e16);
+
         emit TaskFailed(taskId, task.payment, task.token);
     }
 
     // ============ Fee Withdrawal ============
 
-    function withdrawFees() external onlyOwner {
+    function withdrawFees() external onlyOwner nonReentrant {
         uint256 fees = accumulatedFees;
         require(fees > 0, "No ETH fees");
         accumulatedFees = 0;
@@ -331,11 +346,20 @@ contract MultiTokenEscrow is Ownable, ReentrancyGuard {
         require(sent, "Fee transfer failed");
     }
 
-    function withdrawTokenFees(address token) external onlyOwner {
+    function withdrawTokenFees(address token) external onlyOwner nonReentrant {
         uint256 fees = accumulatedTokenFees[token];
         require(fees > 0, "No token fees");
         accumulatedTokenFees[token] = 0;
         IERC20(token).safeTransfer(feeRecipient, fees);
+    }
+
+    function _requireActiveAgents(address client, address worker) internal view {
+        AgentRegistry.Agent memory clientAgent = agentRegistry.getAgent(client);
+        require(clientAgent.isActive == 1, "Client not registered");
+
+        AgentRegistry.Agent memory workerAgent = agentRegistry.getAgent(worker);
+        require(workerAgent.isActive == 1, "Worker not registered");
+        require(workerAgent.reputation > 0, "Worker reputation too low");
     }
 
     // ============ Read Functions ============

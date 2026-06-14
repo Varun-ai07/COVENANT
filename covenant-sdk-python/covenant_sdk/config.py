@@ -47,6 +47,34 @@ DEFAULT_ADDRESSES: Dict[int, ContractAddresses] = {
     ),
 }
 
+# Default V4 contract addresses by chain ID
+V4_ADDRESSES: Dict[int, Dict[str, str]] = {
+    84532: {
+        "CovenantIdentity": "0xB93eCF2bD8DE0e35ddAD13D9F00E70b938C18FdF",
+        "CovenantEscrow": "0xDb9F26155192c685BEC75E86A7c70A3ca0F80Ac3",
+        "CovenantSettlement": "0xBB3deBA10b0bDaa79c9384E39cDd899116082939",
+        "CovenantArbitration": "0x874d2D6Aa857685D1B7786db2eF9C32C0AcfB614",
+        "CovenantGovernance": "0xd505b5CA3dB39d04592D51DB51507550e0d878DF",
+        "CovenantAttestation": "0x65804fb982Be86C48E03107963FDAcd285f21540",
+    },
+    8453: {
+        "CovenantIdentity": "0x0000000000000000000000000000000000000000",
+        "CovenantEscrow": "0x0000000000000000000000000000000000000000",
+        "CovenantSettlement": "0x0000000000000000000000000000000000000000",
+        "CovenantArbitration": "0x0000000000000000000000000000000000000000",
+        "CovenantGovernance": "0x0000000000000000000000000000000000000000",
+        "CovenantAttestation": "0x0000000000000000000000000000000000000000",
+    },
+    31337: {
+        "CovenantIdentity": "0x0000000000000000000000000000000000000000",
+        "CovenantEscrow": "0x0000000000000000000000000000000000000000",
+        "CovenantSettlement": "0x0000000000000000000000000000000000000000",
+        "CovenantArbitration": "0x0000000000000000000000000000000000000000",
+        "CovenantGovernance": "0x0000000000000000000000000000000000000000",
+        "CovenantAttestation": "0x0000000000000000000000000000000000000000",
+    },
+}
+
 # Default RPC URLs by chain ID
 DEFAULT_RPC_URLS: Dict[int, str] = {
     84532: "https://sepolia.base.org",

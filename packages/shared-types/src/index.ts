@@ -255,6 +255,124 @@ export const BASE_SEPOLIA_ADDRESSES: ContractAddresses = {
   AgentWallet: "0x0000000000000000000000000000000000000000",
 };
 
+// ============================================================================
+// V4 Addresses (Redesigned minimal trust layer — 6 core contracts)
+// ============================================================================
+
+export interface V4ContractAddresses {
+  CovenantIdentity: Address;
+  CovenantEscrow: Address;
+  CovenantSettlement: Address;
+  CovenantArbitration: Address;
+  CovenantGovernance: Address;
+  CovenantAttestation: Address;
+}
+
+export const V4_SEPOLIA_ADDRESSES: V4ContractAddresses = {
+  CovenantIdentity: "0xB93eCF2bD8DE0e35ddAD13D9F00E70b938C18FdF",
+  CovenantEscrow: "0xDb9F26155192c685BEC75E86A7c70A3ca0F80Ac3",
+  CovenantSettlement: "0xBB3deBA10b0bDaa79c9384E39cDd899116082939",
+  CovenantArbitration: "0x874d2D6Aa857685D1B7786db2eF9C32C0AcfB614",
+  CovenantGovernance: "0xd505b5CA3dB39d04592D51DB51507550e0d878DF",
+  CovenantAttestation: "0x65804fb982Be86C48E03107963FDAcd285f21540",
+};
+
+export const V4_ADDRESSES: Record<number, V4ContractAddresses> = {
+  84532: V4_SEPOLIA_ADDRESSES,
+  8453: {
+    CovenantIdentity: ZERO_ADDRESS,
+    CovenantEscrow: ZERO_ADDRESS,
+    CovenantSettlement: ZERO_ADDRESS,
+    CovenantArbitration: ZERO_ADDRESS,
+    CovenantGovernance: ZERO_ADDRESS,
+    CovenantAttestation: ZERO_ADDRESS,
+  },
+};
+
+// ============================================================================
+// V4 Types
+// ============================================================================
+
+export type V4TaskStatus = "None" | "Created" | "Funded" | "Submitted" | "Disputed" | "Completed" | "Failed" | "Cancelled";
+
+export const V4_TASK_STATUS: Record<number, V4TaskStatus> = {
+  0: "None",
+  1: "Created",
+  2: "Funded",
+  3: "Submitted",
+  4: "Disputed",
+  5: "Completed",
+  6: "Failed",
+  7: "Cancelled",
+};
+
+export type V4Ruling = "None" | "ClientWins" | "WorkerWins" | "Split";
+
+export const V4_RULING: Record<number, V4Ruling> = {
+  0: "None",
+  1: "ClientWins",
+  2: "WorkerWins",
+  3: "Split",
+};
+
+export interface V4AgentIdentity {
+  owner: Address;
+  metadataRoot: `0x${string}`;
+  stake: bigint;
+  reputation: number;
+  registeredAt: bigint;
+  lastActivityAt: bigint;
+  isActive: boolean;
+}
+
+export interface V4Task {
+  client: Address;
+  worker: Address;
+  amount: bigint;
+  deadline: bigint;
+  metaHash: `0x${string}`;
+  deliverableHash: `0x${string}`;
+  status: number;
+  disputeCount: number;
+  createdAt: bigint;
+  completedAt: bigint;
+}
+
+export interface V4Dispute {
+  taskId: bigint;
+  disputant: Address;
+  ruling: number;
+  splitBps: number;
+  createdAt: bigint;
+  evidenceHash: `0x${string}`;
+  clientStake: bigint;
+  workerStake: bigint;
+  settled: boolean;
+}
+
+export interface V4Attestation {
+  id: bigint;
+  issuer: Address;
+  subject: Address;
+  attestationType: string;
+  dataHash: `0x${string}`;
+  timestamp: bigint;
+  isValid: boolean;
+}
+
+export interface V4Proposal {
+  id: bigint;
+  proposer: Address;
+  description: string;
+  target: Address;
+  callData: `0x${string}`;
+  votesFor: bigint;
+  votesAgainst: bigint;
+  startBlock: bigint;
+  endBlock: bigint;
+  executed: boolean;
+}
+
 export const POLYGON_ADDRESSES: ContractAddresses = {
   AgentRegistry: ZERO_ADDRESS,
   TaskEscrow: ZERO_ADDRESS,
@@ -361,5 +479,38 @@ export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
     addresses: ARBITRUM_ADDRESSES,
     rpcUrl: "https://arb1.arbitrum.io/rpc",
     explorerUrl: "https://arbiscan.io",
+  },
+};
+
+// ============================================================================
+// V4 Chain Configs (separate from V1/V2)
+// ============================================================================
+
+export interface V4ChainConfig {
+  name: string;
+  v4Addresses: V4ContractAddresses;
+  rpcUrl: string;
+  explorerUrl: string;
+}
+
+export const V4_CHAIN_CONFIGS: Record<number, V4ChainConfig> = {
+  84532: {
+    name: "Base Sepolia",
+    v4Addresses: V4_SEPOLIA_ADDRESSES,
+    rpcUrl: "https://sepolia.base.org",
+    explorerUrl: "https://sepolia.basescan.org",
+  },
+  8453: {
+    name: "Base Mainnet",
+    v4Addresses: {
+      CovenantIdentity: ZERO_ADDRESS,
+      CovenantEscrow: ZERO_ADDRESS,
+      CovenantSettlement: ZERO_ADDRESS,
+      CovenantArbitration: ZERO_ADDRESS,
+      CovenantGovernance: ZERO_ADDRESS,
+      CovenantAttestation: ZERO_ADDRESS,
+    },
+    rpcUrl: "https://mainnet.base.org",
+    explorerUrl: "https://basescan.org",
   },
 };

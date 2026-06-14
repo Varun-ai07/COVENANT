@@ -1,9 +1,9 @@
 /**
- * Attestation & ERC-8004 Verification MCP Tools
+ * CovenantAttestation MCP Tools
  *
- * Exposes on-chain ERC-8004 receipt verification and batch attestation tools.
- * ZK proof verification (Groth16) has been removed — capabilities are verified
- * via on-chain agent registry lookups and ERC-8004 attestations instead.
+ * corven_create_attestation    — Issue an on-chain attestation
+ * corven_verify_attestation    — Verify an attestation's validity
+ * corven_batch_verify_attestations — Batch verify multiple attestations
  */
 import { z } from "zod";
 import { isAddress, type Address } from "viem";
@@ -14,25 +14,22 @@ import { parseContractError, formatStructuredError } from "../lib/formatResponse
 import { ethAddress } from "../lib/schemaHelpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const RECEIPT_ABI = loadAbi("ReceiptVerifier");
-
-// ─── Input Schemas ─────────────────────────────────────────────────
+const ATTESTATION_ABI = loadAbi("ReceiptVerifier");
 
 const createAttestationSchema = z.object({
-  counterparty: z.string().refine(isAddress, { message: "Invalid address" }).describe("Counterparty address"),
-  interactionType: z.number().int().min(0).max(5).describe("Receipt type (0=TaskCompleted, 1=AgentVerified, 2=CapabilityProven, 3=ReputationVerified, 4=DisputeResolved, 5=InsuranceClaimed)"),
-  dataHash: z.string().min(1).describe("Hash of the attestation data"),
+  subject: z.string().refine(isAddress, { message: "Invalid address" }).describe("Address of the attestation subject"),
+  schemaHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid bytes32 hex").describe("Schema hash (bytes32)"),
+  dataHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid bytes32 hex").describe("Hash of attestation data (bytes32)"),
+  expiresAt: z.number().int().min(0).optional().describe("Expiry timestamp (uint32). 0 or omitted = no expiry."),
 });
 
-const verifyReceiptSchema = z.object({
-  receiptId: z.string().min(1).describe("Receipt ID (bytes32 hex)"),
+const verifyAttestationSchema = z.object({
+  attestationId: z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid bytes32 hex").describe("Attestation ID (bytes32)"),
 });
 
 const batchVerifySchema = z.object({
-  receiptIds: z.array(z.string()).min(1).max(50).describe("Receipt IDs to verify"),
+  attestationIds: z.array(z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid bytes32 hex")).min(1).max(50).describe("Attestation IDs to verify"),
 });
-
-// ─── Tool Registration ─────────────────────────────────────────────
 
 export function registerVerificationTools(server: McpServer): void {
   // ──────────────────────────────────────────────────────────────
@@ -41,19 +38,20 @@ export function registerVerificationTools(server: McpServer): void {
   server.registerTool(
     "corven_create_attestation",
     {
-      title: "Create ERC-8004 Attestation",
+      title: "Create Attestation",
       description:
-        "Issue an ERC-8004 attestation receipt for a completed interaction. Anchors offchain verification results on-chain as portable credentials.\n" +
-        "USE WHEN: You want to anchor an off-chain verification result (capability proof, reputation check, etc.) as a permanent on-chain attestation.\n" +
-        "REQUIRES: You must have a wallet configured. The counterparty address must be valid.\n" +
-        "RETURNS: Transaction hash. The attestation receipt ID is emitted in the event logs.\n" +
-        "COMES AFTER: corven_verify_capability_proof or corven_verify_reputation_proof completed successfully.\n" +
-        "COMES BEFORE: The receipt can be queried via ReceiptVerifier tools for portable verification.\n" +
-        "NOTE: interactionType values: 0=TaskCompleted, 1=AgentVerified, 2=CapabilityProven, 3=ReputationVerified, 4=DisputeResolved, 5=InsuranceClaimed.",
+        "Issue an on-chain attestation for a subject address. Anchors verification results as portable credentials.\n" +
+        "USE WHEN: You want to attest to a capability, reputation, or verification result for an agent.\n" +
+        "REQUIRES: You must have a wallet configured. Subject address must be valid. Schema must be registered.\n" +
+        "RETURNS: Transaction hash. The attestation ID is emitted in the event logs.\n" +
+        "COMES AFTER: Verification or reputation checks completed successfully.\n" +
+        "COMES BEFORE: The attestation can be queried via corven_verify_attestation for portable verification.\n" +
+        "NOTE: Register schemas first via registerSchema. expiresAt=0 means no expiry.",
       inputSchema: {
-        counterparty: ethAddress,
-        interactionType: z.number().describe("Receipt type (0=TaskCompleted, 1=AgentVerified, etc.)"),
-        dataHash: z.string().describe("Hash of the attestation data"),
+        subject: ethAddress,
+        schemaHash: z.string().describe("Schema hash (bytes32 hex)"),
+        dataHash: z.string().describe("Data hash (bytes32 hex)"),
+        expiresAt: z.number().optional().describe("Expiry timestamp (uint32). 0 = no expiry."),
       },
     },
     async (params) => {
@@ -61,15 +59,20 @@ export function registerVerificationTools(server: McpServer): void {
         const parsed = createAttestationSchema.safeParse(params);
         if (!parsed.success) return formatError(parsed.error);
 
-        const { counterparty, interactionType, dataHash } = parsed.data;
+        const { subject, schemaHash, dataHash, expiresAt } = parsed.data;
         const account = getAccount();
         if (!account) return formatError(new Error("No wallet configured."));
 
         const result = await executeOrPrepare(
           CONTRACTS.ReceiptVerifier as Address,
-          RECEIPT_ABI,
-          "createReceipt",
-          [account as Address, counterparty as Address, String(interactionType), dataHash as `0x${string}`]
+          ATTESTATION_ABI,
+          "attest",
+          [
+            subject as Address,
+            schemaHash as `0x${string}`,
+            dataHash as `0x${string}`,
+            expiresAt ?? 0,
+          ]
         );
 
         return formatTxResult(result);
@@ -88,34 +91,45 @@ export function registerVerificationTools(server: McpServer): void {
     {
       title: "Verify Attestation",
       description:
-        "Check if an ERC-8004 receipt is valid on-chain.\n" +
-        "USE WHEN: You have a receipt ID and want to verify its on-chain validity and authenticity.\n" +
-        "REQUIRES: The receipt ID must be a valid bytes32 hex string.\n" +
-        "RETURNS: Boolean validity status with a human-readable note explaining the result.\n" +
-        "COMES AFTER: corven_create_attestation or corven_create_receipt issued the receipt.\n" +
+        "Check if an attestation is valid on-chain.\n" +
+        "USE WHEN: You have an attestation ID and want to verify its on-chain validity and authenticity.\n" +
+        "REQUIRES: The attestation ID must be a valid bytes32 hex string.\n" +
+        "RETURNS: Boolean validity status with full attestation details (subject, schemaHash, dataHash, expiresAt).\n" +
+        "COMES AFTER: corven_create_attestation issued the attestation.\n" +
         "COMES BEFORE: Use the validity result to make trust decisions about an agent.\n" +
-        "NOTE: Returns false for revoked receipts or receipts that never existed.",
+        "NOTE: Returns false for revoked attestations or attestations that never existed.",
       inputSchema: {
-        receiptId: z.string().describe("Receipt ID (bytes32 hex)"),
+        attestationId: z.string().describe("Attestation ID (bytes32 hex)"),
       },
     },
     async (params) => {
       try {
-        const parsed = verifyReceiptSchema.safeParse(params);
+        const parsed = verifyAttestationSchema.safeParse(params);
         if (!parsed.success) return formatError(parsed.error);
 
         const result = await readContract(
           CONTRACTS.ReceiptVerifier as Address,
-          RECEIPT_ABI,
-          "verifyReceipt",
-          [parsed.data.receiptId as `0x${string}`]
+          ATTESTATION_ABI,
+          "verify",
+          [parsed.data.attestationId as `0x${string}`]
         );
 
-        return formatReadResult({
-          receiptId: parsed.data.receiptId,
-          isValid: result,
-          note: result ? "Receipt is valid and verified on-chain." : "Receipt is invalid or has been revoked.",
-        }, "Attestation Verification");
+        const [valid, attestation] = result as [boolean, any];
+        const enriched = valid ? {
+          attestationId: parsed.data.attestationId,
+          valid: true,
+          subject: attestation.subject,
+          schemaHash: attestation.schemaHash,
+          dataHash: attestation.dataHash,
+          expiresAt: attestation.expiresAt,
+          note: "Attestation is valid and verified on-chain.",
+        } : {
+          attestationId: parsed.data.attestationId,
+          valid: false,
+          note: "Attestation is invalid, expired, or has been revoked.",
+        };
+
+        return formatReadResult(enriched, "Attestation Verification");
       } catch (e: unknown) {
         const parsed = parseContractError(e);
         return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
@@ -131,15 +145,15 @@ export function registerVerificationTools(server: McpServer): void {
     {
       title: "Batch Verify Attestations",
       description:
-        "Verify multiple ERC-8004 receipts in a single call.\n" +
-        "USE WHEN: You have multiple receipt IDs and want to check their validity efficiently in one transaction.\n" +
-        "REQUIRES: All receipt IDs must be valid bytes32 hex strings. Max 50 receipts per call.\n" +
-        "RETURNS: Summary with total, valid, and invalid counts, plus per-receipt validity status.\n" +
-        "COMES AFTER: corven_get_receipts or corven_create_receipt provided the receipt IDs.\n" +
+        "Verify multiple attestations in a single call.\n" +
+        "USE WHEN: You have multiple attestation IDs and want to check their validity efficiently.\n" +
+        "REQUIRES: All attestation IDs must be valid bytes32 hex strings. Max 50 per call.\n" +
+        "RETURNS: Summary with total, valid, and invalid counts, plus per-attestation validity status.\n" +
+        "COMES AFTER: corven_create_attestation or corven_get_agent_attestations provided the IDs.\n" +
         "COMES BEFORE: Use the batch validity results for bulk credential auditing.\n" +
-        "NOTE: More gas-efficient than calling corven_verify_attestation individually for each receipt.",
+        "NOTE: More gas-efficient than calling corven_verify_attestation individually for each attestation.",
       inputSchema: {
-        receiptIds: z.array(z.string()).describe("Receipt IDs to verify"),
+        attestationIds: z.array(z.string()).describe("Attestation IDs to verify (bytes32 hex)"),
       },
     },
     async (params) => {
@@ -149,18 +163,18 @@ export function registerVerificationTools(server: McpServer): void {
 
         const results = await readContract(
           CONTRACTS.ReceiptVerifier as Address,
-          RECEIPT_ABI,
-          "batchVerifyReceipts",
-          [parsed.data.receiptIds as `0x${string}`[]]
+          ATTESTATION_ABI,
+          "verify",
+          [parsed.data.attestationIds as `0x${string}`[]]
         );
 
         const validity = results as boolean[];
-        const summary = parsed.data.receiptIds.map((id, i) =>
+        const summary = parsed.data.attestationIds.map((id, i) =>
           `${id.slice(0, 18)}...: ${validity[i] ? "VALID" : "INVALID"}`
         ).join("\n");
 
         return formatReadResult({
-          total: parsed.data.receiptIds.length,
+          total: parsed.data.attestationIds.length,
           valid: validity.filter(Boolean).length,
           invalid: validity.filter(v => !v).length,
           results: summary,

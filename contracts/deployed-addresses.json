@@ -1,19 +1,14 @@
 {
-  "AgentRegistry": "0xB215589dA259A98eEE8BF39739F6255131ac33A1",
-  "ReceiptVerifier": "0xa47D15099be6aC516B53a6859D468E9004eEf76b",
-  "TaskEscrow": "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3",
-  "OpenTaskMarket": "0x5ccF09469222E5046b0830c6d71ed6B912bE70e6",
-  "ParallelTaskBatch": "0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc",
-  "AgentCollective": "0x0CDE9560D2E95338922c40A52A2c81cdd20613d1",
-  "AgentInsurance": "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55",
   "network": "baseSepolia",
-  "chainId": "84532",
-  "owner": "0xa2BCf507C3A9603c9206B80ef842dE4FAC86d93f",
-  "feeRecipient": "0xa2BCf507C3A9603c9206B80ef842dE4FAC86d93f",
-  "deployedAt": "2026-05-15T13:22:18.355Z",
-  "COVENANTRouter": "0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09",
-  "LitProtocolIntegration": "0x9322B12111699Dd05DD3d0c5D8D08b764051A89f",
-  "DisputeArbitration": "0x37A62C6eDd18461CCe00B6772Da8640C75DE740e",
-  "AgentWallet": "0x70F6d2dBd0471DD0aA6a1A54d492eF1AE4F400A1",
-  "updatedAt": "2026-05-15T17:36:36.297Z"
+  "chainId": 84532,
+  "deployer": "0xE2e34Dceb7dAFCd63257C5cbE69Fcb06571ADAcC",
+  "timestamp": "2026-06-14T07:26:19.680Z",
+  "contracts": {
+    "CovenantIdentity": "0xB93eCF2bD8DE0e35ddAD13D9F00E70b938C18FdF",
+    "CovenantEscrow": "0xDb9F26155192c685BEC75E86A7c70A3ca0F80Ac3",
+    "CovenantSettlement": "0xBB3deBA10b0bDaa79c9384E39cDd899116082939",
+    "CovenantArbitration": "0x874d2D6Aa857685D1B7786db2eF9C32C0AcfB614",
+    "CovenantGovernance": "0xd505b5CA3dB39d04592D51DB51507550e0d878DF",
+    "CovenantAttestation": "0x65804fb982Be86C48E03107963FDAcd285f21540"
+  }
 }

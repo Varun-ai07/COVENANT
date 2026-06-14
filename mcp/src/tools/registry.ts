@@ -1,15 +1,15 @@
 /**
- * AgentRegistry MCP Tools
+ * AgentRegistry MCP Tools (V4 CovenantIdentity)
  *
  * register_agent  — Register a new agent on-chain
  * get_agent       — Look up an agent's profile by address
- * find_workers    — Find agents by capability string
  * add_stake       — Increase agent stake
  * deactivate_agent — Deactivate and withdraw stake
- * get_all_agents  — List all registered agents
+ * grant_capability — Grant a capability to an agent
+ * revoke_capability — Revoke a capability from an agent
  */
 import { z } from "zod";
-import { parseEther, type Address, isAddress } from "viem";
+import { parseEther, keccak256, toBytes, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
@@ -34,8 +34,16 @@ const getAgentSchema = z.object({
   address: z.string().refine(isAddress, { message: "Invalid Ethereum address" })
 });
 
-const findWorkersSchema = z.object({
-  capability: z.string().min(1).max(50)
+const grantCapabilitySchema = z.object({
+  agent: z.string().refine(isAddress, { message: "Invalid agent address" }),
+  capabilityHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid capability hash"),
+  expiry: z.number().int().nonnegative(),
+  valueLimit: z.string().regex(/^\d+$/, "Invalid value limit")
+});
+
+const revokeCapabilitySchema = z.object({
+  agent: z.string().refine(isAddress, { message: "Invalid agent address" }),
+  capabilityHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid capability hash")
 });
 
 export function registerAgentTools(server: McpServer): void {
@@ -86,11 +94,13 @@ export function registerAgentTools(server: McpServer): void {
         }
 
         const stakeAmount = parseEther(validatedStake);
+        const metadataRoot = keccak256(toBytes(validatedName + validatedCapabilities.join(",")));
+
         const result = await executeOrPrepare(
           CONTRACTS.AgentRegistry,
           ABI,
           "register",
-          [validatedName, validatedCapabilities],
+          [stakeAmount, metadataRoot],
           stakeAmount
         );
 
@@ -167,87 +177,6 @@ export function registerAgentTools(server: McpServer): void {
   );
 
   // ──────────────────────────────────────────────────────────────
-  // find_workers
-  // ──────────────────────────────────────────────────────────────
-  server.registerTool(
-    "corven_find_workers",
-    {
-      title: "Find Workers by Capability",
-      description:
-        "Searches the registry for active agents with a specific capability. Returns them sorted by reputation highest first.\n" +
-        "USE WHEN: Before creating any task. This is how you discover who can do the work.\n" +
-        "REQUIRES: Nothing. Free read-only call. No gas cost.\n" +
-        "RETURNS: Array of agent profiles with address, name, reputation score, success rate, active task count.\n" +
-        "COMES BEFORE: corven_create_task or corven_post_open_task. Use the returned address as the worker parameter.\n" +
-        "NOTE: The first result has the highest reputation. For high-value tasks, always use a high-reputation worker.",
-      inputSchema: {
-        capability: z
-          .string()
-          .describe(
-            'The capability tag to search for. ' +
-            'Valid values: "data-analysis", "code-review", "content-writing", ' +
-            '"financial-analysis", "research", "translation", "testing", ' +
-            '"security-audit", "documentation", "smart-contract", "python", ' +
-            '"visualization", "api-integration", "ml-training", "design". ' +
-            'Returns all active agents with this capability sorted by reputation.'
-          ),
-      },
-    },
-    async ({ capability }) => {
-      try {
-        const validationResult = findWorkersSchema.safeParse({ capability });
-        if (!validationResult.success) {
-          return formatStructuredError(
-            "Invalid capability string.",
-            `Received '${capability}' — must be 1-50 characters.`,
-            "Pass a valid capability tag like 'data-analysis', 'code-review', or 'research'.",
-            true
-          );
-        }
-
-        const validatedCapability = validationResult.data.capability;
-        const addresses = (await readContract(
-          CONTRACTS.AgentRegistry,
-          ABI,
-          "getAgentsByCapability",
-          [capability]
-        )) as Address[];
-
-        if (addresses.length === 0) {
-          return formatReadResult(
-            { capability, count: 0, workers: [] },
-            `No workers found for "${capability}"`
-          );
-        }
-
-        const workers = await Promise.all(
-          addresses.map(async (addr) => {
-            const profile = await readContract(
-              CONTRACTS.AgentRegistry,
-              ABI,
-              "getAgent",
-              [addr]
-            );
-            return { address: addr, ...profile };
-          })
-        );
-
-        workers.sort(
-          (a: any, b: any) => Number(b.reputation ?? 0) - Number(a.reputation ?? 0)
-        );
-
-        return formatReadResult(
-          { capability, count: workers.length, workers },
-          `Workers with capability "${capability}"`
-        );
-      } catch (e) {
-        const parsed = parseContractError(e);
-        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
-      }
-    }
-  );
-
-  // ──────────────────────────────────────────────────────────────
   // corven_add_stake
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
@@ -281,7 +210,7 @@ export function registerAgentTools(server: McpServer): void {
         const result = await executeOrPrepare(
           CONTRACTS.AgentRegistry,
           ABI,
-          "addStake",
+          "increaseStake",
           [],
           stakeAmount
         );
@@ -353,32 +282,138 @@ export function registerAgentTools(server: McpServer): void {
   );
 
   // ──────────────────────────────────────────────────────────────
-  // corven_get_all_agents
+  // corven_grant_capability
   // ──────────────────────────────────────────────────────────────
   server.registerTool(
-    "corven_get_all_agents",
+    "corven_grant_capability",
     {
-      title: "Get All Agents",
+      title: "Grant Capability",
       description:
-        "Returns the addresses of every registered agent on the protocol.\n" +
-        "USE WHEN: Building a directory. Discovering all participants. Checking protocol adoption.\n" +
-        "REQUIRES: Nothing. Free read-only call.\n" +
-        "RETURNS: Count and array of Ethereum addresses. Each needs corven_get_agent for full profile.\n" +
-        "COMES BEFORE: Call corven_get_agent on each address to get name, reputation, capabilities, and stake.",
-      inputSchema: {},
+        "Grants a specific capability to an agent with an expiry and value limit.\n" +
+        "USE WHEN: Authorizing an agent to perform specific actions or access certain resources.\n" +
+        "REQUIRES: You must have permission to grant capabilities (typically the agent owner or admin).\n" +
+        "RETURNS: Confirmation of capability grant, txHash.\n" +
+        "COMES AFTER: corven_register_agent (agent must be registered).\n" +
+        "NOTE: Capabilities can be revoked with corven_revoke_capability.",
+      inputSchema: {
+        agent: ethAddress,
+        capabilityHash: z.string().describe("Keccak256 hash of the capability string (bytes32 hex)"),
+        expiry: z.number().int().nonnegative().describe("Expiry timestamp (unix seconds)"),
+        valueLimit: z.string().describe("Maximum value limit for this capability (in wei)")
+      },
     },
-    async () => {
+    async ({ agent, capabilityHash, expiry, valueLimit }) => {
       try {
-        const addresses = await readContract(
+        const account = getAccount();
+        if (!account) {
+          return formatStructuredError(
+            "No private key configured.",
+            "PRIVATE_KEY environment variable is not set.",
+            "Set PRIVATE_KEY in your .env file.",
+            false
+          );
+        }
+
+        const validationResult = grantCapabilitySchema.safeParse({ agent, capabilityHash, expiry, valueLimit });
+        if (!validationResult.success) {
+          return formatStructuredError(
+            "Invalid input parameters.",
+            validationResult.error.issues.map((e: any) => e.message).join(", "),
+            "Check agent address (valid 0x...), capabilityHash (0x...64hex), expiry (non-negative integer), and valueLimit (numeric string).",
+            true
+          );
+        }
+
+        const result = await executeOrPrepare(
           CONTRACTS.AgentRegistry,
           ABI,
-          "getAllAgents",
-          []
+          "grantCapability",
+          [
+            validationResult.data.agent as Address,
+            validationResult.data.capabilityHash as `0x${string}`,
+            validationResult.data.expiry,
+            BigInt(validationResult.data.valueLimit)
+          ]
         );
-        return formatReadResult(
-          { count: (addresses as any[]).length, agents: addresses },
-          "All Registered Agents"
+
+        if (result.status === "success") {
+          return formatSuccess(
+            `Capability granted to ${agent}.`,
+            { agent, capabilityHash, expiry, valueLimit },
+            result.txHash,
+            ["Capability is now active. Use corven_has_capability to verify."]
+          );
+        }
+
+        return formatTxResult(result);
+      } catch (e) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // corven_revoke_capability
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_revoke_capability",
+    {
+      title: "Revoke Capability",
+      description:
+        "Revokes a previously granted capability from an agent.\n" +
+        "USE WHEN: Removing a capability from an agent that is no longer needed or authorized.\n" +
+        "REQUIRES: You must have permission to revoke capabilities (typically the agent owner or admin).\n" +
+        "RETURNS: Confirmation of capability revocation, txHash.\n" +
+        "COMES AFTER: corven_grant_capability (capability must have been granted).\n" +
+        "NOTE: The agent will immediately lose access to the revoked capability.",
+      inputSchema: {
+        agent: ethAddress,
+        capabilityHash: z.string().describe("Keccak256 hash of the capability string (bytes32 hex)")
+      },
+    },
+    async ({ agent, capabilityHash }) => {
+      try {
+        const account = getAccount();
+        if (!account) {
+          return formatStructuredError(
+            "No private key configured.",
+            "PRIVATE_KEY environment variable is not set.",
+            "Set PRIVATE_KEY in your .env file.",
+            false
+          );
+        }
+
+        const validationResult = revokeCapabilitySchema.safeParse({ agent, capabilityHash });
+        if (!validationResult.success) {
+          return formatStructuredError(
+            "Invalid input parameters.",
+            validationResult.error.issues.map((e: any) => e.message).join(", "),
+            "Check agent address (valid 0x...) and capabilityHash (0x...64hex).",
+            true
+          );
+        }
+
+        const result = await executeOrPrepare(
+          CONTRACTS.AgentRegistry,
+          ABI,
+          "revokeCapability",
+          [
+            validationResult.data.agent as Address,
+            validationResult.data.capabilityHash as `0x${string}`
+          ]
         );
+
+        if (result.status === "success") {
+          return formatSuccess(
+            `Capability revoked from ${agent}.`,
+            { agent, capabilityHash },
+            result.txHash,
+            ["Capability has been removed. The agent no longer has access."]
+          );
+        }
+
+        return formatTxResult(result);
       } catch (e) {
         const parsed = parseContractError(e);
         return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);

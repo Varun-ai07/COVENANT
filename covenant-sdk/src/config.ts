@@ -1,6 +1,6 @@
 import type { Address } from "viem";
-import { BASE_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
-import type { ContractAddresses, V2ContractAddresses } from "./types.js";
+import { BASE_SEPOLIA_ADDRESSES, V4_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
+import type { ContractAddresses, V2ContractAddresses, V4ContractAddresses } from "./types.js";
 
 /**
  * Default contract addresses by chain ID
@@ -182,6 +182,43 @@ export function getV2ContractAddresses(
   const defaults = V2_ADDRESSES[chainId];
   if (!defaults) {
     throw new Error(`Unsupported chain ID for V2: ${chainId}. Supported: ${Object.keys(V2_ADDRESSES).join(", ")}`);
+  }
+  return { ...defaults, ...overrides };
+}
+
+/**
+ * Default V4 contract addresses by chain ID
+ */
+export const V4_ADDRESSES: Record<number, V4ContractAddresses> = {
+  84532: V4_SEPOLIA_ADDRESSES,
+  8453: {
+    CovenantIdentity: "0x0000000000000000000000000000000000000000",
+    CovenantEscrow: "0x0000000000000000000000000000000000000000",
+    CovenantSettlement: "0x0000000000000000000000000000000000000000",
+    CovenantArbitration: "0x0000000000000000000000000000000000000000",
+    CovenantGovernance: "0x0000000000000000000000000000000000000000",
+    CovenantAttestation: "0x0000000000000000000000000000000000000000",
+  },
+  31337: {
+    CovenantIdentity: "0x0000000000000000000000000000000000000000",
+    CovenantEscrow: "0x0000000000000000000000000000000000000000",
+    CovenantSettlement: "0x0000000000000000000000000000000000000000",
+    CovenantArbitration: "0x0000000000000000000000000000000000000000",
+    CovenantGovernance: "0x0000000000000000000000000000000000000000",
+    CovenantAttestation: "0x0000000000000000000000000000000000000000",
+  },
+};
+
+/**
+ * Get V4 contract addresses for a chain ID with optional overrides
+ */
+export function getV4ContractAddresses(
+  chainId: number,
+  overrides?: Partial<V4ContractAddresses>
+): V4ContractAddresses {
+  const defaults = V4_ADDRESSES[chainId];
+  if (!defaults) {
+    throw new Error(`Unsupported chain ID for V4: ${chainId}. Supported: ${Object.keys(V4_ADDRESSES).join(", ")}`);
   }
   return { ...defaults, ...overrides };
 }

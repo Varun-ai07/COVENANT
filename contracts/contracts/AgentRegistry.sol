@@ -2,8 +2,9 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract AgentRegistry is Ownable {
+contract AgentRegistry is Ownable, ReentrancyGuard {
     // Events
     event AgentRegistered(address indexed agent, bytes32 indexed did, string name, uint256 stake);
     event ReputationUpdated(address indexed agent, int256 delta, uint256 newReputation);
@@ -210,7 +211,7 @@ contract AgentRegistry is Ownable {
     /**
      * @notice Deactivate an agent (returns stake minus any pending obligations)
      */
-    function deactivate() external {
+    function deactivate() external nonReentrant {
         require(agents[msg.sender].isActive == 1, "Not active");
 
         agents[msg.sender].isActive = 0;
@@ -271,7 +272,7 @@ contract AgentRegistry is Ownable {
     function slashStake(
         address agent,
         uint256 slashAmount
-    ) external onlyAuthorized {
+    ) external onlyAuthorized nonReentrant {
         require(agents[agent].isActive == 1, "Agent not active");
         require(slashAmount <= agents[agent].stakedAmount, "Slash exceeds stake");
 
