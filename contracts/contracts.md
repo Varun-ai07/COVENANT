@@ -621,3 +621,97 @@ Work rarely meets requirements on the first try. This contract tracks revision r
 | CovenantSettlement | ~50K gas | ~25K gas |
 | CovenantArbitration | ~50K gas | ~25K gas |
 | All contracts | Upgradeable (no redeploy) | CEI + nonReentrant |
+
+---
+
+## Complete .sol File Inventory (35 files)
+
+### V5 Core Contracts (6 files) — The Protocol
+
+These are the 6 core contracts that make up the COVENANT protocol. All are upgradeable, CEI-compliant, and have `nonReentrant` guards.
+
+| # | File | Contract | Lines | Purpose |
+|---|------|----------|-------|---------|
+| 1 | v5/core/CovenantIdentity.sol | CovenantIdentity | 167 | Agent registration, stake, reputation, capabilities |
+| 2 | v5/core/CovenantEscrow.sol | CovenantEscrow | 310 | Task payments, escrow, completion |
+| 3 | v5/core/CovenantSettlement.sol | CovenantSettlement | 301 | Streaming payments, signed receipts |
+| 4 | v5/core/CovenantArbitration.sol | CovenantArbitration | 257 | Dispute resolution, arbiter ruling |
+| 5 | v5/core/CovenantAttestation.sol | CovenantAttestation | 131 | Verifiable credentials, schema-based |
+| 6 | v5/core/CovenantGovernance.sol | CovenantGovernance | 172 | Proposals, voting, timelock |
+
+### V5 Extensions (8 files) — Additional Features
+
+These extend the core protocol with specialized functionality.
+
+| # | File | Contract | Lines | Purpose |
+|---|------|----------|-------|---------|
+| 7 | v5/extensions/ParallelTaskBatch.sol | ParallelTaskBatch | 138 | Multi-worker parallel tasks |
+| 8 | v5/extensions/AgentCollective.sol | AgentCollective | 132 | Pool resources for expensive tasks |
+| 9 | v5/extensions/MultiTokenEscrow.sol | MultiTokenEscrow | 109 | ERC-20 token payments |
+| 10 | v5/extensions/COVENANTRouter.sol | COVENANTRouter | 72 | Batch multicall |
+| 11 | v5/extensions/TrainingMarketplace.sol | TrainingMarketplace | 184 | Sell/buy agent training |
+| 12 | v5/extensions/GrantProgram.sol | GrantProgram | 77 | DAO-funded grants |
+| 13 | v5/extensions/InsurancePool.sol | InsurancePool | 108 | Cooperative insurance |
+| 14 | v5/extensions/RevisionManager.sol | RevisionManager | 83 | Revision tracking |
+
+### V5 Interfaces (6 files) — Type Definitions
+
+These define the function signatures for each V5 contract. Used by the MCP server and SDK for type safety.
+
+| # | File | Interface | Purpose |
+|---|------|-----------|---------|
+| 15 | v5/interfaces/ICovenantIdentity.sol | ICovenantIdentity | Agent registration interface |
+| 16 | v5/interfaces/ICovenantEscrow.sol | ICovenantEscrow | Task escrow interface |
+| 17 | v5/interfaces/ICovenantSettlement.sol | ICovenantSettlement | Settlement interface |
+| 18 | v5/interfaces/ICovenantArbitration.sol | ICovenantArbitration | Arbitration interface |
+| 19 | v5/interfaces/ICovenantAttestation.sol | ICovenantAttestation | Attestation interface |
+| 20 | v5/interfaces/ICovenantGovernance.sol | ICovenantGovernance | Governance interface |
+
+### V1 Legacy Contracts (13 files) — Deployed, Superseded
+
+These are the original contracts deployed on Base Sepolia. They're kept for:
+- Backward compatibility (MCP tools reference V1 names)
+- Reference (V5 was built on top of these)
+- Historical record (original deployment)
+
+| # | File | Contract | V5 Replacement | Status |
+|---|------|----------|---------------|--------|
+| 21 | AgentRegistry.sol | AgentRegistry | CovenantIdentity | Legacy |
+| 22 | TaskEscrow.sol | TaskEscrow | CovenantEscrow | Legacy |
+| 23 | ReceiptVerifier.sol | ReceiptVerifier | CovenantAttestation | Legacy |
+| 24 | DisputeArbitration.sol | DisputeArbitration | CovenantArbitration | Legacy |
+| 25 | AgentInsurance.sol | AgentInsurance | InsurancePool | Legacy |
+| 26 | AgentCollective.sol | AgentCollective | AgentCollective (V5) | Legacy |
+| 27 | ParallelTaskBatch.sol | ParallelTaskBatch | ParallelTaskBatch (V5) | Legacy |
+| 28 | OpenTaskMarket.sol | OpenTaskMarket | CovenantEscrow | Legacy |
+| 29 | COVENANTRouter.sol | COVENANTRouter | COVENANTRouter (V5) | Legacy |
+| 30 | MultiTokenEscrow.sol | MultiTokenEscrow | MultiTokenEscrow (V5) | Legacy |
+| 31 | AgentWallet.sol | AgentWallet | CovenantIdentity | Legacy |
+| 32 | CapabilityVerifier.sol | CapabilityVerifier | CovenantAttestation | Legacy |
+| 33 | ReputationVerifier.sol | ReputationVerifier | Merkle roots in Identity | Legacy |
+
+### Test Contracts (2 files) — Internal Testing Only
+
+These are never deployed. They exist only for unit testing.
+
+| # | File | Contract | Purpose |
+|---|------|----------|---------|
+| 34 | test/MockERC20.sol | MockERC20 | Fake ERC-20 token for testing MultiTokenEscrow |
+| 35 | test/ReentrancyAttacker.sol | ReentrancyAttacker | Malicious contract for testing reentrancy protection |
+
+### Do These Files Need Documentation?
+
+| Category | Needs Docs? | Why |
+|----------|------------|-----|
+| V5 Core (6) | ✅ Already documented | Main protocol contracts |
+| V5 Extensions (8) | ✅ Already documented | Additional features |
+| V5 Interfaces (6) | ❌ No | Auto-generated type definitions |
+| V1 Legacy (13) | ❌ No | Superseded by V5, kept for reference |
+| Test Contracts (2) | ❌ No | Internal testing only |
+
+### Why V1 Files Are Still Here
+
+1. **MCP backward compatibility**: MCP tools use V1 names (`corven_agent`, `corven_task`) that map to V5 addresses via config
+2. **Deployed contracts**: V1 contracts are live on Base Sepolia — users interact with them
+3. **Reference**: V5 was built on top of V1 patterns — keeping V1 shows the evolution
+4. **Migration**: When V5 is fully adopted, V1 files can be removed
