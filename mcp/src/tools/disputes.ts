@@ -4,6 +4,7 @@
  * file_dispute    — File a dispute on a task
  * cast_vote       — Cast a vote on a dispute
  * get_dispute     — Get dispute details
+ * claim_reward    — Claim juror reward (pull-payment)
  * get_dispute_counter — Get total disputes
  */
 import { z } from "zod";
@@ -179,6 +180,42 @@ export function registerDisputeTools(server: McpServer): void {
           votingEndsAt: (data as any).votingEndsAt,
         };
         return formatReadResult(enriched, `Dispute #${disputeId}`);
+      } catch (e) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // claim_reward
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_claim_reward",
+    {
+      title: "Claim Juror Reward",
+      description:
+        "Claim your accumulated juror rewards from resolved disputes.\n" +
+        "USE WHEN: You are a juror who voted on a dispute and want to collect your reward.\n" +
+        "HOW IT WORKS: After a dispute is resolved, juror rewards are credited to your address. " +
+        "Call this tool to withdraw them to your wallet.\n" +
+        "REQUIRES: You must have unclaimed rewards from previous dispute resolutions.\n" +
+        "RETURNS: Amount of ETH claimed.",
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        if (!isDisputeDeployed()) {
+          return formatError(new Error("DisputeArbitration contract is not deployed on this network."));
+        }
+        const result = await executeOrPrepare(
+          CONTRACTS.DisputeArbitration,
+          ABI,
+          "claimReward",
+          [],
+          0n
+        );
+        return formatTxResult(result);
       } catch (e) {
         const parsed = parseContractError(e);
         return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);

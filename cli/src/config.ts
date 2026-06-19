@@ -60,7 +60,7 @@ export const CHAIN =
 
 export const CONTRACTS: Record<string, Address> = {
   AgentRegistry: (process.env.REGISTRY_ADDRESS ||
-    "0xB215589dA259A98eEE8BF39739F6255131ac33A1") as Address,
+    "0x0003072b15d2c299d46bC5FfE7785E803895E614") as Address,
   TaskEscrow: (process.env.ESCROW_ADDRESS ||
     "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3") as Address,
   ReceiptVerifier: (process.env.VERIFIER_ADDRESS ||

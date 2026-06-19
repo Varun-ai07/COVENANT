@@ -1,11 +1,14 @@
 {
   "name": "covenant-monorepo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "workspaces": [
     "packages/*",
     "covenant-sdk",
     "mcp",
     "cli"
-  ]
+  ],
+  "dependencies": {
+    "ethers": "^6.16.0"
+  }
 }

@@ -9,11 +9,18 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@elizaos/core": "latest"
+    "@elizaos/core": "^1.7.2",
+    "ethers": "^6.17.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
   },
-  "keywords": ["elizaos", "covenant", "mcp", "agent-economy", "blockchain"],
+  "keywords": [
+    "elizaos",
+    "covenant",
+    "mcp",
+    "agent-economy",
+    "blockchain"
+  ],
   "license": "MIT"
 }

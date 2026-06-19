@@ -5,7 +5,7 @@ const hre = require("hardhat");
 const { ethers } = hre;
 const fs = require("fs");
 
-const V1_REGISTRY = "0xB215589dA259A98eEE8BF39739F6255131ac33A1";
+const V1_REGISTRY = "0x0003072b15d2c299d46bC5FfE7785E803895E614";
 const V2_REGISTRY = "0x773d1954997b6A91e917e0c2326ABCcAf36e21E1";
 const PROGRESS_FILE = __dirname + "/migration-progress.json";
 const BATCH_SIZE = 50;

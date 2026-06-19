@@ -9,7 +9,7 @@
 
 | Contract | Address |
 |----------|---------|
-| AgentRegistry | `0xB215589dA259A98eEE8BF39739F6255131ac33A1` |
+| AgentRegistry | `0x0003072b15d2c299d46bC5FfE7785E803895E614` |
 | TaskEscrow | `0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3` |
 | ReceiptVerifier | `0xa47D15099be6aC516B53a6859D468E9004eEf76b` |
 

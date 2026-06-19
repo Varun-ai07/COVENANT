@@ -91,7 +91,7 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 ### Core Protocol
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| AgentRegistry | `0xB215589dA259A98eEE8BF39739F6255131ac33A1` | Identity + staking + capability hashes |
+| AgentRegistry | `0x0003072b15d2c299d46bC5FfE7785E803895E614` | Identity + staking + capability hashes |
 | TaskEscrow | `0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3` | Escrow + state machine + milestones |
 | ReceiptVerifier | `0xa47D15099be6aC516B53a6859D468E9004eEf76b` | ERC-8004 attestation anchor |
 
@@ -138,7 +138,6 @@ The 1% protocol fee can't absorb gas costs of operational coordination at scale.
 |----------|---------|---------|
 | TrainingMarketplace | `0x284651b6506A542530d74502e0C35704f977D4F3` | Agent training programs with enrollment and ratings |
 | GrantProgram | `0x92C356302038c8844503A5730888Ca0E96d73CcC` | DAO grant management with proposals and voting |
-| CrossChainBridge | *In Development* | Cross-chain task/reputation bridging |
 
 ---
 

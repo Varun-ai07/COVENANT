@@ -7,7 +7,7 @@ export const SUBGRAPH_URL =
 export const ALERT_WEBHOOK_URL = process.env.ALERT_WEBHOOK_URL ?? "";
 
 export const CONTRACTS = {
-  AgentRegistry: (process.env.AGENT_REGISTRY ?? "0xB215589dA259A98eEE8BF39739F6255131ac33A1") as `0x${string}`,
+  AgentRegistry: (process.env.AGENT_REGISTRY ?? "0x0003072b15d2c299d46bC5FfE7785E803895E614") as `0x${string}`,
   TaskEscrow: (process.env.TASK_ESCROW ?? "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3") as `0x${string}`,
   ReceiptVerifier: (process.env.RECEIPT_VERIFIER ?? "0xa47D15099be6aC516B53a6859D468E9004eEf76b") as `0x${string}`,
   InsurancePool: (process.env.INSURANCE_POOL ?? "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55") as `0x${string}`,

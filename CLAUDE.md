@@ -35,7 +35,6 @@ Each contract domain (`registry`, `market`, `escrow`, `disputes`, `batches`, `in
 
 ## Architecture
 
-Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (payment escrow), `ReceiptVerifier` (attestation receipts). Extensions: `OpenTaskMarket` (competitive bidding), `ParallelTaskBatch` (multi-worker batches), `AgentCollective` (pooled groups), `AgentInsurance` (coverage pool), `DisputeArbitration` (juror resolution), Groth16 ZK verifiers, `COVENANTRouter` (unified router), `LitProtocolIntegration` (key mgmt), `MultiTokenEscrow` (USDC/DAI/USDT escrow), `AgentSmartWallet` (ERC-4337 account abstraction), `CovenantPaymaster` (gasless transactions), `CrossChainBridge` (cross-chain task/reputation bridging), `TrainingMarketplace` (agent training programs), `GrantProgram` (DAO grant management). Features: cross-chain support (Base Sepolia, Base Mainnet, Polygon, Arbitrum), reputation VCs (W3C Verifiable Credentials), streaming payments, governance DAO, bounty board, task templates with auto-pricing, smart worker matching, agent messaging, ElizaOS plugin integration, training marketplace, grant program, cross-chain bridge.
 
 ## Subgraph
 
@@ -48,7 +47,7 @@ Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (
 
 | Contract | Address |
 |----------|---------|
-| AgentRegistry | `0xB215589dA259A98eEE8BF39739F6255131ac33A1` |
+| AgentRegistry | `0x0003072b15d2c299d46bC5FfE7785E803895E614` |
 | TaskEscrow | `0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3` |
 | ReceiptVerifier | `0xa47D15099be6aC516B53a6859D468E9004eEf76b` |
 | OpenTaskMarket | `0x5ccF09469222E5046b0830c6d71ed6B912bE70e6` |
@@ -65,18 +64,17 @@ Core: `AgentRegistry` (agent identity/reputation, ERC-8004 DIDs), `TaskEscrow` (
 | MultiTokenEscrow | `0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e` |
 | AgentSmartWallet | `0x3c857aADAcFb62F94F121813000E072E788f4d21` |
 | CovenantPaymaster | `0xd1C5265eF0Cb20c2bBE697d296bAF924754A5fd1` |
-| TrainingMarketplace | `0x284651b6506A542530d74502e0C35704f977D4F3` |
-| GrantProgram | `0x92C356302038c8844503A5730888Ca0E96d73CcC` |
-| AutoVerifier | `0xad7A6453447d720b715E106F2e331fAcfb4B21d1` |
-| MultiPartyReview | `0x8B1D433D1f744004c7E375e07143869FeA4482F1` |
-| ClientReputation | `0x4de4694b5a509081949BA599e8AB9Fa9784188d9` |
-| StakeSlashing | `0x3b56AB51e2D34d403aaB3D3F89c3Cee57DFFD946` |
-| MilestoneVerification | `0x2aC422503988556645e7923E9CBCb2DB68d35CD7` |
-| RevisionManager | `0x913d3486687544eA18057ca84C2D6b6bb1E01a65` |
+| TrainingMarketplace | `0x399C35e52BFe7c1822132af709bFE4B141D80D2C` |
+| GrantProgram | `0x062CCc9f549db1c559f549b57ce84e89d20f61bc` |
+| AutoVerifier | `0x23f135467fBe0F9f869F0Bf0B30eaaB87a9ec3A7` |
+| MultiPartyReview | `0x482c435b4Ae3687089A49F9b1FE532FA019e3304` |
+| ClientReputation | `0x32f84FE07466DdE497b941a02C18E3571f5570f8` |
+| StakeSlashing | `0xC9BfA9FDcd0b6f1A8B99a29Fc72C0423D6015Be1` |
+| MilestoneVerification | `0x3Ab1d5f3317e28fFBa607019b4E0AC9243851DF6` |
+| RevisionManager | `0xc953A9B3DD7c0217ad800cE06A133590C7045701` |
 
 | Contract | Address |
 |----------|---------|
-| CrossChainBridge | *In Development* |
 
 ## Technical Specs
 
@@ -88,7 +86,17 @@ Multi-stage pipeline: automated gatekeeping, specialized type checkers (ThreeJS,
 
 ## MCP Tools
 
-131 `corven_`-prefixed tools in `mcp/` covering registry, escrow, market, batches, collectives, insurance, disputes, receipts, verification, templates, matching, messaging, router, cross-chain, streaming, governance, bounties, account-abstraction, fiat, ElizaOS, training, grants, bridge. Standard pattern: `register*Tools()` per domain, `executeOrPrepare()` for wallet ops, `formatReadResult(data, label)`/`formatTxResult(result)` for output.
+25 `corven_`-prefixed domain tools in `mcp/` (v2.0.0). Each tool uses `action` parameter for routing. Key tools:
+
+- `corven_agent` — register, get, update, deactivate, stake, find
+- `corven_task` — create, fund, submit, verify, dispute, get, milestone
+- `corven_market` — post, bid, select, cancel
+- `corven_batch` — create, submit, verify, check
+- `corven_dispute` — file, vote, get, claim_reward
+- `corven_upload_ipfs` — upload to IPFS via Pinata
+- `corven_help` — protocol guide with workflows
+
+Standard pattern: `register*Tools(server)` per domain, `executeOrPrepare()` for wallet ops, `formatReadResult(data, label)`/`formatTxResult(result)` for output.
 
 ## Environment
 
@@ -115,7 +123,7 @@ Multi-stage pipeline: automated gatekeeping, specialized type checkers (ThreeJS,
 | agents | `npx tsx demo.ts` | Full client->worker->verify |
 | agents | `npx tsx register.ts` | Register on-chain |
 | frontend | `npm run dev/build/lint` | Dev :3000 |
-| mcp | `npm run build && npm start` | MCP server (131 tools) |
+| mcp | `npm run build && npm start` | MCP server (25 tools) |
 | covenant-sdk-python | `pip install -e .` | Python SDK |
 | cli | `npm run build && npm start` | CLI tool |
 | root | `./demo.sh local` | Local demo (free) |

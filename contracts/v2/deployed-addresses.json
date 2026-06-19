@@ -2,15 +2,23 @@
   "network": "base-sepolia",
   "chainId": 84532,
   "deployer": "0xa2BCf507C3A9603c9206B80ef842dE4FAC86d93f",
-  "deployedAt": "2026-05-24T13:29:49.511Z",
+  "deployedAt": "2026-06-15T14:30:00.000Z",
   "contracts": {
-    "AgentRegistry": "0xA594E8Aab8d418a2AEF45E7B07E944D03EE524Db",
-    "TaskEscrow": "0xCDdeBedfC2DF08daa6D9459979244093c4Ca20cF",
-    "ReceiptVerifier": "0xcAcb3de1EB1926B2Fba0888BFceE721e0cAc7631",
+    "AgentRegistry": "0x35bEEece8be15270709aF0278061CCfB09773524",
+    "TaskEscrow": "0x361de3E3465b6AaFaa0397B47A324924065aa4aA",
+    "ReceiptVerifier": "0x878B0F6C0C0934569EfDF3B6174524fcf24b06F6",
     "InsurancePool": "0x3FA3C7eE3f18c6Ae1aD3A2175AF865559e93eE54",
     "DisputeResolution": "0x7C7389A41cE55f56BBAca2B7F165b7398e0416fd",
     "MultiTokenEscrow": "0xF55EFfBa88022Fb9C251B69e1934C4203c13b0e9",
-    "CovenantPaymaster": "0x329Dacd266ec6e3784508F4098e0863F057491c1"
+    "CovenantPaymaster": "0x70A9132239b34f58d41D920ecF5C7EdA1c949Ec3",
+    "TrainingMarketplace": "0x399C35e52BFe7c1822132af709bFE4B141D80D2C",
+    "GrantProgram": "0x062CCc9f549db1c559f549b57ce84e89d20f61bc",
+    "RevisionManager": "0xA241ae58B41202C064f98CDC5aEb0314651Ebf1A",
+    "AutoVerifier": "0x23f135467fBe0F9f869F0Bf0B30eaaB87a9ec3A7",
+    "ClientReputation": "0x32f84FE07466DdE497b941a02C18E3571f5570f8",
+    "MilestoneVerification": "0x3Ab1d5f3317e28fFBa607019b4E0AC9243851DF6",
+    "MultiPartyReview": "0x482c435b4Ae3687089A49F9b1FE532FA019e3304",
+    "StakeSlashing": "0xC9BfA9FDcd0b6f1A8B99a29Fc72C0423D6015Be1"
   },
   "existing": {
     "groth16Verifier": "0xd7108ed5C8577B30f6FC024319ebE8B380DaAb85",

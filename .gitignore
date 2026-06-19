@@ -6,6 +6,11 @@ node_modules/
 .env.local
 *.env.backup
 
+# Agent/IDE configs (secrets)
+.openclaude/
+.claude/scheduled_tasks.json
+.claude/scheduled_tasks.lock
+
 # Build outputs
 .next/
 dist/

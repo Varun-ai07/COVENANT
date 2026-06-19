@@ -12,7 +12,8 @@ import {
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { BASE_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
+import { CovenantSDK } from "../../covenant-sdk/dist/index.js";
+import { BASE_SEPOLIA_ADDRESSES } from "./shared-types.js";
 import type { WalletMode, ContractConfig, ContractConfigV2, ContractVersion, ContractConfigMerged } from "./types.js";
 
 dotenv.config({ quiet: true });
@@ -60,6 +61,9 @@ const _v1: ContractConfig = {
   COVENANTRouter: (process.env.ROUTER_ADDRESS || BASE_SEPOLIA_ADDRESSES.COVENANTRouter) as Address,
   LitProtocolIntegration: (process.env.LIT_ADDRESS || BASE_SEPOLIA_ADDRESSES.LitProtocolIntegration) as Address,
   AgentWallet: (process.env.WALLET_ADDRESS || BASE_SEPOLIA_ADDRESSES.AgentWallet) as Address,
+  RevisionManager: (process.env.REVISION_MANAGER_V2 || BASE_SEPOLIA_ADDRESSES.RevisionManager) as Address,
+  TrainingMarketplace: (process.env.TRAINING_MARKETPLACE_ADDRESS || BASE_SEPOLIA_ADDRESSES.TrainingMarketplace) as Address,
+  GrantProgram: (process.env.GRANT_PROGRAM_ADDRESS || BASE_SEPOLIA_ADDRESSES.GrantProgram) as Address,
 };
 
 // V2 addresses (minimal settlement contracts)
@@ -74,26 +78,32 @@ const _v2: ContractConfigV2 = {
 };
 
 export const CONTRACT_VERSION: ContractVersion =
-  (process.env.CONTRACT_VERSION as ContractVersion) || "v1";
+  (process.env.CONTRACT_VERSION as ContractVersion) || "v5";
 
 /**
- * Active contract addresses. When CONTRACT_VERSION=v2:
- * - AgentRegistry, TaskEscrow, ReceiptVerifier → v2 addresses
- * - AgentInsurance → InsurancePool v2 address
- * - DisputeArbitration → DisputeResolution v2 address
- * - All other v1 contracts (market, batches, collective, router, etc.) unchanged
+ * Active contract addresses.
+ * V5 is the default. All V5 contracts are upgradeable.
+ * Legacy V1 addresses are kept for backward compatibility.
  */
-export const CONTRACTS: ContractConfig = CONTRACT_VERSION === "v2"
-  ? {
-      ..._v1,
-      AgentRegistry: _v2.AgentRegistry,
-      TaskEscrow: _v2.TaskEscrow,
-      ReceiptVerifier: _v2.ReceiptVerifier,
-      AgentInsurance: _v2.InsurancePool,       // v1 name → v2 address
-      DisputeArbitration: _v2.DisputeResolution, // v1 name → v2 address
-      MultiTokenEscrow: _v2.MultiTokenEscrow,
-    } as ContractConfig
-  : _v1;
+export const CONTRACTS: ContractConfig = (() => {
+  const v5 = BASE_SEPOLIA_ADDRESSES;
+
+  // Map V5 names to V1 names for tool compatibility
+  // V5 CovenantIdentity → V1 AgentRegistry
+  // V5 CovenantEscrow → V1 TaskEscrow
+  // V5 CovenantSettlement → V1 ReceiptVerifier
+  // V5 CovenantArbitration → V1 DisputeArbitration
+  // V5 InsurancePool → V1 AgentInsurance
+  return {
+    ...v5,
+    // V5 → V1 name mapping (tools use V1 names)
+    AgentRegistry: v5.CovenantIdentity,
+    TaskEscrow: v5.CovenantEscrow,
+    ReceiptVerifier: v5.CovenantSettlement,
+    DisputeArbitration: v5.CovenantArbitration,
+    AgentInsurance: v5.InsurancePool,
+  } as ContractConfig;
+})();
 
 // ============================================================
 // Wallet Mode
@@ -190,6 +200,21 @@ export function getWalletClient(): any {
   return _walletClient;
 }
 
+// ─── CovenantSDK singleton ──────────────────────────────────────
+let _sdk: CovenantSDK | null = null;
+
+export function getSDK(): CovenantSDK {
+  if (!_sdk) {
+    _sdk = new CovenantSDK({
+      chainId: CHAIN.id,
+      publicClient: getPublicClient(),
+      walletClient: getWalletClient(),
+      contractAddresses: CONTRACTS as any,
+    });
+  }
+  return _sdk;
+}
+
 export function getAccount(): any {
   if (!_account) {
     const key = getPrivateKey();
@@ -215,16 +240,25 @@ import ParallelTaskBatchAbi from "./abis/ParallelTaskBatch.json" with { type: "j
 import AgentCollectiveAbi from "./abis/AgentCollective.json" with { type: "json" };
 import AgentInsuranceAbi from "./abis/AgentInsurance.json" with { type: "json" };
 import DisputeArbitrationAbi from "./abis/DisputeArbitration.json" with { type: "json" };
-// New contracts
 import COVENANTRouterAbi from "./abis/COVENANTRouter.json" with { type: "json" };
 import LitProtocolIntegrationAbi from "./abis/LitProtocolIntegration.json" with { type: "json" };
 import AgentWalletAbi from "./abis/AgentWallet.json" with { type: "json" };
 import MultiTokenEscrowAbi from "./abis/MultiTokenEscrow.json" with { type: "json" };
-// ZK Verifiers
 import Groth16VerifierCapabilityAbi from "./abis/Groth16VerifierCapability.json" with { type: "json" };
 import CapabilityVerifierAbi from "./abis/CapabilityVerifier.json" with { type: "json" };
 import Groth16VerifierReputationAbi from "./abis/Groth16VerifierReputation.json" with { type: "json" };
 import ReputationVerifierAbi from "./abis/ReputationVerifier.json" with { type: "json" };
+import TrainingMarketplaceAbi from "./abis/TrainingMarketplace.json" with { type: "json" };
+import GrantProgramAbi from "./abis/GrantProgram.json" with { type: "json" };
+import RevisionManagerAbi from "./abis/RevisionManager.json" with { type: "json" };
+// V5 ABIs
+import CovenantIdentityAbi from "./abis/CovenantIdentity.json" with { type: "json" };
+import CovenantEscrowAbi from "./abis/CovenantEscrow.json" with { type: "json" };
+import CovenantSettlementAbi from "./abis/CovenantSettlement.json" with { type: "json" };
+import CovenantArbitrationAbi from "./abis/CovenantArbitration.json" with { type: "json" };
+import CovenantAttestationAbi from "./abis/CovenantAttestation.json" with { type: "json" };
+import CovenantGovernanceAbi from "./abis/CovenantGovernance.json" with { type: "json" };
+import InsurancePoolAbi from "./abis/InsurancePool.json" with { type: "json" };
 
 // V2 ABIs — loaded dynamically via loadAbiV2(); static imports added as v2 artifacts are compiled
 import fs from "node:fs";
@@ -232,30 +266,36 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ABIS: Record<string, any> = {
-  // Core Protocol
-  AgentRegistry: AgentRegistryAbi.abi,
-  TaskEscrow: TaskEscrowAbi.abi,
-  ReceiptVerifier: ReceiptVerifierAbi.abi,
-  // Market & Batching
+  // V5 Core (NEW)
+  CovenantIdentity: CovenantIdentityAbi.abi,
+  CovenantEscrow: CovenantEscrowAbi.abi,
+  CovenantSettlement: CovenantSettlementAbi.abi,
+  CovenantArbitration: CovenantArbitrationAbi.abi,
+  CovenantAttestation: CovenantAttestationAbi.abi,
+  CovenantGovernance: CovenantGovernanceAbi.abi,
+  // V5 Extensions (NEW)
+  InsurancePool: InsurancePoolAbi.abi,
+  // V5 → V1 name mapping (tools use V1 names)
+  AgentRegistry: CovenantIdentityAbi.abi,    // V5 CovenantIdentity ABI
+  TaskEscrow: CovenantEscrowAbi.abi,         // V5 CovenantEscrow ABI
+  ReceiptVerifier: CovenantSettlementAbi.abi, // V5 CovenantSettlement ABI
+  DisputeArbitration: CovenantArbitrationAbi.abi, // V5 CovenantArbitration ABI
+  AgentInsurance: InsurancePoolAbi.abi,      // V5 InsurancePool ABI
+  // Legacy V1 (still available)
   OpenTaskMarket: OpenTaskMarketAbi.abi,
   ParallelTaskBatch: ParallelTaskBatchAbi.abi,
-  // Collective & Insurance
   AgentCollective: AgentCollectiveAbi.abi,
-  AgentInsurance: AgentInsuranceAbi.abi,
-  // Dispute Resolution
-  DisputeArbitration: DisputeArbitrationAbi.abi,
-  // Router & Integration
   COVENANTRouter: COVENANTRouterAbi,
   LitProtocolIntegration: LitProtocolIntegrationAbi,
-  // Wallet
   AgentWallet: AgentWalletAbi,
-  // ZK Verifiers
   Groth16VerifierCapability: Groth16VerifierCapabilityAbi,
   CapabilityVerifier: CapabilityVerifierAbi,
   Groth16VerifierReputation: Groth16VerifierReputationAbi,
   ReputationVerifier: ReputationVerifierAbi,
-  // Multi-Token Escrow
   MultiTokenEscrow: MultiTokenEscrowAbi,
+  TrainingMarketplace: TrainingMarketplaceAbi.abi,
+  GrantProgram: GrantProgramAbi.abi,
+  RevisionManager: RevisionManagerAbi.abi,
 };
 
 const ALLOWED_CONTRACTS = Object.keys(ABIS);
@@ -278,10 +318,19 @@ export function loadAbi(contractName: string): any {
       }
     } catch { /* fall through to v1 ABI */ }
   }
-  if (!ALLOWED_CONTRACTS.includes(contractName)) {
-    throw new Error(`Unknown contract: ${contractName}. Allowed: ${ALLOWED_CONTRACTS.join(", ")}`);
+  // V1 contracts
+  if (ABIS[contractName]) {
+    return ABIS[contractName];
   }
-  return ABIS[contractName];
+  // Fallback: check v2 ABI directory for contracts not in v1 (e.g. RevisionManager)
+  try {
+    const filePath = path.join(V2_ABI_DIR, `${contractName}.json`);
+    if (fs.existsSync(filePath)) {
+      const artifact = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      return artifact.abi ?? artifact;
+    }
+  } catch { /* not found anywhere */ }
+  throw new Error(`Unknown contract: ${contractName}. Allowed: ${ALLOWED_CONTRACTS.join(", ")}`);
 }
 
 // ============================================================

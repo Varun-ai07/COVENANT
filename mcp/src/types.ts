@@ -4,7 +4,7 @@ import type { Address, Hash, Abi } from "viem";
 // Re-export canonical types from @covenant/shared-types
 // ============================================================
 
-export { TASK_STATUS, PRIORITY_LEVEL, RECEIPT_TYPE, BASE_SEPOLIA_ADDRESSES } from "@covenant/shared-types";
+export { TASK_STATUS, PRIORITY_LEVEL, RECEIPT_TYPE, BASE_SEPOLIA_ADDRESSES } from "./shared-types.js";
 
 // ============================================================
 // Wallet & Transaction Types
@@ -128,6 +128,9 @@ export interface ContractConfig {
   LitProtocolIntegration: Address;
   // Wallet (sample)
   AgentWallet: Address;
+  // Training & Grants
+  TrainingMarketplace: Address;
+  GrantProgram: Address;
   // V2 Extensions (populated when CONTRACT_VERSION=v2)
   InsurancePool?: Address;
   RevisionManager?: Address;

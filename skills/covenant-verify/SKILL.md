@@ -2,13 +2,13 @@
 name: covenant-verify
 description: |
   Universal project verification skill for COVENANT protocol.
-  Analyzes any GitHub project deeply — code quality, security, performance, architecture.
+  3-stage verification pipeline: automated gatekeeper → deep analysis → on-chain attestation.
   Use when verifying a worker's submitted deliverable.
 ---
 
-# COVENANT Verify Skill
+# COVENANT Verify Skill — Production Verification
 
-Universal project verification for COVENANT protocol tasks.
+3-stage verification pipeline for COVENANT protocol tasks.
 
 ## Usage
 
@@ -16,56 +16,85 @@ Universal project verification for COVENANT protocol tasks.
 /covenant-verify <github-url> [--depth quick|standard|deep] [--requirements "task requirements"]
 ```
 
-## What It Does
+## 3-Stage Pipeline
 
-1. Clones the GitHub repository
-2. Analyzes the entire codebase
-3. Scores the project on 8 dimensions
-4. Returns structured verification result
+### Stage 1: Automated Gatekeeper (instant)
+- Lint check (ESLint, Prettier)
+- Build check (compiles without errors)
+- Test check (tests exist and pass)
+- Security scan (eval, innerHTML, SQL injection)
+- Secret detection (hardcoded keys, .env files)
 
-## Verification Dimensions
+### Stage 2: Deep Analysis (30s-2min)
+- Code quality (LOC, complexity, any types, TODOs)
+- Architecture (file structure, modules, dependencies)
+- Security deep scan (XSS, child_process, patterns)
+- Performance (bundle size, large files)
+- Testing quality (coverage, assertions)
+- Documentation (README, code comments)
+- LLM analysis (deep mode only — smart contract checks)
 
-| Dimension | Weight | What It Checks |
-|-----------|--------|----------------|
-| Code Quality | 20% | Lines of code, complexity, naming, duplication |
-| Architecture | 15% | File structure, modules, dependencies, patterns |
-| Security | 20% | Vulnerabilities, hardcoded secrets, auth gaps |
-| Performance | 15% | Bundle size, imports, memory, algorithms |
-| Testing | 15% | Coverage, quality, edge cases, mocks |
-| Documentation | 5% | README, comments, API docs, examples |
-| Dependencies | 5% | Outdated, vulnerable, unused, licenses |
-| Best Practices | 5% | Error handling, types, linting, git hygiene |
+### Stage 3: On-Chain Attestation
+- Generate evidence hash (SHA256)
+- Store report on IPFS
+- Record verification on CovenantAttestation contract
 
-## Output Format
+## Scoring
+
+| Dimension | Weight |
+|-----------|--------|
+| Stage 1: Gatekeeper | 33% |
+| Stage 2: Deep Analysis | 33% |
+| Stage 3: Attestation | 33% |
+
+**Verdict:**
+- Score ≥ 70: PASS
+- Score ≥ 40: PARTIAL
+- Score < 40: FAIL
+
+## Examples
+
+### Quick verification
+```
+/covenant-verify https://github.com/worker/project --depth quick
+```
+
+### Deep verification with requirements
+```
+/covenant-verify https://github.com/worker/project --depth deep --requirements "Solidity smart contract with reentrancy guards, 90% test coverage"
+```
+
+### Smart contract verification
+```
+/covenant-verify https://github.com/worker/token-contract --depth deep --requirements "ERC-20 token with governance, no reentrancy vulnerabilities"
+```
+
+## Output
 
 ```json
 {
   "score": 85,
   "verdict": "pass",
-  "checks": [
-    {"dimension": "code_quality", "score": 88, "details": "..."},
-    {"dimension": "security", "score": 92, "details": "..."},
-    ...
-  ],
-  "summary": "High-quality Three.js portfolio with optimized shaders...",
-  "recommendations": ["Consider adding error boundaries...", ...],
-  "evidenceHash": "Qm..."
+  "stage1": { "passed": true, "score": 90, "checks": [...] },
+  "stage2": { "passed": true, "score": 85, "checks": [...] },
+  "stage3": { "passed": true, "score": 80, "checks": [...] },
+  "summary": "Score: 85/100 (3/3 stages passed)...",
+  "recommendations": ["..."],
+  "evidenceHash": "abc123...",
+  "reportCid": "Qm...",
+  "repoUrl": "https://github.com/worker/project",
+  "timestamp": 1234567890
 }
 ```
 
-## Examples
+## Integration with COVENANT
 
-### Verify a 3D Portfolio
-```
-/covenant-verify https://github.com/worker/threejs-portfolio --depth deep --requirements "Three.js 3D portfolio with custom shaders, responsive design, 60fps"
-```
+After verification passes:
+1. Client calls `corven_task({ action: 'verify', taskId: 1, success: true })`
+2. Worker gets paid
+3. Attestation recorded on-chain via CovenantAttestation
 
-### Verify an AI Agent
-```
-/covenant-verify https://github.com/worker/trading-agent --depth standard --requirements "Autonomous trading agent with LangChain"
-```
-
-### Verify a Smart Contract
-```
-/covenant-verify https://github.com/worker/token-contract --depth deep --requirements "ERC-20 token with governance"
-```
+After verification fails:
+1. Client calls `corven_task({ action: 'verify', taskId: 1, success: false })`
+2. Worker can request revision via `corven_revision({ action: 'request', taskId: 1 })`
+3. Or client files dispute via `corven_task({ action: 'dispute', taskId: 1 })`

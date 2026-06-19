@@ -11,7 +11,7 @@ from .types import ContractAddresses
 DEFAULT_ADDRESSES: Dict[int, ContractAddresses] = {
     # Base Sepolia Testnet
     84532: ContractAddresses(
-        AgentRegistry="0xB215589dA259A98eEE8BF39739F6255131ac33A1",
+        AgentRegistry="0x0003072b15d2c299d46bC5FfE7785E803895E614",
         TaskEscrow="0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3",
         ReceiptVerifier="0xa47D15099be6aC516B53a6859D468E9004eEf76b",
         OpenTaskMarket="0x5ccF09469222E5046b0830c6d71ed6B912bE70e6",

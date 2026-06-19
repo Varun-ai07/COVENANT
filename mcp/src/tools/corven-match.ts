@@ -1,0 +1,317 @@
+/**
+ * corven_match — Smart Worker Matching MCP Tool
+ *
+ * Multi-factor scoring algorithm to find the best workers for tasks.
+ */
+import { z } from "zod";
+import { formatEther } from "viem";
+import { loadAbi, CONTRACTS, getAccount } from "../config.js";
+import { executeOrPrepare, readContract } from "../handlers/wallet.js";
+import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
+import { parseContractError, formatStructuredError } from "../lib/formatResponse.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+const ABI = loadAbi("AgentRegistry");
+
+// Scoring weights
+const W_CAPABILITY = 0.30;
+const W_SUCCESS_RATE = 0.20;
+const W_PRICE = 0.15;
+const W_REPUTATION = 0.55;
+const MAX_REPUTATION = 1000;
+
+// ─── Helpers ─────────────────────────────────────────────────
+
+function capabilityMatchScore(agentCaps: string[], requiredCaps: string[]): number {
+  if (requiredCaps.length === 0) return 1;
+  const agentSet = new Set(agentCaps.map((c) => c.toLowerCase()));
+  const matched = requiredCaps.filter((c) => agentSet.has(c.toLowerCase()));
+  return matched.length / requiredCaps.length;
+}
+
+function successRateScore(completed: number, failed: number): number {
+  const total = completed + failed;
+  if (total === 0) return 0.5;
+  return completed / total;
+}
+
+function priceCompetitivenessScore(stakeWei: bigint, maxStakeWei: bigint): number {
+  if (maxStakeWei === 0n) return 0.5;
+  return Number((stakeWei * 10000n) / maxStakeWei) / 10000;
+}
+
+function reputationScore(reputation: number): number {
+  return Math.min(reputation / MAX_REPUTATION, 1);
+}
+
+// ─── Input Schemas ───────────────────────────────────────────
+
+const findSchema = z.object({
+  capabilities: z.array(z.string().min(1).max(50)).min(1).max(10).describe("Required capability tags"),
+  minReputation: z.number().int().min(0).max(1000).optional().describe("Minimum reputation filter"),
+  limit: z.number().int().min(1).max(50).optional().default(5).describe("Max results (1-50)"),
+});
+
+const matchSchema = z.object({
+  workerAddress: z.string().describe("Worker address to match against"),
+  capabilities: z.array(z.string()).min(1).describe("Required capabilities for the task"),
+});
+
+interface ScoredAgent {
+  address: string;
+  name: string;
+  reputation: number;
+  capabilities: string[];
+  tasksCompleted: number;
+  tasksFailed: number;
+  stakedAmountEth: string;
+  score: number;
+  scoreBreakdown: {
+    capabilityMatch: number;
+    successRate: number;
+    priceCompetitiveness: number;
+    reputation: number;
+  };
+}
+
+// ─── Tool Registration ───────────────────────────────────────
+
+export function registerMatchTools(server: McpServer): void {
+  // ──────────────────────────────────────────────────────────
+  // corven_match — action: find
+  // ──────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_match",
+    {
+      title: "Smart Worker Matching",
+      description:
+        "Find the best workers for your task using multi-factor scoring.\n" +
+        "ACTIONS:\n" +
+        "  find  — Discover and rank agents by capability match, success rate, price competitiveness, and reputation.\n" +
+        "  match — Get a detailed match score for a specific worker against your requirements.\n" +
+        "SCORING: capability_match(30%) + success_rate(20%) + price_competitiveness(15%) + reputation(55%).\n" +
+        "WORKFLOW: corven_match find → corven_get_agent (inspect top candidates) → corven_create_task.\n" +
+        "WHEN TO USE: Before creating a task to find the optimal worker. Free read-only call, no gas cost.",
+      inputSchema: {
+        action: z.enum(["find", "match"]).describe("Matching action"),
+        capabilities: z.array(z.string()).describe("Required capability tags (e.g. ['python', 'data-analysis'])"),
+        minReputation: z.number().optional().describe("Minimum reputation filter (0-1000)"),
+        limit: z.number().optional().describe("Max results for find (1-50, default 5)"),
+        workerAddress: z.string().optional().describe("Worker address to evaluate (for match)"),
+      },
+    },
+    async (params) => {
+      try {
+        const { action } = params as { action: string };
+
+        switch (action) {
+          case "find": {
+            const parsed = findSchema.safeParse({
+              capabilities: params.capabilities,
+              minReputation: params.minReputation,
+              limit: params.limit,
+            });
+            if (!parsed.success) {
+              return formatStructuredError(
+                "Invalid input for find.",
+                parsed.error.issues.map((e) => e.message).join("; "),
+                "Provide capabilities as non-empty array, minReputation as 0-1000, limit as 1-50.",
+                true
+              );
+            }
+            const { capabilities: reqCaps, minReputation: minRep, limit: maxResults } = parsed.data;
+
+            const addresses = (await readContract(
+              CONTRACTS.AgentRegistry,
+              ABI,
+              "getAgentsPaginated",
+              [0, 100]
+            )) as string[];
+
+            if (!addresses || addresses.length === 0) {
+              return formatReadResult(
+                { count: 0, matches: [], query: { capabilities: reqCaps, minReputation: minRep, limit: maxResults } },
+                "No agents registered on the protocol."
+              );
+            }
+
+            const profiles = await Promise.all(
+              addresses.map(async (addr: string) => {
+                try {
+                  const agent = (await readContract(CONTRACTS.AgentRegistry, ABI, "getAgent", [addr])) as any;
+                  return { address: addr, ...agent };
+                } catch {
+                  return null;
+                }
+              })
+            );
+
+            const candidates = profiles.filter((a: any) => {
+              if (!a) return false;
+              const active = a.isActive === 1 || a.isActive === true;
+              if (!active) return false;
+              if (minRep !== undefined && Number(a.reputation) < minRep) return false;
+              return true;
+            });
+
+            if (candidates.length === 0) {
+              return formatReadResult(
+                { count: 0, matches: [], query: { capabilities: reqCaps, minReputation: minRep, limit: maxResults } },
+                "No agents match the specified filters."
+              );
+            }
+
+            let maxStake = 0n;
+            for (const a of candidates) {
+              const s = BigInt(a.stakedAmount ?? 0);
+              if (s > maxStake) maxStake = s;
+            }
+
+            const scored: ScoredAgent[] = candidates.map((a: any) => {
+              const caps: string[] = a.capabilities ?? [];
+              const completed = Number(a.tasksCompleted ?? 0);
+              const failed = Number(a.tasksFailed ?? 0);
+              const stake = BigInt(a.stakedAmount ?? 0);
+              const rep = Number(a.reputation ?? 0);
+
+              const capScore = capabilityMatchScore(caps, reqCaps);
+              const srScore = successRateScore(completed, failed);
+              const priceScore = priceCompetitivenessScore(stake, maxStake);
+              const repScore = reputationScore(rep);
+
+              const total =
+                capScore * W_CAPABILITY +
+                srScore * W_SUCCESS_RATE +
+                priceScore * W_PRICE +
+                repScore * W_REPUTATION;
+
+              return {
+                address: a.address ?? a.wallet,
+                name: a.name ?? "Unknown",
+                reputation: rep,
+                capabilities: caps,
+                tasksCompleted: completed,
+                tasksFailed: failed,
+                stakedAmountEth: (() => {
+                  try { return formatEther(stake); } catch { return "0"; }
+                })(),
+                score: Math.round(total * 10000) / 10000,
+                scoreBreakdown: {
+                  capabilityMatch: Math.round(capScore * 10000) / 10000,
+                  successRate: Math.round(srScore * 10000) / 10000,
+                  priceCompetitiveness: Math.round(priceScore * 10000) / 10000,
+                  reputation: Math.round(repScore * 10000) / 10000,
+                },
+              };
+            });
+
+            scored.sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score;
+              return b.reputation - a.reputation;
+            });
+
+            const top = scored.slice(0, maxResults);
+
+            return formatReadResult(
+              {
+                count: top.length,
+                totalCandidates: candidates.length,
+                query: { capabilities: reqCaps, minReputation: minRep ?? null, limit: maxResults },
+                weights: {
+                  capabilityMatch: W_CAPABILITY,
+                  successRate: W_SUCCESS_RATE,
+                  priceCompetitiveness: W_PRICE,
+                  reputation: W_REPUTATION,
+                },
+                matches: top,
+              },
+              `Top ${top.length} agent matches for [${reqCaps.join(", ")}]`
+            );
+          }
+
+          case "match": {
+            const parsed = matchSchema.safeParse({
+              workerAddress: params.workerAddress,
+              capabilities: params.capabilities,
+            });
+            if (!parsed.success) {
+              return formatStructuredError(
+                "Invalid input for match.",
+                parsed.error.issues.map((e) => e.message).join("; "),
+                "Provide workerAddress and capabilities.",
+                true
+              );
+            }
+            const { workerAddress, capabilities: reqCaps } = parsed.data;
+
+            const agent = (await readContract(
+              CONTRACTS.AgentRegistry,
+              ABI,
+              "getAgent",
+              [workerAddress]
+            )) as any;
+
+            if (!agent) {
+              return formatStructuredError(
+                "Agent not found.",
+                `No agent registered at ${workerAddress}`,
+                "Verify the address or use corven_match find to discover agents.",
+                false
+              );
+            }
+
+            const caps: string[] = agent.capabilities ?? [];
+            const completed = Number(agent.tasksCompleted ?? 0);
+            const failed = Number(agent.tasksFailed ?? 0);
+            const stake = BigInt(agent.stakedAmount ?? 0);
+            const rep = Number(agent.reputation ?? 0);
+
+            const capScore = capabilityMatchScore(caps, reqCaps);
+            const srScore = successRateScore(completed, failed);
+            const priceScore = 0.5;
+            const repScore = reputationScore(rep);
+
+            const total =
+              capScore * W_CAPABILITY +
+              srScore * W_SUCCESS_RATE +
+              priceScore * W_PRICE +
+              repScore * W_REPUTATION;
+
+            return formatReadResult(
+              {
+                address: workerAddress,
+                name: agent.name ?? "Unknown",
+                reputation: rep,
+                capabilities: caps,
+                tasksCompleted: completed,
+                tasksFailed: failed,
+                stakedAmountEth: (() => {
+                  try { return formatEther(stake); } catch { return "0"; }
+                })(),
+                score: Math.round(total * 10000) / 10000,
+                scoreBreakdown: {
+                  capabilityMatch: Math.round(capScore * 10000) / 10000,
+                  successRate: Math.round(srScore * 10000) / 10000,
+                  priceCompetitiveness: Math.round(priceScore * 10000) / 10000,
+                  reputation: Math.round(repScore * 10000) / 10000,
+                },
+              },
+              `Match score for ${agent.name ?? workerAddress}: ${Math.round(total * 10000) / 10000}`
+            );
+          }
+
+          default:
+            return formatStructuredError(
+              `Unknown action: ${action}`,
+              "Valid actions: find, match",
+              "Pass action as 'find' or 'match'.",
+              true
+            );
+        }
+      } catch (e: unknown) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
+    }
+  );
+}
