@@ -715,3 +715,107 @@ These are never deployed. They exist only for unit testing.
 2. **Deployed contracts**: V1 contracts are live on Base Sepolia — users interact with them
 3. **Reference**: V5 was built on top of V1 patterns — keeping V1 shows the evolution
 4. **Migration**: When V5 is fully adopted, V1 files can be removed
+
+---
+
+## Audit-Critical Details
+
+### Access Control Matrix
+
+| Contract | Function | Who Can Call | Role |
+|----------|----------|-------------|------|
+| CovenantIdentity | register | Anyone | — |
+| CovenantIdentity | deactivate | Agent owner | self |
+| CovenantIdentity | withdrawStake | Agent owner | self |
+| CovenantIdentity | grantCapability | Agent owner OR contract owner | owner/self |
+| CovenantIdentity | updateReputationRoot | reputationOracle | oracle |
+| CovenantIdentity | setReputationOracle | Contract owner | owner |
+| CovenantIdentity | emergencyWithdraw | Contract owner | owner |
+| CovenantEscrow | createTask | Anyone | — |
+| CovenantEscrow | completeTask | Anyone (with client sig) | — |
+| CovenantEscrow | failTask | Arbitration/Settlement/Owner | authorized |
+| CovenantEscrow | batchSettle | Owner only | owner |
+| CovenantArbitration | submitRuling | Arbiter only | arbiter |
+| CovenantArbitration | settleDispute | Anyone | — |
+| CovenantGovernance | submitVotes | Anyone (with guardian sig) | — |
+| CovenantGovernance | executeProposal | Anyone (after timelock) | — |
+| CovenantGovernance | vetoProposal | Vetoer only | vetoer |
+| CovenantGovernance | emergencyPause | Guardian only | guardian |
+| All contracts | pause/unpause | Owner only | owner |
+| All contracts | emergencyWithdraw | Owner only | owner |
+
+### Cross-Contract Dependencies
+
+```
+CovenantEscrow → CovenantIdentity (verify agent is registered)
+CovenantArbitration → CovenantEscrow (read task, fail task)
+ParallelTaskBatch → CovenantEscrow (create subtasks)
+AgentCollective → CovenantEscrow (create collective task)
+AgentCollective → CovenantIdentity (verify worker is active)
+COVENANTRouter → Any contract (generic multicall)
+```
+
+### Upgrade Proxy Addresses
+
+All V5 contracts are deployed as upgradeable proxies. The proxy addresses are the same as the contract addresses listed above. The implementation contracts are separate (not listed — not needed for interaction).
+
+### Initialize Parameter Constraints
+
+| Contract | Parameter | Constraint |
+|----------|-----------|------------|
+| CovenantIdentity | minimumStake | Must be > 0 |
+| CovenantIdentity | reputationOracle | Must be valid address |
+| CovenantEscrow | identity | Must be deployed CovenantIdentity |
+| CovenantSettlement | identity | Must be deployed CovenantIdentity |
+| CovenantArbitration | escrow | Must be deployed CovenantEscrow |
+| CovenantArbitration | arbiter | Must be trusted address |
+| CovenantGovernance | guardian | Must be trusted address |
+| CovenantGovernance | vetoer | Must be trusted address |
+| CovenantGovernance | initialQuorum | Must be > 0 |
+| ParallelTaskBatch | escrow | Must be deployed CovenantEscrow |
+| AgentCollective | taskEscrow | Must be deployed CovenantEscrow |
+| AgentCollective | agentRegistry | Must be deployed CovenantIdentity |
+| MultiTokenEscrow | feeRecipient | Must be valid address |
+
+### Overflow/Underflow Protection
+
+All V5 contracts use Solidity 0.8.24 which has built-in overflow/underflow checks. Additionally:
+- `unchecked` blocks are used only for safe operations (e.g., `totalAgents++`)
+- All arithmetic is protected by Solidity's default checks
+- `uint128` for amounts prevents overflow in payment calculations
+- `uint32` for timestamps prevents overflow until year 2106
+
+### Event Emission Patterns
+
+Every state-changing function emits events:
+- Registration: `AgentRegistered`
+- Task lifecycle: `TaskCreated`, `TaskFunded`, `TaskSubmitted`, `TaskCompleted`, `TaskFailed`, `TaskCancelled`, `TaskDisputed`
+- Disputes: `DisputeCreated`, `DisputeStaked`, `DisputeRuled`, `DisputeSettled`
+- Streaming: `StreamCreated`, `StreamWithdrawn`, `StreamCancelled`
+- Attestations: `AttestationIssued`, `AttestationRevoked`
+- Governance: `ProposalCreated`, `VotesSubmitted`, `ProposalExecuted`, `ProposalDefeated`, `ProposalVetoed`
+- Emergency: `EmergencyWithdraw`, `EmergencyPaused`
+
+### Gas Limit Edge Cases
+
+| Scenario | Risk | Mitigation |
+|----------|------|------------|
+| Batch settle 20 tasks | ~1M gas | MAX_BATCH_SIZE = 20 |
+| Batch settle 50 receipts | ~2M gas | MAX_BATCH_SIZE = 50 |
+| Batch attest 100 | ~5M gas | MAX_BATCH_SIZE = 100 |
+| Juror loop in arbitration | Variable | Pull-payment pattern (claimReward) |
+| Capability grant with long expiry | Low risk | Expiry checked on use |
+
+### Deployment Verification Checklist
+
+Before mainnet deployment, verify:
+- [ ] All proxy contracts have correct implementation addresses
+- [ ] Admin roles are set correctly (owner, guardian, vetoer, arbiter, oracle)
+- [ ] Authorized contracts are registered (Escrow → Identity, etc.)
+- [ ] Emergency functions work (pause, unpause, emergencyWithdraw)
+- [ ] Gas costs are within acceptable limits on target chain
+- [ ] All events are emitted correctly
+- [ ] Cross-contract calls work (Escrow ↔ Identity, Arbitration ↔ Escrow)
+- [ ] Upgrade paths are tested (deploy proxy, upgrade implementation)
+- [ ] Timelock in governance works (1-day delay enforced)
+- [ ] Quorum and threshold checks work (67% approval required)
