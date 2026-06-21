@@ -40,6 +40,9 @@ contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, Reentran
     // Emergency pause targets
     mapping(address => bool) public pausedTargets;
 
+    // Signature replay prevention
+    mapping(bytes32 => bool) private _usedSignatures;
+
     event ProposalCreated(uint256 indexed proposalId, address indexed proposer, address target, bytes32 descriptionHash);
     event VotesSubmitted(uint256 indexed proposalId, uint256 forVotes, uint256 againstVotes);
     event ProposalExecuted(uint256 indexed proposalId);
@@ -61,6 +64,7 @@ contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, Reentran
     error NotGuardian();
     error NotVetoer();
     error InvalidGuardianSignature();
+    error SignatureAlreadyUsed();
     error ExecutionFailed();
 
     constructor() {}
@@ -100,15 +104,20 @@ contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, Reentran
         uint256 forVotes,
         uint256 againstVotes,
         bytes calldata guardianSignature
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused {
         ProposalStorage storage proposal = _proposals[proposalId];
         if (proposal.status != ProposalStatus.Active) revert NotActive();
         if (block.timestamp > proposal.votingEnd) revert VotingNotEnded();
 
-        bytes32 message = keccak256(abi.encodePacked(proposalId, forVotes, againstVotes, block.chainid));
+        bytes32 message = keccak256(abi.encodePacked(proposalId, forVotes, againstVotes, block.chainid, address(this)));
         bytes32 ethSignedHash = message.toEthSignedMessageHash();
         address signer = ethSignedHash.recover(guardianSignature);
         if (signer != guardian) revert InvalidGuardianSignature();
+
+        // Prevent signature replay
+        bytes32 sigHash = keccak256(abi.encodePacked(guardianSignature));
+        if (_usedSignatures[sigHash]) revert SignatureAlreadyUsed();
+        _usedSignatures[sigHash] = true;
 
         proposal.forVotes += forVotes;
         proposal.againstVotes += againstVotes;

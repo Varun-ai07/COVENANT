@@ -83,6 +83,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
     constructor() {}
 
     function initialize(address _identity) public initializer {
+        if (_identity == address(0)) revert InvalidAddress();
         __Ownable_init();
         __ReentrancyGuard_init();
         __Pausable_init();
@@ -163,7 +164,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
         if (task.status != TaskStatus.Submitted) revert NotSubmitted();
 
         // Verify client signature (off-chain approval)
-        bytes32 message = keccak256(abi.encodePacked(taskId, block.chainid));
+        bytes32 message = keccak256(abi.encodePacked(taskId, block.chainid, address(this)));
         bytes32 ethSignedHash = message.toEthSignedMessageHash();
         address signer = ethSignedHash.recover(clientSignature);
         if (signer != task.client) revert InvalidClientSignature();
@@ -221,6 +222,10 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
         TaskStorage storage task = _tasks[taskId];
 
         if (task.status == TaskStatus.Disputed) {
+            // Only authorized parties can increment dispute count on disputed tasks
+            if (msg.sender != task.client && msg.sender != task.worker && msg.sender != authorizedArbitration) {
+                revert NotParty();
+            }
             task.disputeCount++;
             emit TaskDisputed(taskId, msg.sender);
             return;
@@ -284,6 +289,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
 
     function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
         if (to == address(0)) revert InvalidAddress();
+        if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");
         require(success, "emergency withdraw failed");
         emit EmergencyWithdraw(to, amount);
@@ -310,5 +316,6 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
     error NotActionable();
     error NotCancellable();
     error WorkerAssigned();
+    error ExcessiveWithdraw();
     receive() external payable {}
 }

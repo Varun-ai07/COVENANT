@@ -27,6 +27,7 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     mapping(uint256 => Claim) public claims;
     uint256 public claimCount;
     uint256 public poolBalance;
+    uint256 public totalContributions;
 
     uint256 public constant MIN_JOIN_AMOUNT = 0.01 ether;
     uint256 public constant CLAIM_COVERAGE_PERCENT = 50;
@@ -35,11 +36,14 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event PremiumPaid(address indexed agent, uint256 taskId, uint256 amount);
     event ClaimFiled(uint256 indexed claimId, address indexed claimant, uint256 amount);
     event ClaimPaid(uint256 indexed claimId, address indexed claimant, uint256 amount);
+    event ClaimApproved(uint256 indexed claimId);
 
     error NotMember();
     error InsufficientPool();
     error ClaimAlreadyPaid();
     error InvalidAmount();
+    error InvalidAddress();
+    error ExcessiveWithdraw();
 
     modifier onlyMember() {
         if (!members[msg.sender].isMember) revert NotMember();
@@ -48,13 +52,14 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); }
+    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); }
 
     function joinPool() external payable nonReentrant {
         if (msg.value < MIN_JOIN_AMOUNT) revert InvalidAmount();
         members[msg.sender] = MemberInfo({isMember: true, totalPremiumsPaid: msg.value, totalClaimsReceived: 0});
         memberCount++;
         poolBalance += msg.value;
+        totalContributions += msg.value;
         emit MemberJoined(msg.sender, msg.value);
     }
 
@@ -72,6 +77,7 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function approveClaim(uint256 claimId) external onlyOwner {
         claims[claimId].approved = true;
+        emit ClaimApproved(claimId);
     }
 
     function payClaim(uint256 claimId) external onlyOwner nonReentrant {
@@ -90,10 +96,20 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     function withdraw() external onlyMember nonReentrant {
-        uint256 minReserve = memberCount * MIN_JOIN_AMOUNT;
-        if (poolBalance <= minReserve) revert InsufficientPool();
-        uint256 amount = poolBalance - minReserve;
+        MemberInfo storage member = members[msg.sender];
+        if (totalContributions == 0) revert InsufficientPool();
+
+        // Proportional withdrawal: member gets their contribution share of the pool
+        uint256 amount = (poolBalance * member.totalPremiumsPaid) / totalContributions;
+        if (amount == 0) revert InsufficientPool();
+
+        // Update state before external call (CEI)
         poolBalance -= amount;
+        totalContributions -= member.totalPremiumsPaid;
+        member.totalPremiumsPaid = 0;
+        member.isMember = false;
+        memberCount--;
+
         (bool s, ) = msg.sender.call{value: amount}("");
         require(s, "transfer failed");
     }
@@ -101,6 +117,8 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function getPoolBalance() external view returns (uint256) { return poolBalance; }
 
     function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+        if (to == address(0)) revert InvalidAddress();
+        if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool s, ) = to.call{value: amount}("");
         require(s, "withdraw failed");
     }

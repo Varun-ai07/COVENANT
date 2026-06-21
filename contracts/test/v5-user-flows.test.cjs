@@ -21,7 +21,7 @@ describe("V5 REAL USER FLOWS", function () {
     await escrow.connect(worker).submitWork(1, ethers.ZeroHash);
 
     const chainId = (await ethers.provider.getNetwork()).chainId;
-    const sig = await client.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint256"], [1, chainId]))));
+    const sig = await client.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint256", "address"], [1, chainId, await escrow.getAddress()]))));
 
     const b1 = await ethers.provider.getBalance(worker.address);
     await escrow.connect(client).completeTask(1, sig);
@@ -75,7 +75,7 @@ describe("V5 REAL USER FLOWS", function () {
     await arbitration.connect(client).createDispute(1, ethers.ZeroHash);
 
     const chainId = (await ethers.provider.getNetwork()).chainId;
-    const sig = await arbiter.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint8", "uint8", "uint256"], [1, 1, 0, chainId]))));
+    const sig = await arbiter.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint8", "uint8", "uint256", "address"], [1, 1, 0, chainId, await arbitration.getAddress()]))));
     await arbitration.connect(arbiter).submitRuling(1, 1, 0, sig);
     const d = await arbitration.getDispute(1);
     expect(d.ruling).to.equal(1);
@@ -109,7 +109,7 @@ describe("V5 REAL USER FLOWS", function () {
 
     await gov.connect(owner).propose(owner.address, "0x", ethers.ZeroHash, 86400);
     const chainId = (await ethers.provider.getNetwork()).chainId;
-    const sig = await guardian.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint256", "uint256", "uint256"], [1, 200, 0, chainId]))));
+    const sig = await guardian.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint256", "uint256", "uint256", "address"], [1, 200, 0, chainId, await gov.getAddress()]))));
     await gov.connect(owner).submitVotes(1, 200, 0, sig);
     const p = await gov.getProposal(1);
     expect(p.forVotes).to.equal(200);
@@ -173,7 +173,7 @@ describe("V5 REAL USER FLOWS", function () {
     const chainId = (await ethers.provider.getNetwork()).chainId;
     const sigs = [];
     for (let i = 0; i < 3; i++) {
-      sigs.push(await client.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint256"], [i + 1, chainId])))));
+      sigs.push(await client.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint256", "address"], [i + 1, chainId, await escrow.getAddress()])))));
     }
     const b1 = await ethers.provider.getBalance(worker.address);
     await escrow.batchSettle([1, 2, 3], [100, 200, 300], sigs);

@@ -28,6 +28,7 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error NotInstructor();
     error InvalidFee();
     error InvalidAddress();
+    error ExcessiveWithdraw();
 
     constructor() {}
 
@@ -54,6 +55,12 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         t.enrollmentCount++;
 
+        // Refund excess ETH
+        if (msg.value > t.price) {
+            (bool s0, ) = msg.sender.call{value: msg.value - t.price}("");
+            require(s0, "refund failed");
+        }
+
         // CEI: State updated, now external calls
         (bool s1, ) = t.instructor.call{value: instructorPayment}("");
         require(s1, "instructor payment failed");
@@ -78,6 +85,8 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+        if (to == address(0)) revert InvalidAddress();
+        if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool s, ) = to.call{value: amount}("");
         require(s, "withdraw failed");
     }

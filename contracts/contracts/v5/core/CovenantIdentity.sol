@@ -63,10 +63,12 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
     error StakeBelowMinimum();
     error CapabilityExpired();
     error CapabilityNotFound();
+    error ExcessiveWithdraw();
 
     constructor() {}
 
     function initialize(uint96 _minimumStake, address _reputationOracle) public initializer {
+        if (_reputationOracle == address(0)) revert InvalidAddress();
         __Ownable_init();
         __ReentrancyGuard_init();
         __Pausable_init();
@@ -146,6 +148,7 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
 
     function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
         if (to == address(0)) revert InvalidAddress();
+        if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");
         require(success, "emergency withdraw failed");
         emit EmergencyWithdraw(to, amount);

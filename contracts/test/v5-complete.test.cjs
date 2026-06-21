@@ -168,7 +168,7 @@ describe("V5 CovenantEscrow", function () {
     await escrow.connect(worker).submitWork(1, ethers.ZeroHash);
 
     const chainId = (await ethers.provider.getNetwork()).chainId;
-    const message = ethers.solidityPacked(["uint256", "uint256"], [1, chainId]);
+    const message = ethers.solidityPacked(["uint256", "uint256", "address"], [1, chainId, await escrow.getAddress()]);
     const hash = ethers.keccak256(message);
     const signature = await client.signMessage(ethers.getBytes(hash));
 
@@ -184,7 +184,7 @@ describe("V5 CovenantEscrow", function () {
     await escrow.connect(worker).submitWork(1, ethers.ZeroHash);
 
     const chainId = (await ethers.provider.getNetwork()).chainId;
-    const message = ethers.solidityPacked(["uint256", "uint256"], [1, chainId]);
+    const message = ethers.solidityPacked(["uint256", "uint256", "address"], [1, chainId, await escrow.getAddress()]);
     const hash = ethers.keccak256(message);
     const signature = await worker.signMessage(ethers.getBytes(hash));
 
@@ -305,7 +305,7 @@ describe("V5 CovenantArbitration", function () {
     await arbitration.connect(client).createDispute(1, ethers.ZeroHash);
 
     const chainId = (await ethers.provider.getNetwork()).chainId;
-    const message = ethers.solidityPacked(["uint256", "uint8", "uint8", "uint256"], [1, 2, 0, chainId]);
+    const message = ethers.solidityPacked(["uint256", "uint8", "uint8", "uint256", "address"], [1, 2, 0, chainId, await arbitration.getAddress()]);
     const hash = ethers.keccak256(message);
     const signature = await arbiter.signMessage(ethers.getBytes(hash));
     await arbitration.connect(arbiter).submitRuling(1, 2, 0, signature);
@@ -375,7 +375,7 @@ describe("V5 CovenantGovernance", function () {
   it("should submit votes", async function () {
     await governance.connect(owner).propose(owner.address, "0x", ethers.ZeroHash, 86400);
     const chainId = (await ethers.provider.getNetwork()).chainId;
-    const message = ethers.solidityPacked(["uint256", "uint256", "uint256", "uint256"], [1, 100, 0, chainId]);
+    const message = ethers.solidityPacked(["uint256", "uint256", "uint256", "uint256", "address"], [1, 100, 0, chainId, await governance.getAddress()]);
     const hash = ethers.keccak256(message);
     const signature = await guardian.signMessage(ethers.getBytes(hash));
     await governance.connect(owner).submitVotes(1, 100, 0, signature);

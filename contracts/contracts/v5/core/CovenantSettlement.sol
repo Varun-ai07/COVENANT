@@ -82,11 +82,13 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error BatchTooLarge();
     error BatchLengthMismatch();
     error InvalidAddress();
+    error ExcessiveWithdraw();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
     function initialize(address _identity) public initializer {
+        if (_identity == address(0)) revert InvalidAddress();
         __Ownable_init();
         __ReentrancyGuard_init();
         identity = _identity;
@@ -192,7 +194,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         // Verify payer signature (EIP-712 style)
         bytes32 receiptHash = keccak256(abi.encodePacked(
-            RECEIPT_TYPEHASH, payer, payee, amount, nonce, block.chainid
+            RECEIPT_TYPEHASH, payer, payee, amount, nonce, block.chainid, address(this)
         ));
         bytes32 ethSignedHash = receiptHash.toEthSignedMessageHash();
         address signer = ethSignedHash.recover(payerSignature);
@@ -241,7 +243,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             if (amounts[i] == 0) revert InvalidAmount();
 
             bytes32 receiptHash = keccak256(abi.encodePacked(
-                RECEIPT_TYPEHASH, payers[i], payees[i], amounts[i], nonces[i], block.chainid
+                RECEIPT_TYPEHASH, payers[i], payees[i], amounts[i], nonces[i], block.chainid, address(this)
             ));
             bytes32 ethSignedHash = receiptHash.toEthSignedMessageHash();
             address signer = ethSignedHash.recover(payerSignatures[i]);
@@ -275,6 +277,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
         if (to == address(0)) revert InvalidAddress();
+        if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");
         require(success, "emergency withdraw failed");
         emit EmergencyWithdraw(to, amount);

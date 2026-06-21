@@ -3,12 +3,13 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 /// @title CovenantArbitration V5 — Dispute resolution with CEI fixes
 /// @notice Client/worker stake + arbiter ruling + split basis points
 /// @dev Fixes V4: CEI in settleDispute, batch size limits, emergency withdrawal
-contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using ECDSAUpgradeable for bytes32;
 
     // ═══════════════════════════════════════════════════════════════
@@ -72,13 +73,14 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     constructor() {}
 
     function initialize(address _escrow, address _arbiter) public initializer {
+        if (_escrow == address(0) || _arbiter == address(0)) revert InvalidAddress();
         __Ownable_init();
         __ReentrancyGuard_init();
         escrow = _escrow;
         arbiter = _arbiter;
     }
 
-    function createDispute(uint256 taskId, bytes32 evidenceHash) external nonReentrant {
+    function createDispute(uint256 taskId, bytes32 evidenceHash) external nonReentrant whenNotPaused {
         // Read task from escrow (external call — acceptable here for validation)
         (address client, address worker, , , uint8 status, , ) = _getTask(taskId);
 
@@ -112,7 +114,7 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         }
     }
 
-    function stakeForDispute(uint256 disputeId) external payable nonReentrant {
+    function stakeForDispute(uint256 disputeId) external payable nonReentrant whenNotPaused {
         DisputeStorage storage dispute = _disputes[disputeId];
         if (dispute.taskId == 0) revert DisputeNotFound();
         if (dispute.settled) revert AlreadySettled();
@@ -147,7 +149,7 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (dispute.ruling != DisputeRuling.None) revert AlreadyRuled();
 
         // Verify arbiter signature
-        bytes32 message = keccak256(abi.encodePacked(disputeId, ruling, splitBps, block.chainid));
+        bytes32 message = keccak256(abi.encodePacked(disputeId, ruling, splitBps, block.chainid, address(this)));
         bytes32 ethSignedHash = message.toEthSignedMessageHash();
         address signer = ethSignedHash.recover(arbiterSignature);
         if (signer != arbiter) revert InvalidArbiterSignature();
@@ -159,7 +161,7 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit DisputeRuled(disputeId, ruling, splitBps);
     }
 
-    function settleDispute(uint256 disputeId) external nonReentrant {
+    function settleDispute(uint256 disputeId) external nonReentrant whenNotPaused {
         DisputeStorage storage dispute = _disputes[disputeId];
         if (dispute.taskId == 0) revert DisputeNotFound();
         if (dispute.ruling == DisputeRuling.None) revert NotRuled();
@@ -193,7 +195,8 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             require(success2, "worker payout failed");
         }
 
-        _failTask(dispute.taskId, keccak256("dispute settled"));
+        // NOTE: Do NOT call _failTask here — payouts are handled above.
+        // Calling _failTask would trigger a second refund from escrow (double-payout bug).
 
         emit DisputeSettled(disputeId, client, worker, clientPayout, workerPayout);
     }
@@ -204,6 +207,7 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
         if (to == address(0)) revert InvalidAddress();
+        if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");
         require(success, "emergency withdraw failed");
         emit EmergencyWithdraw(to, amount);
@@ -253,6 +257,9 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // Custom errors
     error NotDisputable();
+    error ExcessiveWithdraw();
     error NotRuled();
+    function pause() external onlyOwner { _pause(); }
+    function unpause() external onlyOwner { _unpause(); }
     receive() external payable {}
 }
