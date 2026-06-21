@@ -165,20 +165,33 @@ describe("V5 REAL USER FLOWS", function () {
     const EF = await ethers.getContractFactory("contracts/v5/core/CovenantEscrow.sol:CovenantEscrow");
     const escrow = await EF.deploy();
     await escrow.initialize(identity.target);
-    const deadline = await futureTimestamp(7 * 86400);
-    for (let i = 0; i < 3; i++) {
-      await escrow.connect(client).createTask(worker.address, 100 * (i + 1), deadline, ethers.ZeroHash, { value: 100 * (i + 1) });
-      await escrow.connect(worker).submitWork(i + 1, ethers.ZeroHash);
-    }
+    const deadline = BigInt(await futureTimestamp(7 * 86400));
+    const escrowAddr = await escrow.getAddress();
     const chainId = (await ethers.provider.getNetwork()).chainId;
+    for (let i = 0; i < 3; i++) {
+      const taskId = BigInt(i + 1);
+      const amount = BigInt(100 * (i + 1));
+      await escrow.connect(client).createTask(worker.address, amount, deadline, ethers.ZeroHash, { value: amount });
+      await escrow.connect(worker).submitWork(taskId, ethers.ZeroHash);
+    }
     const sigs = [];
     for (let i = 0; i < 3; i++) {
-      sigs.push(await client.signMessage(ethers.getBytes(ethers.keccak256(ethers.solidityPacked(["uint256", "uint256", "address"], [i + 1, chainId, await escrow.getAddress()])))));
+      const taskId = BigInt(i + 1);
+      // Use abi.encodePacked-compatible encoding: uint256 + uint256 + uint160 (20-byte address)
+      const addrBytes = ethers.getBytes(escrowAddr).slice(0, 20);
+      const packed = ethers.concat([
+        ethers.zeroPadValue(ethers.toBeHex(taskId), 32),
+        ethers.zeroPadValue(ethers.toBeHex(chainId), 32),
+        addrBytes,
+      ]);
+      const hash = ethers.keccak256(packed);
+      const sig = await client.signMessage(ethers.getBytes(hash));
+      sigs.push(sig);
     }
     const b1 = await ethers.provider.getBalance(worker.address);
-    await escrow.batchSettle([1, 2, 3], [100, 200, 300], sigs);
+    await escrow.batchSettle([1n, 2n, 3n], [100n, 200n, 300n], sigs);
     const b2 = await ethers.provider.getBalance(worker.address);
-    expect(b2 - b1).to.equal(600);
+    expect(b2 - b1).to.equal(600n);
   });
 
   it("Flow 10: Emergency pause/unpause", async function () {

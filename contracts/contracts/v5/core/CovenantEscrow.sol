@@ -262,7 +262,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
             TaskStorage storage task = _tasks[taskIds[i]];
             if (task.status != TaskStatus.Submitted) revert NotSubmitted();
 
-            bytes32 message = keccak256(abi.encodePacked(taskIds[i], block.chainid));
+            bytes32 message = keccak256(abi.encodePacked(taskIds[i], block.chainid, address(this)));
             bytes32 ethSignedHash = message.toEthSignedMessageHash();
             address signer = ethSignedHash.recover(signatures[i]);
             if (signer != task.client) revert InvalidClientSignature();
