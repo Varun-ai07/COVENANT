@@ -12,6 +12,7 @@ import type { Address } from "viem";
 // ============================================================================
 
 export interface ContractAddresses {
+  // V1 names (backward compat)
   AgentRegistry: Address;
   TaskEscrow: Address;
   ReceiptVerifier: Address;
@@ -38,6 +39,14 @@ export interface ContractAddresses {
   MilestoneVerification: Address;
   RevisionManager: Address;
   AgentWallet: Address;
+  // V5 contracts
+  CovenantIdentity: Address;
+  CovenantEscrow: Address;
+  CovenantSettlement: Address;
+  CovenantArbitration: Address;
+  CovenantAttestation: Address;
+  CovenantGovernance: Address;
+  InsurancePool: Address;
 }
 
 export type PartialContractAddresses = Partial<ContractAddresses>;
@@ -261,6 +270,13 @@ export const BASE_SEPOLIA_ADDRESSES: ContractAddresses = {
   MilestoneVerification: "0x2aC422503988556645e7923E9CBCb2DB68d35CD7",
   RevisionManager: "0x2484636Dd3bF529C33B2C12D2D4d7b6942F85357",
   AgentWallet: "0x0000000000000000000000000000000000000000",
+  CovenantIdentity: "0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA",
+  CovenantEscrow: "0x259338371e67cA712F22A95cb8b616f3926b0E4D",
+  CovenantSettlement: "0xF8deBc17DE3B5D501307166EA40FC2C460997B2D",
+  CovenantArbitration: "0x5b8CcBd735DA802e6B81a49b78BdA5A29159926f",
+  CovenantAttestation: "0x9B314674cb8C3123a6e80832b8A56C28C2e58490",
+  CovenantGovernance: "0x6e7Be799ba629289eC675f19bbB8f0029E719E73",
+  InsurancePool: "0x5e4A41CA094a68d69b84F0Bb9Fa454ba3e1df00a",
 };
 
 export const POLYGON_ADDRESSES: ContractAddresses = {
@@ -290,6 +306,13 @@ export const POLYGON_ADDRESSES: ContractAddresses = {
   MilestoneVerification: ZERO_ADDRESS,
   RevisionManager: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
+  CovenantIdentity: ZERO_ADDRESS,
+  CovenantEscrow: ZERO_ADDRESS,
+  CovenantSettlement: ZERO_ADDRESS,
+  CovenantArbitration: ZERO_ADDRESS,
+  CovenantAttestation: ZERO_ADDRESS,
+  CovenantGovernance: ZERO_ADDRESS,
+  InsurancePool: ZERO_ADDRESS,
 };
 
 export const ARBITRUM_ADDRESSES: ContractAddresses = {
@@ -319,6 +342,13 @@ export const ARBITRUM_ADDRESSES: ContractAddresses = {
   MilestoneVerification: ZERO_ADDRESS,
   RevisionManager: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
+  CovenantIdentity: ZERO_ADDRESS,
+  CovenantEscrow: ZERO_ADDRESS,
+  CovenantSettlement: ZERO_ADDRESS,
+  CovenantArbitration: ZERO_ADDRESS,
+  CovenantAttestation: ZERO_ADDRESS,
+  CovenantGovernance: ZERO_ADDRESS,
+  InsurancePool: ZERO_ADDRESS,
 };
 
 export const BASE_MAINNET_ADDRESSES: ContractAddresses = {
@@ -348,6 +378,13 @@ export const BASE_MAINNET_ADDRESSES: ContractAddresses = {
   MilestoneVerification: ZERO_ADDRESS,
   RevisionManager: ZERO_ADDRESS,
   AgentWallet: ZERO_ADDRESS,
+  CovenantIdentity: ZERO_ADDRESS,
+  CovenantEscrow: ZERO_ADDRESS,
+  CovenantSettlement: ZERO_ADDRESS,
+  CovenantArbitration: ZERO_ADDRESS,
+  CovenantAttestation: ZERO_ADDRESS,
+  CovenantGovernance: ZERO_ADDRESS,
+  InsurancePool: ZERO_ADDRESS,
 };
 
 export interface ChainConfig {

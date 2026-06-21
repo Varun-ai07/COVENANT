@@ -2,7 +2,7 @@
  * Inlined shared types from @covenant/shared-types.
  * Kept local so the MCP package is self-contained when published to npm.
  */
-import type { Address } from "viem";
+import type { Address, PublicClient, WalletClient } from "viem";
 
 export const TASK_STATUS = {
   0: "Created",
@@ -156,3 +156,117 @@ export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
     explorerUrl: "https://arbiscan.io",
   },
 };
+
+// ============================================================================
+// SDK Types (inlined for self-containment)
+// ============================================================================
+
+
+export interface AgentData {
+  did: `0x${string}`;
+  name: string;
+  capabilities: string[];
+  reputation: bigint;
+  stakedAmount: bigint;
+  tasksCompleted: bigint;
+  tasksFailed: bigint;
+  totalValueTransferred: bigint;
+  isActive: boolean;
+  registeredAt: bigint;
+  walletAddress: Address;
+}
+
+export interface TaskData {
+  taskId: bigint;
+  client: Address;
+  worker: Address;
+  payment: bigint;
+  deadline: bigint;
+  descriptionHash: string;
+  deliverableHash: string;
+  status: string;
+  createdAt: bigint;
+  completedAt: bigint;
+  protocolFee: bigint;
+  totalValue: bigint;
+}
+
+export interface ContractAddresses {
+  AgentRegistry: Address;
+  TaskEscrow: Address;
+  ReceiptVerifier: Address;
+  OpenTaskMarket: Address;
+  ParallelTaskBatch: Address;
+  AgentCollective: Address;
+  AgentInsurance: Address;
+  DisputeArbitration: Address;
+  Groth16VerifierCapability: Address;
+  CapabilityVerifier: Address;
+  Groth16VerifierReputation: Address;
+  ReputationVerifier: Address;
+  COVENANTRouter: Address;
+  LitProtocolIntegration: Address;
+  MultiTokenEscrow: Address;
+  AgentSmartWallet: Address;
+  CovenantPaymaster: Address;
+  TrainingMarketplace: Address;
+  GrantProgram: Address;
+  AutoVerifier: Address;
+  MultiPartyReview: Address;
+  ClientReputation: Address;
+  StakeSlashing: Address;
+  MilestoneVerification: Address;
+  RevisionManager: Address;
+  AgentWallet: Address;
+  CovenantIdentity: Address;
+  CovenantEscrow: Address;
+  CovenantSettlement: Address;
+  CovenantArbitration: Address;
+  CovenantAttestation: Address;
+  CovenantGovernance: Address;
+  InsurancePool: Address;
+}
+
+export interface CovenantConfig {
+  chainId: number;
+  publicClient: PublicClient;
+  walletClient?: WalletClient;
+  contractAddresses?: Partial<ContractAddresses>;
+}
+
+export interface ReceiptData {
+  receiptId: string;
+  issuer: string;
+  counterparty: string;
+  interactionType: string;
+  dataHash: string;
+  timestamp: bigint;
+  blockNumber: bigint;
+  isValid: boolean;
+}
+
+export interface BidData {
+  taskId: bigint;
+  bidder: Address;
+  price: bigint;
+  timeEstimate: bigint;
+  proposalHash: string;
+  bidAt: bigint;
+  isSelected: boolean;
+}
+
+export interface CollectiveData {
+  collectiveId: bigint;
+  creator: Address;
+  members: Address[];
+  contributions: bigint[];
+  totalFunded: bigint;
+  selectedWorker: Address;
+  taskId: bigint;
+  status: string;
+  createdAt: bigint;
+}
+
+export type TaskStatus = "Open" | "Created" | "Funded" | "InProgress" | "Submitted" | "Completed" | "Disputed" | "Failed" | "Cancelled";
+
+export type WalletMode = "autonomous" | "prepare-only";

@@ -76,6 +76,17 @@ export async function startHttpServer(
   const apiKeyMiddleware = createApiKeyMiddleware();
   app.use("/mcp", apiKeyMiddleware);
 
+  // CORS: only allow same-origin or localhost by default
+  const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:5173").split(",");
+  app.use("/mcp", (req: any, res: any, next: any) => {
+    const origin = req.headers.origin;
+    if (origin && !allowedOrigins.includes(origin) && !allowedOrigins.includes("*")) {
+      res.status(403).json({ error: "Origin not allowed" });
+      return;
+    }
+    next();
+  });
+
   // Rate limiting: 100 requests per 15 minutes per IP
   const rateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

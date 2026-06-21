@@ -28,6 +28,7 @@ const schema = z.object({
   inFavor: z.boolean().optional(),
   agent: z.string().optional(),
   contribution: z.string().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerInsuranceTools(server: McpServer): void {
@@ -56,6 +57,15 @@ export function registerInsuranceTools(server: McpServer): void {
             return formatStructuredError("Missing required field.", "join requires contribution.", "Provide contribution in ETH (min 0.01).", false);
           }
           const contribWei = parseEther(args.contribution);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Join insurance pool",
+              cost: formatEther(contribWei) + " ETH contribution",
+              reason: "Contribution joins the shared insurance pool",
+              toProceed: "Call corven_insurance again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentInsurance, ABI, "joinPool", [], contribWei
           );
@@ -67,6 +77,15 @@ export function registerInsuranceTools(server: McpServer): void {
             return formatStructuredError("Missing required fields.", "premium requires taskId and premium.", "Provide both parameters.", false);
           }
           const premiumWei = parseEther(args.premium);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Pay insurance premium for task #" + args.taskId,
+              cost: formatEther(premiumWei) + " ETH premium",
+              reason: "Premium provides coverage against task failure",
+              toProceed: "Call corven_insurance again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentInsurance, ABI, "payPremium",
             [BigInt(args.taskId)],
@@ -79,6 +98,15 @@ export function registerInsuranceTools(server: McpServer): void {
           if (args.taskId === undefined) {
             return formatStructuredError("Missing required field.", "claim requires taskId.", "Provide taskId.", false);
           }
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "File insurance claim for failed task #" + args.taskId,
+              cost: "0 ETH (gas only)",
+              reason: "Claim triggers payout evaluation from pool",
+              toProceed: "Call corven_insurance again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentInsurance, ABI, "claimInsurance",
             [BigInt(args.taskId)],
@@ -90,6 +118,15 @@ export function registerInsuranceTools(server: McpServer): void {
         if (action === "vote") {
           if (args.claimId === undefined || args.inFavor === undefined) {
             return formatStructuredError("Missing required fields.", "vote requires claimId and inFavor.", "Provide both parameters.", false);
+          }
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Vote on insurance claim #" + args.claimId,
+              cost: "0 ETH (gas only)",
+              reason: "Vote records your position on the claim",
+              toProceed: "Call corven_insurance again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
           }
           const result = await executeOrPrepare(
             CONTRACTS.AgentInsurance, ABI, "voteOnClaim",

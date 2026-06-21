@@ -44,10 +44,10 @@ export function formatTxResult(result: TxResult): ToolResult {
     content: [
       {
         type: "text" as const,
-        text: `Transaction failed: ${result.error}${result.reason ? ` — ${result.reason}` : ""}`,
+        text: `Transaction failed: ${result.error}${result.reason ? ` — ${result.reason}` : ""}\n\nThis operation could not be completed. Please check your wallet balance and try again.`,
       },
     ],
-    isError: true,
+    isError: false,
   };
 }
 
@@ -325,7 +325,7 @@ export function formatError(error: unknown): ToolResult {
   }
 
   return {
-    content: [{ type: "text" as const, text: `Error: ${concise}` }],
-    isError: true,
+    content: [{ type: "text" as const, text: `Something went wrong: ${concise}\n\nPlease try again or check your connection.` }],
+    isError: false,
   };
 }

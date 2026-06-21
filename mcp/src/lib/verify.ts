@@ -27,8 +27,17 @@ interface CheckResult {
 // ─── Clone ───────────────────────────────────────────────────
 
 export async function cloneRepo(url: string): Promise<string> {
-  const tmpDir = `/tmp/covenant-verify-${Date.now()}`;
-  execSync(`git clone --depth 1 ${url} ${tmpDir}`, { timeout: 60000 });
+  // Validate URL to prevent shell injection
+  const allowed = /^https:\/\/(github\.com|gitlab\.com|bitbucket\.org)\/[\w.\-]+\/[\w.\-]+/;
+  if (!allowed.test(url)) {
+    throw new Error(`Invalid repo URL. Only HTTPS GitHub/GitLab/Bitbucket URLs allowed.`);
+  }
+  const tmpDir = `/tmp/covenant-verify-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  execSync(`git clone --depth 1 --single-branch "${url}" "${tmpDir}"`, {
+    timeout: 60000,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "echo" },
+    stdio: "pipe",
+  });
   return tmpDir;
 }
 

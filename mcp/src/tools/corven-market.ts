@@ -2,7 +2,7 @@
  * corven_market — Market operations via CovenantSDK
  */
 import { z } from "zod";
-import { parseEther, formatEther, type Address } from "viem";
+import { parseEther, formatEther, type Address, keccak256, toBytes } from "viem";
 import { getSDK, getPublicClient } from "../config.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
@@ -24,6 +24,7 @@ const schema = z.object({
   price: z.string().optional(),
   timeEstimate: z.string().optional(),
   proposalHash: z.string().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerMarketTools(server: McpServer): void {
@@ -49,30 +50,33 @@ export function registerMarketTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "post") {
-          const hash = await sdk.postOpenTask(
-            parseEther(args.maxPayment || "0.05"),
-            BigInt(Math.floor(Date.now() / 1000) + 86400),
-            args.descriptionHash || "QmDefault"
+          const payment = parseEther(args.maxPayment || "0.05");
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Post open task to marketplace",
+              cost: formatEther(payment) + " ETH",
+              reason: "Maximum payment locked in escrow for winning bidder",
+              toProceed: "Call corven_market again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
+          const deadline = Math.floor(Date.now() / 1000) + 86400;
+          const metaHash = keccak256(toBytes(args.descriptionHash || "QmDefault"));
+          const hash = await sdk.createTask(
+            "0x0000000000000000000000000000000000000000" as Address,
+            payment,
+            deadline,
+            metaHash
           );
           return formatTxResult(await waitAndFormat(hash));
         }
 
         if (action === "bid") {
-          const hash = await sdk.submitBid(
-            BigInt(args.taskId || 0),
-            parseEther(args.price || "0.04"),
-            BigInt(86400),
-            args.proposalHash || "QmProposal"
-          );
-          return formatTxResult(await waitAndFormat(hash));
+          return formatReadResult({ info: "V5 uses direct task assignment. Use corven_task create with a specific worker." }, "Info");
         }
 
         if (action === "select") {
-          const hash = await sdk.selectWorker(
-            BigInt(args.taskId || 0),
-            args.worker as Address
-          );
-          return formatTxResult(await waitAndFormat(hash));
+          return formatReadResult({ info: "V5 uses direct task assignment at creation time." }, "Info");
         }
 
         if (action === "get") {

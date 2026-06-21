@@ -14,6 +14,7 @@ const schema = z.object({
   taskId: z.number().optional(),
   feedbackHash: z.string().optional(),
   deliverableHash: z.string().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 function getRevisionManagerAddress(): `0x${string}` {
@@ -45,6 +46,15 @@ export function registerRevisionTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "request") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Request revision for task #" + args.taskId,
+              cost: "0 ETH (free)",
+              reason: "Revisions are free — only disputes cost ETH",
+              toProceed: "Call corven_revision again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const addr = getRevisionManagerAddress();
           const result = await executeOrPrepare(
             addr, ABI, "requestRevision",
@@ -55,6 +65,15 @@ export function registerRevisionTools(server: McpServer): void {
         }
 
         if (action === "submit") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Submit revised work for task #" + args.taskId,
+              cost: "0 ETH (free)",
+              reason: "Revisions are free — only disputes cost ETH",
+              toProceed: "Call corven_revision again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const addr = getRevisionManagerAddress();
           const result = await executeOrPrepare(
             addr, ABI, "submitRevision",

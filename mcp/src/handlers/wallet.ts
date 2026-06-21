@@ -11,9 +11,11 @@
  */
 import {
   encodeFunctionData,
+  formatEther,
   type Abi,
   type Address,
   parseAbi,
+  parseEther,
 } from "viem";
 import {
   getWalletClient,
@@ -31,6 +33,13 @@ import { rpcCache } from "../lib/cache.js";
 
 // Maximum gas limit to prevent DoS via expensive calls
 const GAS_LIMIT_MAX = 10_000_000n; // 10M gas
+
+// Gap 3: Session spending cap
+let totalSessionSpent = 0n;
+const MAX_SPENDING = parseEther(process.env.SPENDING_LIMIT || "0.1");
+
+// Gap 6: Write rate limiter
+let lastWriteTimestamp = 0;
 
 // ============================================================
 // Cache invalidation for write operations
@@ -219,6 +228,47 @@ export async function executeOrPrepare(
   if (WALLET_MODE === "prepare-only") {
     return prepareTx(contractAddress, abi, functionName, args, value);
   }
+
+  // Gap 6: Rate limiter
+  if (Date.now() - lastWriteTimestamp < 5000) {
+    return {
+      status: "error",
+      error: "Too many transactions. Wait 5 seconds between writes.",
+    };
+  }
+
+  // Gap 5: Chain validation
+  const publicClient = getPublicClient();
+  const chainId = await publicClient.getChainId();
+  if (chainId !== 84532) {
+    return {
+      status: "error",
+      error: "Wrong network. Please switch to Base Sepolia (chain ID 84532).",
+    };
+  }
+
+  // Gap 3: Spending cap
+  const txValue = value || 0n;
+  if (totalSessionSpent + txValue > MAX_SPENDING) {
+    return {
+      status: "error",
+      error: `Session spending limit reached (${formatEther(MAX_SPENDING)} ETH max). Restart server to reset.`,
+    };
+  }
+
+  // Gap 1: Balance check
+  const account = getAccount();
+  if (account) {
+    const balance = await publicClient.getBalance({ address: account.address });
+    const required = txValue + parseEther("0.001");
+    if (balance < required) {
+      return {
+        status: "error",
+        error: `Insufficient balance. Have ${formatEther(balance)} ETH, need ${formatEther(required)} ETH (including 0.001 buffer).`,
+      };
+    }
+  }
+
   return executeTx(contractAddress, abi, functionName, args, value);
 }
 
@@ -245,6 +295,21 @@ async function executeTx(
   }
 
   try {
+    // Gap 2: Gas estimation with 20% buffer
+    const estimatedGas = await publicClient.estimateGas({
+      address: contractAddress,
+      abi,
+      functionName,
+      args: args as any,
+      account,
+      value,
+    });
+    const gasWithBuffer = (estimatedGas * 120n) / 100n;
+    const gasPrice = await publicClient.getGasPrice();
+    const estimatedGasCost = gasWithBuffer * gasPrice;
+
+    console.error(`[TX] Estimated gas: ${gasWithBuffer} (${formatEther(estimatedGasCost)} ETH)`);
+
     // Estimate gas with capped limit
     const { request } = await publicClient.simulateContract({
       address: contractAddress,
@@ -253,7 +318,7 @@ async function executeTx(
       args: args as any,
       account,
       value,
-      gas: GAS_LIMIT_MAX,
+      gas: gasWithBuffer < GAS_LIMIT_MAX ? gasWithBuffer : GAS_LIMIT_MAX,
     });
 
     // Send transaction
@@ -274,6 +339,12 @@ async function executeTx(
 
     // Invalidate relevant caches after successful write
     invalidateCacheForWrite(contractAddress, functionName, args);
+
+    // Gap 3: Update session spending
+    totalSessionSpent += value || 0n;
+
+    // Gap 6: Update rate limiter
+    lastWriteTimestamp = Date.now();
 
     return {
       status: "success",

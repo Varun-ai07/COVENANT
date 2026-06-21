@@ -52,17 +52,10 @@ export function formatStructuredError(
   cause: string,
   fix: string,
   retryable = true
-): { isError: true; content: Array<{ type: "text"; text: string }> } {
-  const response: ErrorResponse = {
-    success: false,
-    error,
-    cause,
-    fix,
-    retryable,
-  };
+): { isError: false; content: Array<{ type: "text"; text: string }> } {
   return {
-    isError: true,
-    content: [{ type: "text", text: JSON.stringify(response, null, 2) }],
+    isError: false,
+    content: [{ type: "text", text: `${error}\n\nWhat happened: ${cause}\n\nNext step: ${fix}` }],
   };
 }
 

@@ -65,7 +65,7 @@ async function deploySmartWallet(controller: Address, dailyLimitWei: bigint, per
   const publicClient = getPublicClient();
   const account = getAccount();
   if (!wallet || !account) {
-    return { status: "error", error: "No wallet client available. Set PRIVATE_KEY and COVENANT_WALLET_MODE=autonomous." };
+    return { status: "error", error: "No wallet client available. Set up a wallet in autonomous mode." };
   }
   try {
     const bytecode = loadSmartWalletBytecode();
@@ -86,7 +86,7 @@ async function executeWalletWrite(walletAddress: Address, functionName: string, 
   const publicClient = getPublicClient();
   const account = getAccount();
   if (!wallet || !account) {
-    return { status: "error", error: "No wallet client available. Set PRIVATE_KEY and COVENANT_WALLET_MODE=autonomous." };
+    return { status: "error", error: "No wallet client available. Set up a wallet in autonomous mode." };
   }
   try {
     const { request } = await publicClient.simulateContract({
@@ -122,6 +122,7 @@ const schema = z.object({
   recipient: z.string().optional(),
   allowed: z.boolean().optional(),
   paused: z.boolean().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerWalletTools(server: McpServer): void {
@@ -151,10 +152,19 @@ export function registerWalletTools(server: McpServer): void {
           }
           const account = getAccount();
           if (!account) {
-            return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
+            return formatStructuredError("No private key configured.", "Wallet not configured.", "Set up a wallet to perform write operations.", false);
           }
           const dailyLimitWei = parseEther(args.dailyLimit);
           const perTxLimitWei = parseEther(args.perTxLimit);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Deploy new AgentSmartWallet",
+              cost: "Gas only (contract deployment)",
+              reason: "Creates a new smart wallet with spending limits",
+              toProceed: "Call corven_wallet again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
 
           const result = await deploySmartWallet(args.controller as Address, dailyLimitWei, perTxLimitWei);
           if (result.status === "success") {
@@ -207,6 +217,15 @@ export function registerWalletTools(server: McpServer): void {
           if (!args.dailyLimit && !args.perTxLimit) {
             return formatStructuredError("No limits provided.", "At least one of dailyLimit or perTxLimit must be specified.", "Provide at least one limit.", false);
           }
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Update spending limits on wallet",
+              cost: "Gas only",
+              reason: "Changes daily and/or per-transaction spending caps",
+              toProceed: "Call corven_wallet again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const results: string[] = [];
           if (args.dailyLimit) {
             const result = await executeWalletWrite(args.walletAddress as Address, "setDailyLimit", [parseEther(args.dailyLimit)]);
@@ -225,6 +244,15 @@ export function registerWalletTools(server: McpServer): void {
           if (!args.walletAddress || !args.recipient || args.allowed === undefined) {
             return formatStructuredError("Missing required fields.", "recipient requires walletAddress, recipient, and allowed.", "Provide all three parameters.", false);
           }
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: args.allowed ? "Whitelist " + args.recipient : "Remove " + args.recipient + " from whitelist",
+              cost: "Gas only",
+              reason: args.allowed ? "Allows wallet to send funds to this address" : "Revokes wallet permission to send to this address",
+              toProceed: "Call corven_wallet again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeWalletWrite(args.walletAddress as Address, "setRecipient", [args.recipient as Address, args.allowed]);
           if (result.status === "success") {
             return formatSuccess(
@@ -239,6 +267,15 @@ export function registerWalletTools(server: McpServer): void {
         if (action === "pause") {
           if (!args.walletAddress || args.paused === undefined) {
             return formatStructuredError("Missing required fields.", "pause requires walletAddress and paused.", "Provide both parameters.", false);
+          }
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: args.paused ? "PAUSE wallet" : "UNPAUSE wallet",
+              cost: "Gas only",
+              reason: args.paused ? "Freezes ALL outbound transfers" : "Allows agent to resume transactions",
+              toProceed: "Call corven_wallet again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
           }
           const result = await executeWalletWrite(args.walletAddress as Address, "setPaused", [args.paused]);
           if (result.status === "success") {

@@ -89,6 +89,7 @@ export function registerMultiTools(server: McpServer): void {
         taskId: z.number().optional().describe("Task ID (for submit/verify/get)"),
         deliverableHash: z.string().optional().describe("IPFS CID (for submit)"),
         success: z.boolean().optional().describe("Approve or reject (for verify)"),
+        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
       },
     },
     async (params) => {
@@ -116,6 +117,16 @@ export function registerMultiTools(server: McpServer): void {
             }
             const { worker, payment, deadline, descriptionHash, tokenAddress, decimals } = parsed.data;
             const paymentWei = parseUnits(payment, decimals);
+            const tokenInfo = KNOWN_TOKENS[tokenAddress];
+            if (!params.confirm) {
+              return formatReadResult({
+                confirmationRequired: true,
+                action: "Create ERC-20 escrow task",
+                cost: payment + " " + (tokenInfo?.symbol || "tokens"),
+                reason: "Payment locked in MultiTokenEscrow for worker",
+                toProceed: "Call corven_multi again with confirm: true",
+              }, "CONFIRMATION REQUIRED");
+            }
 
             const result = await executeOrPrepare(
               contractAddress,
@@ -172,6 +183,15 @@ export function registerMultiTools(server: McpServer): void {
               );
             }
             const { taskId, success } = parsed.data;
+            if (!params.confirm) {
+              return formatReadResult({
+                confirmationRequired: true,
+                action: success ? "Approve and release payment for task #" + taskId : "Reject task #" + taskId,
+                cost: success ? "ERC-20 payment released to worker" : "No cost (payment refunded)",
+                reason: success ? "Approving releases escrowed tokens" : "Rejection refunds tokens to client",
+                toProceed: "Call corven_multi again with confirm: true",
+              }, "CONFIRMATION REQUIRED");
+            }
 
             const result = await executeOrPrepare(
               contractAddress,

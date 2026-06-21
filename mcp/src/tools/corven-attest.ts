@@ -28,6 +28,7 @@ const schema = z.object({
   dataHash: z.string().optional(),
   receiptId: z.string().optional(),
   address: z.string().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerAttestTools(server: McpServer): void {
@@ -53,6 +54,15 @@ export function registerAttestTools(server: McpServer): void {
         if (action === "create") {
           if (!args.issuer || !args.counterparty || args.interactionType === undefined || !args.dataHash) {
             return formatStructuredError("Missing required fields.", "create requires issuer, counterparty, interactionType, and dataHash.", "Provide all four parameters.", false);
+          }
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Create attestation receipt",
+              cost: "Gas only",
+              reason: "Issues ERC-8004 attestation on-chain",
+              toProceed: "Call corven_attest again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
           }
           const dataHashBytes32 = stringToBytes32(args.dataHash);
           const result = await executeOrPrepare(

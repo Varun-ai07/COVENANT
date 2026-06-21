@@ -2,7 +2,7 @@
  * corven_task — Task lifecycle via CovenantSDK
  */
 import { z } from "zod";
-import { parseEther, formatEther, type Address } from "viem";
+import { parseEther, formatEther, type Address, keccak256, toBytes } from "viem";
 import { getSDK, getPublicClient } from "../config.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
@@ -28,6 +28,7 @@ const schema = z.object({
   success: z.boolean().optional(),
   milestoneIndex: z.number().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional().default("medium"),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerTaskTools(server: McpServer): void {
@@ -58,37 +59,73 @@ export function registerTaskTools(server: McpServer): void {
 
         if (action === "create") {
           const deadline = args.deadline
-            ? BigInt(args.deadline)
-            : BigInt(Math.floor(Date.now() / 1000) + 86400);
+            ? Number(args.deadline)
+            : Math.floor(Date.now() / 1000) + 86400;
+          const paymentWei = parseEther(args.payment || "0.01");
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Create task and fund escrow",
+              cost: formatEther(paymentWei) + " ETH",
+              reason: "Payment locked in TaskEscrow until worker completes",
+              toProceed: "Call corven_task again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const hash = await sdk.createTask(
             args.worker as Address,
-            parseEther(args.payment || "0.01"),
+            paymentWei,
             deadline,
-            args.descriptionHash || "QmDefault"
+            keccak256(toBytes(args.descriptionHash || "QmDefault"))
           );
           return formatTxResult(await waitAndFormat(hash));
         }
 
         if (action === "submit") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Submit deliverable for task #" + args.taskId,
+              cost: "0 ETH (gas only)",
+              reason: "No direct cost, but commits your submission",
+              toProceed: "Call corven_task again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const hash = await sdk.submitWork(
             BigInt(args.taskId || 0),
-            args.deliverableHash || "QmDelivered"
+            keccak256(toBytes(args.deliverableHash || "QmDelivered"))
           );
           return formatTxResult(await waitAndFormat(hash));
         }
 
         if (action === "verify") {
-          const hash = await sdk.verifyTask(
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Approve and release payment for task #" + args.taskId,
+              cost: "ETH released from escrow to worker",
+              reason: "Approving releases escrowed funds to worker",
+              toProceed: "Call corven_task again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
+          const hash = await sdk.completeTask(
             BigInt(args.taskId || 0),
-            args.success !== false
+            "0x0000000000000000000000000000000000000000000000000000000000000000"
           );
           return formatTxResult(await waitAndFormat(hash));
         }
 
         if (action === "dispute") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "File dispute for task #" + args.taskId,
+              cost: "Bond required (see corven_file_dispute)",
+              reason: "Dispute requires a bond that may be forfeited",
+              toProceed: "Call corven_task again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const hash = await sdk.disputeTask(
-            BigInt(args.taskId || 0),
-            parseEther("0.0002")
+            BigInt(args.taskId || 0)
           );
           return formatTxResult(await waitAndFormat(hash));
         }

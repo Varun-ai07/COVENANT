@@ -16,6 +16,7 @@ const schema = z.object({
   proposalType: z.string().optional(),
   proposalId: z.number().optional(),
   support: z.boolean().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerGovernTools(server: McpServer): void {
@@ -40,6 +41,15 @@ export function registerGovernTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "create") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Create governance proposal",
+              cost: "Gas only",
+              reason: "Submits proposal to DAO for voting",
+              toProceed: "Call corven_govern again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentRegistry, ABI, "createProposal",
             [args.title!, args.description!, args.proposalType!],
@@ -49,6 +59,15 @@ export function registerGovernTools(server: McpServer): void {
         }
 
         if (action === "vote") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Vote on proposal #" + args.proposalId,
+              cost: "Gas only",
+              reason: args.support ? "Supporting the proposal" : "Opposing the proposal",
+              toProceed: "Call corven_govern again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentRegistry, ABI, "voteProposal",
             [BigInt(args.proposalId!), args.support!],

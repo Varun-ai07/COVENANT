@@ -18,6 +18,7 @@ const schema = z.object({
   amount: z.string().optional(),
   grantId: z.number().optional(),
   support: z.boolean().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerGrantTools(server: McpServer): void {
@@ -41,15 +42,34 @@ export function registerGrantTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "apply") {
+          const amountWei = parseEther(args.amount || "1");
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Submit grant application",
+              cost: "Gas only",
+              reason: "Requests " + (args.amount || "1") + " ETH from DAO treasury",
+              toProceed: "Call corven_grants again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.GrantProgram, ABI, "applyGrant",
-            [args.title!, args.description!, args.category!, parseEther(args.amount || "1")],
+            [args.title!, args.description!, args.category!, amountWei],
             0n
           );
           return formatTxResult(result);
         }
 
         if (action === "vote") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Vote on grant #" + args.grantId,
+              cost: "Gas only",
+              reason: args.support ? "Supporting the grant application" : "Opposing the grant application",
+              toProceed: "Call corven_grants again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.GrantProgram, ABI, "voteGrant",
             [BigInt(args.grantId!), args.support!],

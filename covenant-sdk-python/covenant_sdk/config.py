@@ -20,6 +20,17 @@ DEFAULT_ADDRESSES: Dict[int, ContractAddresses] = {
         AgentInsurance="0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55",
         DisputeArbitration="0x37A62C6eDd18461CCe00B6772Da8640C75DE740e",
         COVENANTRouter="0x565C48FEFc39c9D98a37cCE30583913C7d0d5e09",
+        CovenantIdentity="0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA",
+        CovenantEscrow="0x259338371e67cA712F22A95cb8b616f3926b0E4D",
+        CovenantSettlement="0xF8deBc17DE3B5D501307166EA40FC2C460997B2D",
+        CovenantArbitration="0x5b8CcBd735DA802e6B81a49b78BdA5A29159926f",
+        CovenantAttestation="0x9B314674cb8C3123a6e80832b8A56C28C2e58490",
+        CovenantGovernance="0x6e7Be799ba629289eC675f19bbB8f0029E719E73",
+        InsurancePool="0x5e4A41CA094a68d69b84F0Bb9Fa454ba3e1df00a",
+        TrainingMarketplace="0x99BC000066d60d3C62990a318d4E619dEB656aCa",
+        GrantProgram="0x9720B26a9813bB46b2902011ce9Ef75D1F968198",
+        RevisionManager="0x4a0626b4b160D2dE8Bb4Dc78aA2c4F0ef7a7dB45",
+        MultiTokenEscrow="0x0bd7E7E75AA828957AfE7445E17E58A278Bf256e",
     ),
     # Hardhat Local
     31337: ContractAddresses(

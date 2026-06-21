@@ -48,7 +48,7 @@ export function registerMessageTools(server: McpServer): void {
         const { action } = args;
         const account = getAccount();
         if (!account) {
-          return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
+          return formatStructuredError("No private key configured.", "Wallet not configured.", "Set up a wallet to perform write operations.", false);
         }
         const sender = typeof account === "string" ? account : account.address;
 

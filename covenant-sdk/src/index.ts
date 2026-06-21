@@ -1,8 +1,7 @@
 import type { Address, PublicClient, WalletClient, Hash, Chain, Account } from "viem";
 import { getContractAddresses, CHAIN_CONFIGS } from "./config.js";
-import { AgentRegistryABI } from "./contracts/AgentRegistry.js";
-import { TaskEscrowABI } from "./contracts/TaskEscrow.js";
-import { OpenTaskMarketABI } from "./contracts/OpenTaskMarket.js";
+import { CovenantIdentityABI } from "./contracts/CovenantIdentity.js";
+import { CovenantEscrowABI } from "./contracts/CovenantEscrow.js";
 import type {
   CovenantConfig,
   AgentData,
@@ -11,25 +10,12 @@ import type {
   ContractAddresses,
 } from "./types.js";
 
-// Re-export types
 export * from "./types.js";
 export * from "./config.js";
+export { CovenantSDKV5 } from "./v5-extensions.js";
 
-/**
- * COVENANT SDK - TypeScript client for the Autonomous Agent Enforcement Protocol
- *
- * @example
- * ```typescript
- * import { CovenantSDK, createPublicClient, http } from "@covenant/sdk";
- * import { baseSepolia } from "viem/chains";
- *
- * const client = createPublicClient({ chain: baseSepolia, transport: http() });
- * const sdk = new CovenantSDK({ chainId: 84532, publicClient: client });
- *
- * const agent = await sdk.getAgent("0x...");
- * const agents = await sdk.findAgents("data-analysis");
- * ```
- */
+const ZERO_ADDR = "0x0000000000000000000000000000000000000000" as Address;
+
 export class CovenantSDK {
   protected publicClient: PublicClient;
   protected walletClient?: WalletClient;
@@ -51,87 +37,100 @@ export class CovenantSDK {
   }
 
   // =========================================================================
-  // Agent Methods
+  // Agent Methods (V5 — CovenantIdentity)
   // =========================================================================
 
-  /**
-   * Get agent data by address
-   */
   async getAgent(address: Address): Promise<AgentData> {
     const result = await this.publicClient.readContract({
-      address: this.addresses.AgentRegistry,
-      abi: AgentRegistryABI,
+      address: this.addresses.CovenantIdentity,
+      abi: CovenantIdentityABI,
       functionName: "getAgent",
       args: [address],
     });
-    return this.parseAgentData(result as readonly unknown[]);
+    return this.parseAgentData(address, result as readonly unknown[]);
   }
 
-  /**
-   * Get total number of registered agents
-   */
   async getAgentCount(): Promise<bigint> {
     return await this.publicClient.readContract({
-      address: this.addresses.AgentRegistry,
-      abi: AgentRegistryABI,
-      functionName: "getAgentCount",
+      address: this.addresses.CovenantIdentity,
+      abi: CovenantIdentityABI,
+      functionName: "totalAgents",
       args: [],
     }) as bigint;
   }
 
-  /**
-   * Find agents by capability
-   */
-  async findAgents(capability: string, minReputation?: number, limit = 20): Promise<Address[]> {
-    const addresses = await this.publicClient.readContract({
-      address: this.addresses.AgentRegistry,
-      abi: AgentRegistryABI,
-      functionName: "getAgentsByCapability",
-      args: [capability, BigInt(0), BigInt(limit)],
-    }) as Address[];
-
-    if (minReputation !== undefined) {
-      // Filter by reputation
-      const filtered: Address[] = [];
-      for (const addr of addresses) {
-        const agent = await this.getAgent(addr);
-        if (agent.reputation >= BigInt(minReputation)) {
-          filtered.push(addr);
-        }
-      }
-      return filtered;
-    }
-
-    return addresses;
-  }
-
-  /**
-   * Get all agents with pagination
-   */
-  async getAllAgents(offset = 0, limit = 50): Promise<Address[]> {
+  async isRegistered(address: Address): Promise<boolean> {
     return await this.publicClient.readContract({
-      address: this.addresses.AgentRegistry,
-      abi: AgentRegistryABI,
-      functionName: "getAllAgents",
-      args: [BigInt(offset), BigInt(limit)],
-    }) as Address[];
+      address: this.addresses.CovenantIdentity,
+      abi: CovenantIdentityABI,
+      functionName: "isRegistered",
+      args: [address],
+    }) as boolean;
   }
 
-  /**
-   * Register a new agent (requires wallet)
-   */
-  async registerAgent(
-    name: string,
-    capabilities: string[],
-    stake: bigint
-  ): Promise<Hash> {
-    this.requireWallet();
+  async findAgents(capability: string, minReputation?: number, limit = 20): Promise<Address[]> {
+    const count = await this.getAgentCount();
+    const results: Address[] = [];
+    const capHash = BigInt(
+      "0x" + Array.from(new TextEncoder().encode(capability))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("")
+    ).toString();
 
+    for (let i = 0n; i < count && results.length < limit; i++) {
+      try {
+        const agentAddr = await this.publicClient.readContract({
+          address: this.addresses.CovenantIdentity,
+          abi: CovenantIdentityABI,
+          functionName: "getAllAgents",
+          args: [i, 1n],
+        }) as Address;
+        if (agentAddr === ZERO_ADDR) continue;
+        const hasCap = await this.publicClient.readContract({
+          address: this.addresses.CovenantIdentity,
+          abi: CovenantIdentityABI,
+          functionName: "hasCapability",
+          args: [agentAddr, `0x${capHash.padStart(64, "0")}`],
+        }) as boolean;
+        if (!hasCap) continue;
+        if (minReputation !== undefined) {
+          const agent = await this.getAgent(agentAddr);
+          if (agent.reputation < BigInt(minReputation)) continue;
+        }
+        results.push(agentAddr);
+      } catch {
+        continue;
+      }
+    }
+    return results;
+  }
+
+  async getAllAgents(offset = 0, limit = 50): Promise<Address[]> {
+    const count = await this.getAgentCount();
+    const results: Address[] = [];
+    for (let i = BigInt(offset); i < count && results.length < limit; i++) {
+      try {
+        const addr = await this.publicClient.readContract({
+          address: this.addresses.CovenantIdentity,
+          abi: CovenantIdentityABI,
+          functionName: "getAllAgents",
+          args: [i, 1n],
+        }) as Address;
+        if (addr !== ZERO_ADDR) results.push(addr);
+      } catch {
+        continue;
+      }
+    }
+    return results;
+  }
+
+  async registerAgent(stake: bigint, metadataRoot: `0x${string}`): Promise<Hash> {
+    this.requireWallet();
     return await this.walletClient!.writeContract({
-      address: this.addresses.AgentRegistry,
-      abi: AgentRegistryABI,
+      address: this.addresses.CovenantIdentity,
+      abi: CovenantIdentityABI,
       functionName: "register",
-      args: [name, capabilities],
+      args: [stake, metadataRoot],
       value: stake,
       chain: this.chain,
       account: this.account!,
@@ -139,89 +138,51 @@ export class CovenantSDK {
   }
 
   // =========================================================================
-  // Task Methods
+  // Task Methods (V5 — CovenantEscrow)
   // =========================================================================
 
-  /**
-   * Get task data by ID
-   */
   async getTask(taskId: bigint): Promise<TaskData> {
     const result = await this.publicClient.readContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
       functionName: "getTask",
       args: [taskId],
     });
-    return this.parseTaskData(result as readonly unknown[]);
+    return this.parseTaskData(taskId, result as readonly unknown[]);
   }
 
-  /**
-   * Get total number of tasks
-   */
   async getTaskCount(): Promise<bigint> {
     return await this.publicClient.readContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
-      functionName: "getTaskCount",
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
+      functionName: "taskCount",
       args: [],
     }) as bigint;
   }
 
-  /**
-   * Get all task IDs for a client
-   */
-  async getClientTasks(client: Address): Promise<bigint[]> {
-    return await this.publicClient.readContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
-      functionName: "getClientTasks",
-      args: [client],
-    }) as bigint[];
-  }
-
-  /**
-   * Get all task IDs for a worker
-   */
-  async getWorkerTasks(worker: Address): Promise<bigint[]> {
-    return await this.publicClient.readContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
-      functionName: "getWorkerTasks",
-      args: [worker],
-    }) as bigint[];
-  }
-
-  /**
-   * Create a new task (requires wallet)
-   */
   async createTask(
     worker: Address,
-    payment: bigint,
-    deadline: bigint,
-    descriptionHash: string
+    amount: bigint,
+    deadline: number,
+    metaHash: `0x${string}`,
   ): Promise<Hash> {
     this.requireWallet();
-
     return await this.walletClient!.writeContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
       functionName: "createTask",
-      args: [worker, deadline, descriptionHash],
-      value: payment,
+      args: [worker, amount, deadline, metaHash],
+      value: amount,
       chain: this.chain,
       account: this.account!,
     });
   }
 
-  /**
-   * Submit work for a task (requires wallet)
-   */
-  async submitWork(taskId: bigint, deliverableHash: string): Promise<Hash> {
+  async submitWork(taskId: bigint, deliverableHash: `0x${string}`): Promise<Hash> {
     this.requireWallet();
-
     return await this.walletClient!.writeContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
       functionName: "submitWork",
       args: [taskId, deliverableHash],
       chain: this.chain,
@@ -229,96 +190,62 @@ export class CovenantSDK {
     });
   }
 
-  /**
-   * Verify task completion (requires wallet)
-   */
-  async verifyTask(taskId: bigint, success: boolean): Promise<Hash> {
+  async completeTask(taskId: bigint, clientSignature: `0x${string}`): Promise<Hash> {
     this.requireWallet();
-
     return await this.walletClient!.writeContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
-      functionName: "verifyTask",
-      args: [taskId, success],
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
+      functionName: "completeTask",
+      args: [taskId, clientSignature],
       chain: this.chain,
       account: this.account!,
     });
   }
 
-  /**
-   * Dispute a task (requires wallet)
-   */
-  async disputeTask(taskId: bigint, disputeBond: bigint): Promise<Hash> {
+  async disputeTask(taskId: bigint): Promise<Hash> {
     this.requireWallet();
-
     return await this.walletClient!.writeContract({
-      address: this.addresses.TaskEscrow,
-      abi: TaskEscrowABI,
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
       functionName: "disputeTask",
       args: [taskId],
-      value: disputeBond,
       chain: this.chain,
       account: this.account!,
     });
   }
 
-  // =========================================================================
-  // Open Task Market Methods
-  // =========================================================================
-
-  /**
-   * Post an open task for bidding
-   */
-  async postOpenTask(
-    maxPayment: bigint,
-    deadline: bigint,
-    descriptionHash: string
-  ): Promise<Hash> {
+  async cancelTask(taskId: bigint): Promise<Hash> {
     this.requireWallet();
-
     return await this.walletClient!.writeContract({
-      address: this.addresses.OpenTaskMarket,
-      abi: OpenTaskMarketABI,
-      functionName: "postOpenTask",
-      args: [maxPayment, deadline, descriptionHash],
-      value: maxPayment,
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
+      functionName: "cancelTask",
+      args: [taskId],
       chain: this.chain,
       account: this.account!,
     });
   }
 
-  /**
-   * Submit a bid on an open task
-   */
-  async submitBid(
-    taskId: bigint,
-    price: bigint,
-    timeEstimate: bigint,
-    proposalHash: string
-  ): Promise<Hash> {
+  async fundTask(taskId: bigint, amount: bigint): Promise<Hash> {
     this.requireWallet();
-
     return await this.walletClient!.writeContract({
-      address: this.addresses.OpenTaskMarket,
-      abi: OpenTaskMarketABI,
-      functionName: "submitBid",
-      args: [taskId, price, timeEstimate, proposalHash],
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
+      functionName: "fundTask",
+      args: [taskId],
+      value: amount,
       chain: this.chain,
       account: this.account!,
     });
   }
 
-  /**
-   * Select a worker for an open task
-   */
-  async selectWorker(taskId: bigint, worker: Address): Promise<Hash> {
+  async failTask(taskId: bigint, reason: `0x${string}`): Promise<Hash> {
     this.requireWallet();
-
     return await this.walletClient!.writeContract({
-      address: this.addresses.OpenTaskMarket,
-      abi: OpenTaskMarketABI,
-      functionName: "selectWorker",
-      args: [taskId, worker],
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI,
+      functionName: "failTask",
+      args: [taskId, reason],
       chain: this.chain,
       account: this.account!,
     });
@@ -328,16 +255,10 @@ export class CovenantSDK {
   // Utility Methods
   // =========================================================================
 
-  /**
-   * Wait for a transaction to be confirmed
-   */
   async waitForTransaction(hash: Hash) {
     return await this.publicClient.waitForTransactionReceipt({ hash });
   }
 
-  /**
-   * Get contract addresses being used
-   */
   getAddresses(): ContractAddresses {
     return { ...this.addresses };
   }
@@ -352,37 +273,50 @@ export class CovenantSDK {
     }
   }
 
-  private parseAgentData(result: readonly unknown[]): AgentData {
+  private parseAgentData(address: Address, result: readonly unknown[]): AgentData {
     return {
-      did: result[0] as `0x${string}`,
-      name: result[1] as string,
-      capabilities: result[2] as string[],
-      reputation: result[3] as bigint,
-      stakedAmount: result[4] as bigint,
-      tasksCompleted: result[5] as bigint,
-      tasksFailed: result[6] as bigint,
-      totalValueTransferred: result[7] as bigint,
-      isActive: result[8] as boolean,
-      registeredAt: result[9] as bigint,
-      walletAddress: result[10] as Address,
+      did: address,
+      name: "",
+      capabilities: [],
+      reputation: BigInt(result[2] as number),
+      stakedAmount: result[1] as bigint,
+      tasksCompleted: 0n,
+      tasksFailed: 0n,
+      totalValueTransferred: 0n,
+      isActive: result[5] as boolean,
+      registeredAt: BigInt(result[3] as number),
+      walletAddress: result[0] as Address,
     };
   }
 
-  private parseTaskData(result: readonly unknown[]): TaskData {
-    const statusMap: TaskStatus[] = ["Open", "Funded", "InProgress", "Submitted", "Completed", "Disputed", "Failed", "Cancelled"];
+  private parseTaskData(taskId: bigint, result: readonly unknown[]): TaskData {
     return {
-      taskId: result[0] as bigint,
-      client: result[1] as Address,
-      worker: result[2] as Address,
-      payment: result[3] as bigint,
-      deadline: result[4] as bigint,
-      descriptionHash: result[5] as string,
-      deliverableHash: result[6] as string,
-      status: statusMap[result[7] as number] || "Open",
-      createdAt: result[8] as bigint,
-      completedAt: result[9] as bigint,
-      protocolFee: result[10] as bigint,
-      totalValue: result[11] as bigint,
+      taskId,
+      client: result[0] as Address,
+      worker: result[1] as Address,
+      payment: result[2] as bigint,
+      deadline: BigInt(result[3] as number),
+      descriptionHash: result[6] as string,
+      deliverableHash: "",
+      status: this.mapV5Status(result[4] as number),
+      createdAt: 0n,
+      completedAt: 0n,
+      protocolFee: 0n,
+      totalValue: result[2] as bigint,
     };
+  }
+
+  private mapV5Status(status: number): TaskStatus {
+    const map: Record<number, TaskStatus> = {
+      0: "Open",
+      1: "Funded",
+      2: "InProgress",
+      3: "Submitted",
+      4: "Completed",
+      5: "Disputed",
+      6: "Failed",
+      7: "Cancelled",
+    };
+    return map[status] ?? "Open";
   }
 }

@@ -122,6 +122,7 @@ const schema = z.object({
   payment: z.string().optional(),
   startTime: z.number().optional(),
   endTime: z.number().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerStreamTools(server: McpServer): void {
@@ -156,10 +157,19 @@ export function registerStreamTools(server: McpServer): void {
           }
           const account = getAccount();
           if (!account) {
-            return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
+            return formatStructuredError("No private key configured.", "Wallet not configured.", "Set up a wallet to perform write operations.", false);
           }
 
           const totalPayment = parseEther(args.payment);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Create streaming payment to worker",
+              cost: formatEther(totalPayment) + " ETH over " + (args.endTime - args.startTime) + "s",
+              reason: "Payment accrues linearly to worker address",
+              toProceed: "Call corven_stream again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const duration = BigInt(args.endTime - args.startTime);
           const ratePerSecond = totalPayment / duration;
 
@@ -186,7 +196,7 @@ export function registerStreamTools(server: McpServer): void {
           }
           const account = getAccount();
           if (!account) {
-            return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
+            return formatStructuredError("No private key configured.", "Wallet not configured.", "Set up a wallet to perform write operations.", false);
           }
           const stream = streams.get(args.streamId);
           if (!stream) {
@@ -196,11 +206,20 @@ export function registerStreamTools(server: McpServer): void {
             return formatStructuredError("Stream is cancelled.", `Stream #${args.streamId} has been cancelled.`, "No further withdrawals possible.", false);
           }
           if (account.address.toLowerCase() !== stream.worker.toLowerCase()) {
-            return formatStructuredError("Not authorized.", "Only the assigned worker can withdraw.", "Ensure PRIVATE_KEY matches the worker address.", false);
+            return formatStructuredError("Not authorized.", "Only the assigned worker can withdraw.", "Ensure your wallet address matches the worker address.", false);
           }
           const withdrawable = calcWithdrawable(stream);
           if (withdrawable === 0n) {
             return formatStructuredError("Nothing to withdraw.", "No new funds have accrued since last withdrawal.", "Wait for more time to pass, then try again.", false);
+          }
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Withdraw accrued funds from stream #" + args.streamId,
+              cost: formatEther(withdrawable) + " ETH",
+              reason: "Withdrawing accrued payment from escrow",
+              toProceed: "Call corven_stream again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
           }
           stream.withdrawn += withdrawable;
           streams.set(args.streamId, stream);
@@ -218,7 +237,7 @@ export function registerStreamTools(server: McpServer): void {
           }
           const account = getAccount();
           if (!account) {
-            return formatStructuredError("No private key configured.", "PRIVATE_KEY not set.", "Set PRIVATE_KEY in .env.", false);
+            return formatStructuredError("No private key configured.", "Wallet not configured.", "Set up a wallet to perform write operations.", false);
           }
           const stream = streams.get(args.streamId);
           if (!stream) {
@@ -229,13 +248,22 @@ export function registerStreamTools(server: McpServer): void {
           }
           const caller = account.address.toLowerCase();
           if (caller !== stream.client.toLowerCase() && caller !== stream.worker.toLowerCase()) {
-            return formatStructuredError("Not authorized.", "Only the stream client or worker can cancel.", "Ensure PRIVATE_KEY matches either address.", false);
+            return formatStructuredError("Not authorized.", "Only the stream client or worker can cancel.", "Ensure your wallet address matches either address.", false);
           }
 
           const finalAccrued = calcAccrued(stream);
           const finalWithdrawal = finalAccrued > stream.withdrawn ? finalAccrued - stream.withdrawn : 0n;
+          const refund = stream.totalPayment - (stream.withdrawn + finalWithdrawal);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Cancel stream #" + args.streamId,
+              cost: "Worker gets " + formatEther(finalWithdrawal) + " ETH, refund " + formatEther(refund) + " ETH",
+              reason: "Cancelling stops accrual and refunds remaining",
+              toProceed: "Call corven_stream again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           stream.withdrawn += finalWithdrawal;
-          const refund = stream.totalPayment - stream.withdrawn;
           stream.cancelled = true;
           stream.endTime = Math.floor(Date.now() / 1000);
           streams.set(args.streamId, stream);

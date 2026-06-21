@@ -18,6 +18,7 @@ const schema = z.object({
   capabilities: z.array(z.string()).optional(),
   duration: z.number().optional(),
   trainingId: z.number().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerTrainingTools(server: McpServer): void {
@@ -42,9 +43,19 @@ export function registerTrainingTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "create") {
+          const priceWei = parseEther(args.price || "0.001");
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Create training program",
+              cost: "Gas only",
+              reason: "Lists a new training program on the marketplace",
+              toProceed: "Call corven_training again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.TrainingMarketplace, ABI, "createProgram",
-            [args.title!, args.description!, parseEther(args.price || "0.001"),
+            [args.title!, args.description!, priceWei,
              args.capabilities || [], args.duration || 10],
             0n
           );
@@ -53,10 +64,20 @@ export function registerTrainingTools(server: McpServer): void {
 
         if (action === "enroll") {
           const program = await readContract(CONTRACTS.TrainingMarketplace, ABI, "getProgram", [BigInt(args.trainingId!)]);
+          const enrollPrice = parseEther((program as any).price?.toString() || "0");
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Enroll in training program #" + args.trainingId,
+              cost: formatEther(enrollPrice) + " ETH enrollment fee",
+              reason: "2.5% platform fee deducted from payment",
+              toProceed: "Call corven_training again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.TrainingMarketplace, ABI, "enroll",
             [BigInt(args.trainingId!)],
-            parseEther((program as any).price?.toString() || "0")
+            enrollPrice
           );
           return formatTxResult(result);
         }

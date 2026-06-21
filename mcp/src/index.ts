@@ -17,14 +17,17 @@ import { createServer } from "./server.js";
 import { createStdioTransport } from "./transports/stdio.js";
 import { startHttpServer } from "./transports/http.js";
 import { HTTP_PORT, validateConfig } from "./config.js";
+import { AutoVerifier } from "./auto-verifier.js";
+
+let autoVerifier: AutoVerifier | null = null;
 
 async function main(): Promise<void> {
-  // Validate configuration on startup (catches invalid PRIVATE_KEY early)
   validateConfig();
 
   const args = process.argv.slice(2);
   const useHttp = args.includes("--http");
-  const useStdio = args.includes("--stdio") || !useHttp; // default to stdio
+  const useStdio = args.includes("--stdio") || !useHttp;
+  const noAutoVerify = args.includes("--no-auto-verify");
 
   if (useHttp && useStdio) {
     console.error("[ERROR] Cannot use both --stdio and --http. Pick one.");
@@ -32,17 +35,28 @@ async function main(): Promise<void> {
   }
 
   if (useHttp) {
-    // HTTP mode: create a new server per session via factory
     console.error("[BOOT] Starting COVENANT MCP Server in HTTP mode...");
     await startHttpServer(() => createServer(), HTTP_PORT);
     console.error("[BOOT] Server is ready. POST to /mcp to interact.");
   } else {
-    // Stdio mode: single server instance, single transport
     console.error("[BOOT] Starting COVENANT MCP Server in stdio mode...");
     const server = createServer();
     const transport = createStdioTransport();
     await server.connect(transport);
     console.error("[BOOT] Server is ready. Waiting for MCP messages on stdin...");
+  }
+
+  // Start auto-verifier in background (unless disabled)
+  if (!noAutoVerify) {
+    autoVerifier = new AutoVerifier({
+      rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+      privateKey: process.env.PRIVATE_KEY || undefined,
+      pollIntervalMs: 15000,
+      maxConcurrent: 3,
+    });
+    autoVerifier.start().catch((e) => {
+      console.error("[AutoVerifier] Failed to start:", e);
+    });
   }
 }
 

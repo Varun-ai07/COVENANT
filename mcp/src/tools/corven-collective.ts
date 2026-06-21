@@ -30,6 +30,7 @@ const schema = z.object({
   deadline: z.number().optional(),
   descriptionHash: z.string().optional(),
   taskId: z.number().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerCollectiveTools(server: McpServer): void {
@@ -58,6 +59,15 @@ export function registerCollectiveTools(server: McpServer): void {
             return formatStructuredError("Missing required fields.", "create requires minContribution and maxMembers.", "Provide both parameters.", false);
           }
           const minWei = parseEther(args.minContribution);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Create new collective with " + args.maxMembers + " max members",
+              cost: formatEther(minWei) + " ETH initial contribution",
+              reason: "Initial contribution seeds the collective pool",
+              toProceed: "Call corven_collective again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentCollective, ABI, "createCollective",
             [minWei, BigInt(args.maxMembers)],
@@ -71,6 +81,15 @@ export function registerCollectiveTools(server: McpServer): void {
             return formatStructuredError("Missing required fields.", "join requires collectiveId and contribution.", "Provide both parameters.", false);
           }
           const contribWei = parseEther(args.contribution);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Join collective #" + args.collectiveId,
+              cost: formatEther(contribWei) + " ETH contribution",
+              reason: "Contribution pooled with other members for shared tasks",
+              toProceed: "Call corven_collective again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentCollective, ABI, "joinCollective",
             [BigInt(args.collectiveId)],
@@ -84,6 +103,15 @@ export function registerCollectiveTools(server: McpServer): void {
             return formatStructuredError("Missing required fields.", "launch requires collectiveId, worker, payment, deadline, and descriptionHash.", "Provide all five parameters.", false);
           }
           const paymentWei = parseEther(args.payment);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Launch task from collective #" + args.collectiveId,
+              cost: formatEther(paymentWei) + " ETH from collective pool",
+              reason: "Payment released from pooled funds to worker",
+              toProceed: "Call corven_collective again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const descBytes32 = stringToBytes32(args.descriptionHash);
           const result = await executeOrPrepare(
             CONTRACTS.AgentCollective, ABI, "launchTask",

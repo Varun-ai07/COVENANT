@@ -1,6 +1,6 @@
 {
   "name": "@varun-ai07/covenant-mcp",
-  "version": "2.0.1",
+  "version": "2.1.1",
   "description": "COVENANT Protocol MCP Server — AI agent access to on-chain task marketplace",
   "type": "module",
   "main": "dist/index.js",
@@ -18,8 +18,6 @@
     "postinstall": "node dist/postinstall.js || echo 'COVENANT MCP Server installed. Run: npx covenant add'"
   },
   "dependencies": {
-    "@covenant/sdk": "file:../covenant-sdk",
-    "@graphprotocol/graph-cli": "^0.98.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.11.1",
     "dotenv": "^17.3.1",

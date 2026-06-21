@@ -12,7 +12,7 @@ import {
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { CovenantSDK } from "../../covenant-sdk/dist/index.js";
+import { CovenantSDK } from "./sdk.js";
 import { BASE_SEPOLIA_ADDRESSES } from "./shared-types.js";
 import type { WalletMode, ContractConfig, ContractConfigV2, ContractVersion, ContractConfigMerged } from "./types.js";
 

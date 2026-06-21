@@ -2,6 +2,7 @@
 
 from .config import DEFAULT_ADDRESSES, DEFAULT_RPC_URLS, SDKConfig
 from .sdk import CovenantSDK
+from .v5 import CovenantSDKV5
 from .types import (
     AgentData,
     BatchData,
@@ -21,6 +22,7 @@ from .types import (
 
 __all__ = [
     "CovenantSDK",
+    "CovenantSDKV5",
     "SDKConfig",
     "AgentData",
     "BatchData",
@@ -40,4 +42,4 @@ __all__ = [
     "DEFAULT_RPC_URLS",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

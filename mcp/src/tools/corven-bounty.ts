@@ -19,6 +19,7 @@ const schema = z.object({
   bountyId: z.number().optional(),
   deliverableHash: z.string().optional(),
   winnerAddress: z.string().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerBountyTools(server: McpServer): void {
@@ -43,10 +44,20 @@ export function registerBountyTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "post") {
+          const rewardWei = parseEther(args.reward || "0.01");
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Post bounty",
+              cost: formatEther(rewardWei) + " ETH reward",
+              reason: "Reward locked in escrow for winning submission",
+              toProceed: "Call corven_bounty again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentRegistry, ABI, "postBounty",
-            [args.title!, args.description!, parseEther(args.reward || "0.01"), BigInt(args.deadline!)],
-            parseEther(args.reward || "0.01")
+            [args.title!, args.description!, rewardWei, BigInt(args.deadline!)],
+            rewardWei
           );
           return formatTxResult(result);
         }
@@ -61,6 +72,15 @@ export function registerBountyTools(server: McpServer): void {
         }
 
         if (action === "winner") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Select winner for bounty #" + args.bountyId,
+              cost: "ETH released from escrow to winner",
+              reason: "Pays the selected worker from bounty escrow",
+              toProceed: "Call corven_bounty again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const result = await executeOrPrepare(
             CONTRACTS.AgentRegistry, ABI, "selectWinner",
             [BigInt(args.bountyId!), args.winnerAddress as Address],

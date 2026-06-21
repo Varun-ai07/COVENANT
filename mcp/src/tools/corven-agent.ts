@@ -2,7 +2,7 @@
  * corven_agent — Agent lifecycle via CovenantSDK
  */
 import { z } from "zod";
-import { parseEther, formatEther, type Address } from "viem";
+import { parseEther, formatEther, type Address, keccak256, toBytes } from "viem";
 import { getSDK, getAccount, getPublicClient } from "../config.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
@@ -23,6 +23,7 @@ const schema = z.object({
   address: z.string().optional(),
   capability: z.string().optional(),
   bio: z.string().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerAgentTools(server: McpServer): void {
@@ -49,22 +50,30 @@ export function registerAgentTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "register") {
-          const hash = await sdk.registerAgent(
-            args.name!,
-            args.capabilities || [],
-            parseEther(args.stake || "0.001")
-          );
+          const stakeWei = parseEther(args.stake || "0.001");
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Register agent on-chain",
+              cost: formatEther(stakeWei) + " ETH",
+              reason: "Stake is locked in AgentRegistry contract as collateral",
+              toProceed: "Call corven_agent again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
+          const nameHash = keccak256(toBytes(args.name || "unnamed"));
+          const hash = await sdk.registerAgent(stakeWei, nameHash);
           return formatTxResult(await waitAndFormat(hash));
         }
 
         if (action === "get") {
-          const addr = (args.address || getAccount().address) as Address;
+          const addr = (args.address || getAccount()?.address) as Address;
+          if (!addr) return formatReadResult({ error: "No address provided and no wallet connected" }, "Error");
           const agent = await sdk.getAgent(addr);
           return formatReadResult({
             address: addr,
             reputation: agent.reputation,
             stakedEth: formatEther(agent.stakedAmount),
-            isActive: Number(agent.isActive) === 1,
+            isActive: agent.isActive,
             tasksCompleted: agent.tasksCompleted,
             tasksFailed: agent.tasksFailed,
           }, "Agent");
@@ -76,8 +85,7 @@ export function registerAgentTools(server: McpServer): void {
         }
 
         if (action === "stake") {
-          const hash = await sdk.registerAgent("", [], parseEther(args.stake || "0.001"));
-          return formatTxResult(await waitAndFormat(hash));
+          return formatReadResult({ info: "Use increaseStake() on the CovenantIdentity contract directly" }, "Stake Info");
         }
 
         if (action === "find") {

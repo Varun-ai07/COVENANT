@@ -2,11 +2,16 @@
  * corven_verify — Deep verification with on-chain attestation
  */
 import { z } from "zod";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { formatReadResult, formatError } from "../handlers/transactions.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const schema = z.object({
-  action: z.enum(["deep", "capability", "reputation", "result"]),
+  action: z.enum(["deep", "capability", "reputation", "result", "pending", "status"]),
   repoUrl: z.string().optional(),
   requirements: z.string().optional(),
   depth: z.enum(["quick", "standard", "deep"]).optional().default("standard"),
@@ -20,25 +25,28 @@ export function registerVerifyTools(server: McpServer): void {
     {
       title: "Deep Verification",
       description:
-        "Multi-stage verification pipeline for worker deliverables.\n\n" +
+        "Automatic verification of worker deliverables on COVENANT.\n\n" +
         "ACTIONS:\n" +
-        "  deep — Full 3-stage verification: gatekeeper + deep analysis + on-chain attestation\n" +
-        "  capability — Verify agent has specific capability (ZK proof)\n" +
+        "  deep — Run full verification: clone repo + static analysis + score\n" +
+        "  pending — Check what tasks need verification (Submitted status)\n" +
+        "  status — Show auto-verifier system status\n" +
+        "  capability — Verify agent has specific capability\n" +
         "  reputation — Verify agent reputation meets threshold\n" +
         "  result — Get verification result by evidence hash\n\n" +
-        "WORKFLOW:\n" +
-        "1. Worker submits GitHub URL via corven_task({ action: 'submit' })\n" +
-        "2. Client calls corven_verify({ action: 'deep', repoUrl: '...', requirements: '...' })\n" +
-        "3. If score ≥ 70: corven_task({ action: 'verify', taskId: 1, success: true })\n" +
-        "4. If score < 70: corven_task({ action: 'verify', taskId: 1, success: false })\n\n" +
-        "STAGES:\n" +
-        "  Stage 1: Lint + build + test + security + secrets (instant)\n" +
-        "  Stage 2: Code quality + architecture + deep security + performance + testing (30s-2min)\n" +
-        "  Stage 3: Evidence hash + IPFS report + on-chain attestation\n\n" +
-        "SCORING:\n" +
-        "  ≥ 70: PASS (client approves, worker paid)\n" +
-        "  ≥ 40: PARTIAL (client reviews manually)\n" +
-        "  < 40: FAIL (client rejects, dispute possible)",
+        "HOW IT WORKS (automatic, no user action needed):\n" +
+        "1. Worker submits deliverable → TaskSubmitted event fires\n" +
+        "2. Auto-verifier detects event → clones repo → runs checks → scores (0-100)\n" +
+        "3. Score >= 70: Auto-approves, worker paid automatically\n" +
+        "4. Score < 40: Auto-rejects, worker can dispute\n" +
+        "5. Score 40-69: Flagged for your review — read the repo and decide\n\n" +
+        "FOR BORDERLINE CASES (40-69):\n" +
+        "Clone the repo yourself, read the code, compare against task requirements.\n" +
+        "Then call corven_task({ action: 'verify', taskId: X, success: true/false }).\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present verification results as a clean summary: score, verdict, what passed/failed.\n" +
+        "- For borderline cases: explain your code review findings in plain language.\n" +
+        "- Always recommend a clear next step (approve, reject, or request revision).\n" +
+        "- Never show raw JSON, stack traces, or technical error messages.",
       inputSchema: schema.shape,
     },
     async (args) => {
@@ -49,41 +57,18 @@ export function registerVerifyTools(server: McpServer): void {
           if (!repoUrl) return formatError(new Error("repoUrl is required for deep verification"));
 
           // Run the 3-stage verification pipeline
-          const verifyPath = require("path").resolve(__dirname, "../../../../skills/covenant-verify/verify.js");
-          const verifyModule = await import(verifyPath);
-          const result = await verifyModule.verifyProject(repoUrl, requirements || "No specific requirements", depth as any);
+          const { verifyProject } = await import("../lib/verify.js");
+          const result = await verifyProject(repoUrl, requirements || "No specific requirements", depth as any);
+
+          const passed = result.checks.filter((c: any) => c.passed);
+          const failed = result.checks.filter((c: any) => !c.passed);
 
           return formatReadResult({
             score: result.score,
             verdict: result.verdict,
-            stage1_gatekeeper: {
-              passed: result.stage1.passed,
-              score: result.stage1.score,
-              duration: `${result.stage1.duration}ms`,
-              checks: result.stage1.checks.map((c: any) => ({
-                name: c.name,
-                passed: c.passed,
-                score: c.score,
-                details: c.details,
-              })),
-            },
-            stage2_analysis: {
-              passed: result.stage2.passed,
-              score: result.stage2.score,
-              duration: `${result.stage2.duration}ms`,
-              checks: result.stage2.checks.map((c: any) => ({
-                name: c.name,
-                passed: c.passed,
-                score: c.score,
-                details: c.details,
-              })),
-            },
-            stage3_attestation: {
-              passed: result.stage3.passed,
-              score: result.stage3.score,
-              evidenceHash: result.evidenceHash,
-              reportCid: result.reportCid,
-            },
+            checks_passed: passed.length,
+            checks_failed: failed.length,
+            failed_checks: failed.map((c: any) => ({ name: c.name, details: c.details })),
             summary: result.summary,
             recommendations: result.recommendations,
             next_steps: result.verdict === "pass"
@@ -119,6 +104,23 @@ export function registerVerifyTools(server: McpServer): void {
           return formatReadResult({
             note: "Use corven_attest({ action: 'get', attestationId: X }) to retrieve verification results.",
           }, "Verification Result");
+        }
+
+        if (action === "pending") {
+          return formatReadResult({
+            note: "Check corven_task({ action: 'list' }) for tasks in 'Submitted' status. These need verification. For each, call corven_verify({ action: 'deep', repoUrl: '...' }) to run the full verification pipeline.",
+            workflow: "1. corven_task list → find Submitted tasks  2. For each: corven_verify deep  3. If score >= 70: corven_task verify success=true  4. If score < 40: corven_task verify success=false  5. If 40-69: review manually",
+          }, "Pending Verifications");
+        }
+
+        if (action === "status") {
+          return formatReadResult({
+            autoVerifier: "Running in background. Polls every 15 seconds for TaskSubmitted events.",
+            autoApprove: "Tasks scoring >= 70 are auto-approved and worker is paid.",
+            autoReject: "Tasks scoring < 40 are auto-rejected.",
+            manualReview: "Tasks scoring 40-69 are flagged for client AI review.",
+            howItWorks: "Worker submits → Event detected → Static analysis → Score → Auto-decide or flag.",
+          }, "Verification System Status");
         }
 
         return formatError(new Error("Unknown action"));

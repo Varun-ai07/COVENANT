@@ -55,9 +55,10 @@ export function registerDisputeTools(server: McpServer): void {
       inputSchema: {
         taskId: taskIdSchema,
         bond: ethAmount,
+        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
       },
     },
-    async ({ taskId, bond }) => {
+    async ({ taskId, bond, confirm }) => {
       try {
         if (!isDisputeDeployed()) {
           return formatError(new Error("DisputeArbitration contract is not deployed on this network. Dispute functionality is unavailable."));
@@ -73,6 +74,15 @@ export function registerDisputeTools(server: McpServer): void {
         }
 
         const bondWei = parseEther(bond);
+        if (!confirm) {
+          return formatReadResult({
+            confirmationRequired: true,
+            action: "File dispute for task #" + taskId,
+            cost: formatEther(bondWei) + " ETH bond",
+            reason: "Bond is locked during dispute. Refunded if you win.",
+            toProceed: "Call corven_file_dispute again with confirm: true",
+          }, "CONFIRMATION REQUIRED");
+        }
         const result = await executeOrPrepare(
           CONTRACTS.DisputeArbitration,
           ABI,
@@ -106,9 +116,10 @@ export function registerDisputeTools(server: McpServer): void {
       inputSchema: {
         disputeId: z.number().describe("Numeric dispute ID returned by corven_file_dispute"),
         inFavorOfWorker: z.boolean().describe("True to vote for worker, false for client"),
+        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
       },
     },
-    async ({ disputeId, inFavorOfWorker }) => {
+    async ({ disputeId, inFavorOfWorker, confirm }) => {
       try {
         if (!isDisputeDeployed()) {
           return formatError(new Error("DisputeArbitration contract is not deployed on this network. Dispute functionality is unavailable."));
@@ -123,6 +134,15 @@ export function registerDisputeTools(server: McpServer): void {
           return formatError(new Error("No private key configured"));
         }
 
+        if (!confirm) {
+          return formatReadResult({
+            confirmationRequired: true,
+            action: "Cast vote on dispute #" + disputeId,
+            cost: "Gas only",
+            reason: inFavorOfWorker ? "Voting in favor of worker" : "Voting in favor of client",
+            toProceed: "Call corven_cast_vote again with confirm: true",
+          }, "CONFIRMATION REQUIRED");
+        }
         const result = await executeOrPrepare(
           CONTRACTS.DisputeArbitration,
           ABI,

@@ -215,3 +215,15 @@ class ContractAddresses:
     AgentInsurance: str
     DisputeArbitration: str
     COVENANTRouter: str
+    # V5 contracts
+    CovenantIdentity: str = ""
+    CovenantEscrow: str = ""
+    CovenantSettlement: str = ""
+    CovenantArbitration: str = ""
+    CovenantAttestation: str = ""
+    CovenantGovernance: str = ""
+    InsurancePool: str = ""
+    TrainingMarketplace: str = ""
+    GrantProgram: str = ""
+    RevisionManager: str = ""
+    MultiTokenEscrow: str = ""

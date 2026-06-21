@@ -36,6 +36,7 @@ const schema = z.object({
   deadlines: z.array(z.number()).optional(),
   descriptionHashes: z.array(z.string()).optional(),
   aggregationSpec: z.string().optional(),
+  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
 });
 
 export function registerBatchTools(server: McpServer): void {
@@ -68,6 +69,15 @@ export function registerBatchTools(server: McpServer): void {
           }
           const paymentsWei = args.payments.map(p => parseEther(p));
           const totalPayment = paymentsWei.reduce((sum, p) => sum + p, 0n);
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Create batch of " + args.workers.length + " parallel tasks",
+              cost: formatEther(totalPayment) + " ETH total",
+              reason: "Total payment locked in escrow for all workers",
+              toProceed: "Call corven_batch again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
           const descBytes32 = stringsToBytes32(args.descriptionHashes);
           const aggBytes32 = stringToBytes32(args.aggregationSpec);
 

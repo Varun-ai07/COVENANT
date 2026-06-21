@@ -41,7 +41,7 @@ function log(message: string, color: string = colors.reset) {
   console.log(`${color}${message}${colors.reset}`);
 }
 
-const NPM_PACKAGE = "@varun-ai07/covenant-mcp@latest";
+const NPM_PACKAGE = "@varun-ai07/covenant-mcp";
 const SERVER_ARGS = ["-y", NPM_PACKAGE, "server"];
 const SERVER_COMMAND = "npx";
 

@@ -4,7 +4,7 @@
  * Batch multiple operations in one transaction. Save gas.
  */
 import { z } from "zod";
-import { isAddress, parseEther, type Address } from "viem";
+import { isAddress, parseEther, formatEther, type Address } from "viem";
 import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
@@ -68,13 +68,14 @@ export function registerRouterTools(server: McpServer): void {
         payment: z.string().optional().describe("Payment in ETH (for quickstart)"),
         deadline: z.number().optional().describe("Unix timestamp deadline (for quickstart)"),
         descriptionHash: z.string().optional().describe("IPFS CID (for quickstart)"),
+        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
       },
     },
     async (params) => {
       try {
         const { action } = params as { action: string };
         const account = getAccount();
-        if (!account) return formatStructuredError("No wallet configured.", "Set PRIVATE_KEY in .env.", "Add PRIVATE_KEY to mcp/.env", false);
+        if (!account) return formatStructuredError("No wallet configured.", "Set up a wallet to perform write operations.", "Set up wallet configuration", false);
 
         switch (action) {
           case "multicall": {
@@ -89,6 +90,15 @@ export function registerRouterTools(server: McpServer): void {
             }
             const { calls } = parsed.data;
             const totalValue = calls.reduce((sum, c) => sum + parseFloat(c.value || "0"), 0);
+            if (!params.confirm) {
+              return formatReadResult({
+                confirmationRequired: true,
+                action: "Execute batch of " + calls.length + " contract calls",
+                cost: totalValue > 0 ? totalValue + " ETH total value" : "Gas only",
+                reason: "Atomic execution of multiple contract operations",
+                toProceed: "Call corven_router again with confirm: true",
+              }, "CONFIRMATION REQUIRED");
+            }
 
             const result = await executeOrPrepare(
               CONTRACTS.COVENANTRouter as Address,
@@ -125,6 +135,16 @@ export function registerRouterTools(server: McpServer): void {
               );
             }
             const { name, capabilities, worker, payment, deadline, descriptionHash } = parsed.data;
+            const paymentWei = parseEther(payment);
+            if (!params.confirm) {
+              return formatReadResult({
+                confirmationRequired: true,
+                action: "Register agent AND create task in one transaction",
+                cost: formatEther(paymentWei) + " ETH task payment",
+                reason: "Registers agent and locks payment in escrow",
+                toProceed: "Call corven_router again with confirm: true",
+              }, "CONFIRMATION REQUIRED");
+            }
 
             const result = await executeOrPrepare(
               CONTRACTS.COVENANTRouter as Address,
@@ -138,7 +158,7 @@ export function registerRouterTools(server: McpServer): void {
                 BigInt(deadline),
                 descriptionHash,
               ],
-              parseEther(payment)
+              paymentWei
             );
 
             return formatTxResult(result);
