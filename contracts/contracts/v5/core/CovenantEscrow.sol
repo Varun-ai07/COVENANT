@@ -251,7 +251,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
         uint256[] calldata taskIds,
         uint128[] calldata amounts,
         bytes[] calldata signatures
-    ) external onlyOwner nonReentrant {
+    ) external onlyOwner nonReentrant whenNotPaused {
         if (taskIds.length != amounts.length || taskIds.length != signatures.length) {
             revert BatchLengthMismatch();
         }
@@ -287,7 +287,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
     // Emergency (V5 addition)
     // ═══════════════════════════════════════════════════════════════
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert InvalidAddress();
         if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");
@@ -307,8 +307,8 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
     // Admin functions
     // ═══════════════════════════════════════════════════════════════
 
-    function setAuthorizedSettlement(address addr) external onlyOwner { authorizedSettlement = addr; }
-    function setAuthorizedArbitration(address addr) external onlyOwner { authorizedArbitration = addr; }
+    function setAuthorizedSettlement(address addr) external onlyOwner { if (addr == address(0)) revert InvalidAddress(); authorizedSettlement = addr; }
+    function setAuthorizedArbitration(address addr) external onlyOwner { if (addr == address(0)) revert InvalidAddress(); authorizedArbitration = addr; }
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
 

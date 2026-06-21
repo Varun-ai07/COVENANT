@@ -205,7 +205,7 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
     // Emergency (V5 addition)
     // ═══════════════════════════════════════════════════════════════
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert InvalidAddress();
         if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");
@@ -252,8 +252,8 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
     // Admin functions
     // ═══════════════════════════════════════════════════════════════
 
-    function setArbiter(address _arbiter) external onlyOwner { arbiter = _arbiter; }
-    function setEscrow(address _escrow) external onlyOwner { escrow = _escrow; }
+    function setArbiter(address _arbiter) external onlyOwner { if (_arbiter == address(0)) revert InvalidAddress(); arbiter = _arbiter; }
+    function setEscrow(address _escrow) external onlyOwner { if (_escrow == address(0)) revert InvalidAddress(); escrow = _escrow; }
 
     // Custom errors
     error NotDisputable();

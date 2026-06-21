@@ -25,6 +25,7 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     mapping(address => MemberInfo) public members;
     uint256 public memberCount;
     mapping(uint256 => Claim) public claims;
+    mapping(uint256 => mapping(address => bool)) public claimVoters;
     uint256 public claimCount;
     uint256 public poolBalance;
     uint256 public totalContributions;
@@ -41,7 +42,10 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error NotMember();
     error InsufficientPool();
     error ClaimAlreadyPaid();
+    error ClaimAlreadyApproved();
     error InvalidAmount();
+    error AlreadyVoted();
+    error AlreadyMember();
     error InvalidAddress();
     error ExcessiveWithdraw();
 
@@ -56,6 +60,7 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function joinPool() external payable nonReentrant {
         if (msg.value < MIN_JOIN_AMOUNT) revert InvalidAmount();
+        if (members[msg.sender].isMember) revert AlreadyMember();
         members[msg.sender] = MemberInfo({isMember: true, totalPremiumsPaid: msg.value, totalClaimsReceived: 0});
         memberCount++;
         poolBalance += msg.value;
@@ -72,11 +77,17 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function voteOnClaim(uint256 claimId, bool inFavor) external {
         Claim storage c = claims[claimId];
         if (c.claimant == address(0)) revert InvalidAmount();
+        if (claimVoters[claimId][msg.sender]) revert AlreadyVoted();
+        claimVoters[claimId][msg.sender] = true;
         if (inFavor) c.votesFor++; else c.votesAgainst++;
     }
 
     function approveClaim(uint256 claimId) external onlyOwner {
-        claims[claimId].approved = true;
+        Claim storage c = claims[claimId];
+        if (c.claimant == address(0)) revert InvalidAmount();
+        if (c.approved) revert ClaimAlreadyApproved();
+        if (c.paid) revert ClaimAlreadyPaid();
+        c.approved = true;
         emit ClaimApproved(claimId);
     }
 
@@ -116,7 +127,7 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     function getPoolBalance() external view returns (uint256) { return poolBalance; }
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert InvalidAddress();
         if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool s, ) = to.call{value: amount}("");

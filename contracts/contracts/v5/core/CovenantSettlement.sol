@@ -189,7 +189,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 nonce,
         bytes calldata payerSignature
     ) external payable nonReentrant returns (uint256 receiptId) {
-        if (payee == address(0)) revert InvalidPayee();
+        if (payer == address(0) || payee == address(0)) revert InvalidPayee();
         if (amount == 0) revert InvalidAmount();
 
         // Verify payer signature (EIP-712 style)
@@ -275,7 +275,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     // Emergency (V5 addition)
     // ═══════════════════════════════════════════════════════════════
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert InvalidAddress();
         if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");

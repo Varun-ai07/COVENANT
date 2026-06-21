@@ -64,12 +64,14 @@ contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, Reentran
     error NotGuardian();
     error NotVetoer();
     error InvalidGuardianSignature();
+    error InvalidAddress();
     error SignatureAlreadyUsed();
     error ExecutionFailed();
 
     constructor() {}
 
     function initialize(address _guardian, address _vetoer, uint256 initialQuorum) public initializer {
+        if (_guardian == address(0) || _vetoer == address(0)) revert InvalidAddress();
         __Ownable_init();
         __Pausable_init();
         __ReentrancyGuard_init();

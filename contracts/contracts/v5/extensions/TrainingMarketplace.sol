@@ -33,9 +33,10 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     constructor() {}
 
     function initialize(address _feeRecipient) public initializer {
+        if (_feeRecipient == address(0)) revert InvalidAddress();
+        feeRecipient = _feeRecipient;
         __Ownable_init();
         __ReentrancyGuard_init();
-        feeRecipient = _feeRecipient;
     }
 
     function createTraining(string calldata title, uint256 price) external returns (uint256) {
@@ -84,7 +85,7 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         feeRecipient = _recipient;
     }
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert InvalidAddress();
         if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool s, ) = to.call{value: amount}("");

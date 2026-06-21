@@ -94,7 +94,7 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
         emit AgentDeactivated(msg.sender);
     }
 
-    function updateMetadata(bytes32 newRoot) external {
+    function updateMetadata(bytes32 newRoot) external nonReentrant whenNotPaused {
         if (!_agents[msg.sender].active) revert NotRegistered();
         _agents[msg.sender].metadataRoot = newRoot;
         _agents[msg.sender].lastActivity = uint32(block.timestamp);
@@ -120,7 +120,7 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
 
     function updateReputationRoot(bytes32 newRoot, uint256 epoch, bytes calldata signature) external nonReentrant {
         if (msg.sender != reputationOracle) revert Unauthorized();
-        bytes32 message = keccak256(abi.encodePacked(newRoot, epoch));
+        bytes32 message = keccak256(abi.encodePacked(newRoot, epoch, block.chainid, address(this)));
         bytes32 ethSignedHash = message.toEthSignedMessageHash();
         address signer = ethSignedHash.recover(signature);
         if (signer != reputationOracle) revert InvalidSignature();
@@ -146,7 +146,7 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
         emit CapabilityRevoked(agent, capabilityHash);
     }
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert InvalidAddress();
         if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool success, ) = to.call{value: amount}("");
@@ -162,7 +162,10 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
         return c.capabilityHash != bytes32(0) && !c.revoked && block.timestamp < c.expiry;
     }
 
-    function setReputationOracle(address oracle) external onlyOwner { reputationOracle = oracle; }
+    function setReputationOracle(address oracle) external onlyOwner {
+        if (oracle == address(0)) revert InvalidAddress();
+        reputationOracle = oracle;
+    }
     function setMinimumStake(uint96 stake) external onlyOwner { minimumStake = stake; }
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }

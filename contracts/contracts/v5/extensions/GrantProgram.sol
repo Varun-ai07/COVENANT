@@ -16,6 +16,7 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     }
 
     mapping(uint256 => Grant) public grants;
+    mapping(uint256 => mapping(address => bool)) public grantVoters;
     uint256 public grantCount;
     uint256 public treasury;
     uint256 public votingPeriod = 7 days;
@@ -30,6 +31,7 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error GrantNotActive();
     error AlreadyVoted();
     error NotApproved();
+    error InvalidVotingPeriod();
     error AlreadyDisbursed();
     error InvalidAmount();
     error InvalidAddress();
@@ -52,10 +54,11 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function voteGrant(uint256 grantId, bool inFavor) external {
         Grant storage g = grants[grantId];
         if (g.applicant == address(0) || g.approved) revert GrantNotActive();
+        if (grantVoters[grantId][msg.sender]) revert AlreadyVoted();
+        grantVoters[grantId][msg.sender] = true;
         if (inFavor) g.votesFor++; else g.votesAgainst++;
         emit GrantVoted(grantId, msg.sender, inFavor);
 
-        // Auto-approve when enough votes in favor and more for than against
         if (!g.approved && g.votesFor >= MIN_APPROVAL_VOTES && g.votesFor > g.votesAgainst) {
             g.approved = true;
             emit GrantApproved(grantId, g.votesFor, g.votesAgainst);
@@ -76,9 +79,12 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit GrantDisbursed(grantId, g.applicant, g.amount);
     }
 
-    function setVotingPeriod(uint256 _period) external onlyOwner { votingPeriod = _period; }
+    function setVotingPeriod(uint256 _period) external onlyOwner {
+        if (_period < 1 days || _period > 30 days) revert InvalidVotingPeriod();
+        votingPeriod = _period;
+    }
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert InvalidAddress();
         if (amount > address(this).balance / 10) revert ExcessiveWithdraw();
         (bool s, ) = to.call{value: amount}("");
