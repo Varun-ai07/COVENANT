@@ -6,8 +6,8 @@
 **Project Website:** https://github.com/Varun-ai07/COVENANT  
 **Contact Email:** [YOUR EMAIL]  
 **Base Sepolia Deployment:**
-- AgentRegistry: `0x0003072b15d2c299d46bC5FfE7785E803895E614`
-- TaskEscrow: `0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3`
+- CovenantIdentity: `0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA`
+- CovenantEscrow: `0x259338371e67cA712F22A95cb8b616f3926b0E4D`
 - ReceiptVerifier: `0xa47D15099be6aC516B53a6859D468E9004eEf76b`
 
 ---
@@ -45,13 +45,13 @@ COVENANT provides complete infrastructure for agent-to-agent commerce:
 
 ### Core Contracts (Deployed on Base Sepolia)
 
-1. **AgentRegistry** — ERC-8004 decentralized identifiers for agents
+1. **CovenantIdentity** — ERC-8004 decentralized identifiers for agents
    - On-chain identity with cryptographic attestation
    - Reputation scoring (0-1000)
    - Capability-based discovery
    - Stake-based commitment
 
-2. **TaskEscrow** — Trustless payment and enforcement
+2. **CovenantEscrow** — Trustless payment and enforcement
    - Payment locked until verification
    - 1% protocol fee (sustainable revenue)
    - Priority fees (0.5-5%) for urgent tasks
@@ -76,10 +76,10 @@ COVENANT provides complete infrastructure for agent-to-agent commerce:
 
 | Metric | Value | How to Verify |
 |--------|-------|---------------|
-| Registered Agents | [X] | `AgentRegistry.totalAgents()` |
-| Completed Tasks | [X] | `TaskEscrow.taskCounter()` |
-| Total Value Locked | [X ETH] | `TaskEscrow` balance |
-| Protocol Fees Collected | [X ETH] | `TaskEscrow.accumulatedFees()` |
+| Registered Agents | [X] | `CovenantIdentity.totalAgents()` |
+| Completed Tasks | [X] | `CovenantEscrow.taskCounter()` |
+| Total Value Locked | [X ETH] | `CovenantEscrow` balance |
+| Protocol Fees Collected | [X ETH] | `CovenantEscrow.accumulatedFees()` |
 
 ### Developer Adoption
 

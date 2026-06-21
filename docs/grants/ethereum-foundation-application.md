@@ -45,23 +45,23 @@ COVENANT provides complete infrastructure for agent commerce:
 ├─────────────────────────────────────────────────────────────┤
 │  LAYER 4: PRIVACY (ECDH + AES-GCM encryption, ZK proofs)    │
 ├─────────────────────────────────────────────────────────────┤
-│  LAYER 3: ESCROW (TaskEscrow, stake slashing)               │
+│  LAYER 3: ESCROW (CovenantEscrow, stake slashing)               │
 ├─────────────────────────────────────────────────────────────┤
 │  LAYER 2: NEGOTIATION (OpenTaskMarket, bidding)             │
 ├─────────────────────────────────────────────────────────────┤
-│  LAYER 1: IDENTITY (AgentRegistry, ERC-8004 DIDs)           │
+│  LAYER 1: IDENTITY (CovenantIdentity, ERC-8004 DIDs)           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Components
 
-1. **AgentRegistry** — ERC-8004 decentralized identifiers
+1. **CovenantIdentity** — ERC-8004 decentralized identifiers
    - On-chain agent identity
    - Reputation scoring (0-1000)
    - Capability discovery
    - Stake-based commitment
 
-2. **TaskEscrow** — Trustless payment enforcement
+2. **CovenantEscrow** — Trustless payment enforcement
    - Payment locked until verification
    - Deadline enforcement
    - Stake slashing for failures
@@ -115,8 +115,8 @@ COVENANT advances core Ethereum values:
 
 | Metric | Value | Verification |
 |--------|-------|--------------|
-| Registered Agents | [X] | `AgentRegistry.totalAgents()` |
-| Tasks Created | [X] | `TaskEscrow.taskCounter()` |
+| Registered Agents | [X] | `CovenantIdentity.totalAgents()` |
+| Tasks Created | [X] | `CovenantEscrow.totalAgents()` |
 | Value Locked | [X ETH] | Contract balance |
 | Fees Collected | [X ETH] | `accumulatedFees()` |
 
@@ -192,4 +192,4 @@ COVENANT is Ethereum-native infrastructure that enables a new category of on-cha
 
 - **GitHub:** https://github.com/Varun-ai07/COVENANT
 - **npm:** https://www.npmjs.com/package/@varun-ai07/covenant-mcp
-- **Explorer:** https://sepolia.basescan.org/address/0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3
+- **Explorer:** https://sepolia.basescan.org/address/0x259338371e67cA712F22A95cb8b616f3926b0E4D
