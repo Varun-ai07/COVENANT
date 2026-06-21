@@ -4,12 +4,14 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 
 /// @title CovenantSettlement V5 — Streaming + receipt settlement with batch limits
 /// @notice Sub-second agent interactions via signed receipts, batch settlement with limits
 /// @dev Fixes V4: Batch size limits, CEI pattern, emergency withdrawal
 contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     using ECDSAUpgradeable for bytes32;
+    using SafeCastUpgradeable for uint256;
 
     // ═══════════════════════════════════════════════════════════════
     // Types
@@ -76,6 +78,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error NothingToClaim();
     error InvalidPayerSignature();
     error AlreadySettled();
+    error InsufficientBalance();
     error BatchTooLarge();
     error BatchLengthMismatch();
     error InvalidAddress();
@@ -105,7 +108,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         streamId = ++streamCount;
         uint32 endTime = uint32(block.timestamp + duration);
-        uint128 totalCost = uint128(uint256(ratePerSecond) * duration);
+        uint128 totalCost = SafeCastUpgradeable.toUint128(uint256(ratePerSecond) * duration);
 
         if (msg.value < totalCost) revert InsufficientDeposit();
 
@@ -208,6 +211,9 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
             settled: true
         });
 
+        // Verify contract has sufficient balance
+        if (address(this).balance < amount) revert InsufficientBalance();
+
         // External call AFTER state update
         (bool success, ) = payee.call{value: amount}("");
         require(success, "transfer failed");
@@ -290,7 +296,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (!stream.active) return 0;
 
         uint32 currentTime = uint32(block.timestamp < stream.endTime ? block.timestamp : stream.endTime);
-        uint128 totalStreamed = uint128(uint256(stream.ratePerSecond) * (currentTime - stream.startTime));
+        uint128 totalStreamed = SafeCastUpgradeable.toUint128(uint256(stream.ratePerSecond) * (currentTime - stream.startTime));
 
         if (totalStreamed > stream.deposited) totalStreamed = stream.deposited;
         if (totalStreamed <= stream.streamed) return 0;

@@ -2,11 +2,13 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 /// @title CovenantAttestation V5 — Verifiable credentials with batch support
 /// @notice Schema-based attestations with issuer authorization
-contract CovenantAttestation is OwnableUpgradeable {
+contract CovenantAttestation is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using ECDSAUpgradeable for bytes32;
 
     struct AttestationStorage {
@@ -44,14 +46,14 @@ contract CovenantAttestation is OwnableUpgradeable {
 
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); }
+    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __Pausable_init(); }
 
     function attest(
         address subject,
         bytes32 schemaHash,
         bytes32 dataHash,
         uint32 expiresAt
-    ) external returns (bytes32 attestationId) {
+    ) external whenNotPaused returns (bytes32 attestationId) {
         if (!isIssuer[msg.sender]) revert NotAuthorizedIssuer();
         if (subject == address(0)) revert InvalidSubject();
         if (!schemas[schemaHash]) revert SchemaNotRegistered();
@@ -77,7 +79,7 @@ contract CovenantAttestation is OwnableUpgradeable {
         bytes32 schemaHash,
         bytes32[] calldata dataHashes,
         uint32 expiresAt
-    ) external returns (bytes32[] memory attestationIds) {
+    ) external whenNotPaused returns (bytes32[] memory attestationIds) {
         if (!isIssuer[msg.sender]) revert NotAuthorizedIssuer();
         if (subjects.length != dataHashes.length) revert BatchLengthMismatch();
         if (subjects.length > MAX_BATCH_SIZE) revert BatchTooLarge();
@@ -128,4 +130,8 @@ contract CovenantAttestation is OwnableUpgradeable {
 
     function registerSchema(bytes32 schemaHash, string calldata) external onlyOwner { schemas[schemaHash] = true; }
     function registerIssuer(address issuer, string calldata) external onlyOwner { isIssuer[issuer] = true; emit IssuerRegistered(issuer, ""); }
+    function revokeIssuer(address issuer) external onlyOwner { isIssuer[issuer] = false; }
+
+    function pause() external onlyOwner { _pause(); }
+    function unpause() external onlyOwner { _unpause(); }
 }

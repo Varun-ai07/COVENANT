@@ -76,6 +76,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
     error InvalidClientSignature();
     error BatchTooLarge();
     error BatchLengthMismatch();
+    error Overpayment();
     error InvalidAddress();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -260,6 +261,9 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
             bytes32 ethSignedHash = message.toEthSignedMessageHash();
             address signer = ethSignedHash.recover(signatures[i]);
             if (signer != task.client) revert InvalidClientSignature();
+
+            // Validate payout does not exceed escrowed amount
+            if (amounts[i] > task.amount) revert Overpayment();
 
             // CEI: State update before external call
             task.status = TaskStatus.Completed;

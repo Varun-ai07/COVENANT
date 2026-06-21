@@ -206,6 +206,7 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (to == address(0)) revert InvalidAddress();
         (bool success, ) = to.call{value: amount}("");
         require(success, "emergency withdraw failed");
+        emit EmergencyWithdraw(to, amount);
     }
 
     // ═══════════════════════════════════════════════════════════════

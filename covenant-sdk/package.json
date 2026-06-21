@@ -1,5 +1,5 @@
 {
-  "name": "@covenant/sdk",
+  "name": "@varun-ai07/covenant-sdk",
   "version": "2.0.0",
   "description": "TypeScript SDK for COVENANT - Autonomous Agent Enforcement Protocol",
   "main": "dist/index.js",
