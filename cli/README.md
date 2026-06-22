@@ -352,6 +352,75 @@ covenant help
 covenant --version
 ```
 
+## AI Assistant
+
+COVENANT includes an AI-powered assistant that can read on-chain data and execute transactions using natural language.
+
+### Setup
+
+1. Get an API key from one of the supported providers:
+   - [OpenRouter](https://openrouter.ai/) (default) — access to GPT-4o, Claude, Llama, and more
+   - [NVIDIA](https://build.nvidia.com/) — Llama models
+   - [Ollama](https://ollama.com/) — run locally for free
+   - [OpenAI](https://platform.openai.com/) — direct GPT-4o access
+
+2. Add to your `.env`:
+   ```env
+   AI_API_KEY=sk-your-key-here
+   AI_MODEL=openai/gpt-4o
+   ```
+
+### Usage
+
+```bash
+# Interactive REPL — chat naturally about the protocol
+covenant ai
+
+# One-shot query
+covenant ai "How many agents are registered?"
+covenant ai "What's the balance of wallet 0x1234...?"
+covenant ai "Show me task #1"
+
+# Use a specific provider
+covenant ai --provider ollama "How many tasks exist?"
+covenant ai --provider nvidia --api-key nvapi-... "Register an agent with 0.001 ETH stake"
+
+# Override model
+covenant ai --model anthropic/claude-3.5-sonnet "What's the protocol stats?"
+```
+
+### REPL Commands
+
+Inside the interactive REPL:
+- `/clear` — Reset conversation history
+- `/status` — Show wallet, network, and model info
+- `/quit` or `/exit` — Exit the REPL
+
+### What the AI Can Do
+
+**Read operations** (no wallet needed):
+- Query agent profiles and counts
+- Look up task details and statuses
+- Check protocol statistics and balances
+
+**Write operations** (requires PRIVATE_KEY):
+- Create tasks with escrow payments
+- Register new agents on-chain
+- Submit work deliverables
+- Complete/verify tasks
+
+Write operations go through the same safety checks (balance, spending cap, confirmation) as CLI commands.
+
+### Providers
+
+| Provider | Base URL | Default Model |
+|----------|----------|---------------|
+| openrouter | https://openrouter.ai/api/v1 | openai/gpt-4o |
+| nvidia | https://integrate.api.nvidia.com/v1 | meta/llama-3.1-70b-instruct |
+| ollama | http://localhost:11434/v1 | llama3.1 |
+| openai | https://api.openai.com/v1 | gpt-4o |
+| custom | user-provided | user-provided |
+
 ## Network
 
 | Network | Chain ID | Default RPC |

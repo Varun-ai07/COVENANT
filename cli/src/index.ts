@@ -13,6 +13,7 @@
  */
 import { Command } from "commander";
 import chalk from "chalk";
+import ora from "ora";
 import { formatEther, isAddress } from "viem";
 import { CHAIN_NAME, CONTRACTS, SPENDING_LIMIT, getAccount, getPublicClient, loadAbi, RPC_URL } from "./config.js";
 import {
@@ -45,6 +46,9 @@ import { registerArbitrationCommand } from "./commands/arbitration.js";
 import { registerAttestationCommand } from "./commands/attestation.js";
 import { registerGovernanceCommand } from "./commands/governance.js";
 import { registerRevisionCommand } from "./commands/revision.js";
+import { CovenantAI } from "./ai.js";
+import { getProvider, listProviders } from "./ai-providers.js";
+import { AI_API_KEY, AI_BASE_URL, AI_MODEL } from "./config.js";
 
 const VERSION = "2.0.0";
 
@@ -80,6 +84,9 @@ function showHelp(): void {
   for (const [cmd, desc] of cmds) {
     console.log(chalk.cyan(`    ${cmd.padEnd(14)}`) + chalk.gray(desc));
   }
+
+  console.log(chalk.bold.white("\n  AI:"));
+  console.log(chalk.cyan("    ai [text]".padEnd(17)) + chalk.gray("AI assistant — interactive REPL or one-shot query"));
 
   console.log(chalk.bold.white("\n  Meta:"));
   console.log(chalk.cyan("    status".padEnd(17)) + chalk.gray("Show wallet, network, contracts, and spending cap"));
@@ -227,6 +234,66 @@ program
       await showStatus();
     } catch (e) {
       handleError(e);
+    }
+  });
+
+// ── AI command ─────────────────────────────────────────────────
+
+program
+  .command("ai [text]")
+  .description("AI-powered COVENANT assistant (interactive REPL or one-shot)")
+  .option("--model <model>", "AI model override")
+  .option("--provider <name>", `Provider preset (${listProviders().join(", ")})`)
+  .option("--api-key <key>", "API key override")
+  .option("--base-url <url>", "API base URL override")
+  .action(async (text: string | undefined, opts: any) => {
+    let apiKey = opts.apiKey || AI_API_KEY;
+    let baseUrl = opts.baseUrl || AI_BASE_URL;
+    let model = opts.model || AI_MODEL;
+
+    if (opts.provider) {
+      const preset = getProvider(opts.provider);
+      if (!preset) {
+        console.error(chalk.red(`  Unknown provider: ${opts.provider}`));
+        console.error(chalk.gray(`  Available: ${listProviders().join(", ")}`));
+        process.exit(1);
+      }
+      baseUrl = preset.baseUrl;
+      model = preset.model;
+    }
+
+    if (!apiKey) {
+      console.log(chalk.red("\n  ✗ No AI API key configured.\n"));
+      console.log(chalk.white("  Set AI_API_KEY in your .env file or pass --api-key:\n"));
+      console.log(chalk.gray("    covenant ai --api-key sk-... \"How many agents are registered?\"\n"));
+      console.log(chalk.gray("  Or add to .env:"));
+      console.log(chalk.gray("    AI_API_KEY=sk-...\n"));
+      console.log(chalk.white("  Supported providers:"));
+      for (const name of listProviders()) {
+        const p = getProvider(name)!;
+        console.log(chalk.gray(`    --provider ${name.padEnd(14)} (${p.model})`));
+      }
+      console.log();
+      process.exit(1);
+    }
+
+    const ai = new CovenantAI(apiKey, baseUrl, model);
+
+    if (text) {
+      // One-shot mode
+      const spinner = ora({ text: chalk.cyan("Thinking..."), color: "cyan" }).start();
+      try {
+        const response = await ai.chat(text);
+        spinner.stop();
+        console.log(`\n  ${chalk.white(response)}\n`);
+      } catch (err) {
+        spinner.fail(chalk.red("Error"));
+        console.log(chalk.red(`  ${err instanceof Error ? err.message : String(err)}\n`));
+        process.exit(1);
+      }
+    } else {
+      // REPL mode
+      await ai.runREPL();
     }
   });
 

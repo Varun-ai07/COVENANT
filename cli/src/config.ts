@@ -64,6 +64,13 @@ export const CHAIN_NAME = (() => {
   return "Base Sepolia";
 })();
 
+// ── AI configuration ──────────────────────────────────────────
+
+export const AI_API_KEY = process.env.AI_API_KEY || "";
+export const AI_BASE_URL = process.env.AI_BASE_URL || "https://openrouter.ai/api/v1";
+export const AI_MODEL = process.env.AI_MODEL || "openai/gpt-4o";
+export const AI_PROVIDER = process.env.AI_PROVIDER || "openrouter";
+
 // ── Spending limit (Fix 5) ────────────────────────────────────
 
 export const SPENDING_LIMIT: bigint = process.env.SPENDING_LIMIT
