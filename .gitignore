@@ -63,3 +63,4 @@ __pycache__/
 # Databases
 *.db
 ruvector.db
+mcp/*.tgz
