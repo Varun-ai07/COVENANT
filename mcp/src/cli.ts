@@ -42,8 +42,14 @@ function log(message: string, color: string = colors.reset) {
 }
 
 const NPM_PACKAGE = "@varun-ai07/covenant-mcp";
-const SERVER_ARGS = ["-y", NPM_PACKAGE, "server"];
-const SERVER_COMMAND = "npx";
+const SERVER_ARGS = (() => {
+  try {
+    return [require.resolve("@varun-ai07/covenant-mcp/dist/index.js")];
+  } catch {
+    return ["-y", NPM_PACKAGE, "server"];
+  }
+})()
+const SERVER_COMMAND = "node";
 
 // ============================================================
 // Platform Detection & Config
