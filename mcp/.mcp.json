@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "covenant": {
+      "command": "node",
+      "args": [
+        "-y",
+        "@varun-ai07/covenant-mcp",
+        "server"
+      ]
+    }
+  }
+}
