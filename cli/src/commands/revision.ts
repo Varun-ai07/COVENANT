@@ -17,7 +17,6 @@ import {
   printField,
   printSuccess,
   shortAddr,
-  toEth,
   toDate,
   handleError,
 } from "../utils.js";

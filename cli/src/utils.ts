@@ -96,9 +96,8 @@ export function printBanner(): void {
   ${chalk.bold.white("COVENANT")}  ${chalk.dim("v2.1.0")}
   ${chalk.gray("Agent economy protocol")} ${chalk.gray("—")} ${chalk.yellow(CHAIN_NAME)}
 
-  ${chalk.green("⛓ Connected")}   ${chalk.white(addr)}   ${chalk.green("●")}  ${chalk.gray("Reputation")} ${chalk.white("510")}
-
-  ${chalk.gray("Type a command, or just tell me what you need.")}
+  ${account ? chalk.green("⛓ Connected") : chalk.yellow("⚓ Disconnected")}   ${chalk.white(addr)}
+  ${account ? chalk.gray("  Type a command, or just tell me what you need.") : chalk.gray("  Connect wallet to see reputation and live status.")}
   ${chalk.gray('Try: ')}${chalk.cyan('"register me as a worker with data-analysis capability"')}
 `;
   console.log(banner);
@@ -161,17 +160,7 @@ export function printFooter(): void {
   console.log(chalk.bold.cyan(`  └${"─".repeat(48)}┘`));
 }
 
-export function printDivider(): void {
-  if (_quietMode) return;
-  console.log(chalk.gray("  " + "─".repeat(50)));
-}
 
-export function printSection(title: string): void {
-  if (_quietMode) return;
-  console.log();
-  console.log(chalk.bold.white(`  ${title}`));
-  console.log(chalk.gray("  " + "─".repeat(title.length + 2)));
-}
 
 // ── Formatted error ──────────────────────────────────────────
 
@@ -376,6 +365,13 @@ export async function readContract(
   return client.readContract({ address, abi, functionName, args: args as any });
 }
 
+export class CancellationError extends Error {
+  constructor() {
+    super("Transaction cancelled by user.");
+    this.name = "CancellationError";
+  }
+}
+
 // ── SAFETY: Pre-write guard (all three checks) ───────────────
 // MUST be called before every writeContract that sends ETH.
 
@@ -391,8 +387,7 @@ export async function preWriteGuard(description: string, valueEth: string): Prom
   // Check 3: Interactive confirmation
   const confirmed = await confirmAction(description, valueEth);
   if (!confirmed) {
-    printWarning("Transaction cancelled by user.");
-    process.exit(0);
+    throw new CancellationError();
   }
 }
 
@@ -454,6 +449,11 @@ export async function writeContract(
 
 export async function printTicker(): Promise<void> {
   if (_quietMode || _jsonMode) return;
+  const account = getAccount();
+  if (!account) {
+    console.log(chalk.gray("  ↻ Connect wallet to see live status"));
+    return;
+  }
   try {
     const client = getPublicClient();
     const identityAbi = loadAbi("CovenantIdentity");
@@ -464,14 +464,11 @@ export async function printTicker(): Promise<void> {
       client.readContract({ address: CONTRACTS.CovenantEscrow, abi: escrowAbi, functionName: "taskCount", args: [] }).catch(() => 0n),
     ]);
 
-    const activeTasks = Math.max(0, Number(totalTasks) - 1);
-    const pendingVerifications = Math.max(0, Math.floor(Number(totalTasks) * 0.1));
-
     console.log(
       chalk.gray("  ↻ ") +
-      chalk.white(`${activeTasks} active tasks`) +
+      chalk.white(`${Number(totalAgents)} agents`) +
       chalk.gray(" · ") +
-      chalk.white(`${pendingVerifications} pending verification`)
+      chalk.white(`${Number(totalTasks)} tasks`)
     );
   } catch {
     console.log(chalk.gray("  ↻ Protocol status unavailable"));

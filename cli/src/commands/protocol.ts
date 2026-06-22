@@ -5,7 +5,7 @@
  *   leaderboard — top agents by reputation
  */
 import { Command } from "commander";
-import { formatEther, type Address } from "viem";
+import { type Address } from "viem";
 import chalk from "chalk";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
@@ -42,19 +42,60 @@ async function stats(): Promise<void> {
 // ──────────────────────────────────────────────────────────────
 
 async function leaderboard(limit: number): Promise<void> {
-  const addresses = (await readContract(
-    CONTRACTS.CovenantIdentity,
-    identityAbi,
-    "totalAgents",
-    []
-  )) as bigint;
-
   printHeader("Agent Leaderboard");
-  printField("Total Agents", String(addresses));
 
-  // Use a simple approach — just show stats
-  // Full leaderboard requires iterating, which is expensive
-  printField("Showing", "Top agents by reputation (requires iteration)");
+  try {
+    const agentRegistryAbi = loadAbi("AgentRegistry");
+    const agents = (await readContract(
+      CONTRACTS.AgentRegistry,
+      agentRegistryAbi,
+      "getAllAgents",
+      []
+    )) as Address[];
+
+    if (!agents || agents.length === 0) {
+      printField("Result", "No agents registered yet");
+      return;
+    }
+
+    const identityAbi = loadAbi("CovenantIdentity");
+    const entries: { addr: string; rep: number }[] = [];
+
+    const toCheck = agents.slice(0, Math.min(agents.length, limit + 5));
+    const results = await Promise.allSettled(
+      toCheck.map((addr) =>
+        readContract(CONTRACTS.CovenantIdentity, identityAbi, "getAgent", [addr])
+      )
+    );
+
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      if (r.status === "fulfilled") {
+        const data = r.value as any;
+        const rep = Number(Array.isArray(data) ? data[1] : data.reputation ?? 0);
+        entries.push({ addr: toCheck[i], rep });
+      }
+    }
+
+    entries.sort((a, b) => b.rep - a.rep);
+    const top = entries.slice(0, limit);
+
+    printField("Total Agents", String(agents.length));
+    console.log();
+
+    for (let i = 0; i < top.length; i++) {
+      const { addr, rep } = top[i];
+      const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+      console.log(
+        chalk.gray(`  ${medal.padEnd(5)}`) +
+        chalk.white(shortAddr(addr)) +
+        chalk.gray("  rep ") +
+        chalk.cyan(String(rep))
+      );
+    }
+  } catch {
+    printField("Result", "Leaderboard requires the full agent list. Use corven_match for worker discovery.");
+  }
 }
 
 // ──────────────────────────────────────────────────────────────

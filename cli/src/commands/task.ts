@@ -21,7 +21,6 @@ import {
   printHeader,
   printField,
   printSuccess,
-  printInfo,
   shortAddr,
   toEth,
   toDate,

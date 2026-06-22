@@ -7,7 +7,6 @@
  */
 import { Command } from "commander";
 import { parseEther, type Address } from "viem";
-import chalk from "chalk";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,

@@ -154,12 +154,25 @@ async function showStatus(): Promise<void> {
   }
 
   if (account) {
+    let reputation = 0;
+    try {
+      const client = getPublicClient();
+      const identityAbi = loadAbi("CovenantIdentity");
+      const data = (await client.readContract({
+        address: CONTRACTS.CovenantIdentity,
+        abi: identityAbi,
+        functionName: "getAgent",
+        args: [account.address],
+      })) as any;
+      reputation = Number(Array.isArray(data) ? data[1] : data.reputation ?? 0);
+    } catch { /* ok */ }
+
     console.log();
     console.log(
       chalk.green("  ⛓ Connected") + "   " +
       chalk.white(shortAddr(account.address)) + "   " +
       chalk.green("●") + "  " +
-      chalk.gray("Reputation") + " " + chalk.white("510")
+      chalk.gray("Reputation") + " " + chalk.white(String(reputation))
     );
     console.log(chalk.gray("  Network") + "      " + chalk.white(`${CHAIN_NAME} (${CHAIN.id})`));
   } else {

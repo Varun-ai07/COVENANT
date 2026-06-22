@@ -138,6 +138,21 @@ const TOOL_SCHEMAS = [
       parameters: { type: "object" as const, properties: {} },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "fund_task",
+      description: "Fund an existing created task with ETH",
+      parameters: {
+        type: "object" as const,
+        properties: {
+          task_id: { type: "number", description: "Numeric task ID to fund" },
+          amount_eth: { type: "string", description: "Amount in ETH to send" },
+        },
+        required: ["task_id", "amount_eth"],
+      },
+    },
+  },
 ];
 
 // ── Tool execution ─────────────────────────────────────────────
@@ -360,6 +375,33 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       });
     }
 
+    case "fund_task": {
+      if (!account) return "Error: No PRIVATE_KEY configured. Cannot send transactions.";
+      const wallet = getWalletClient();
+      if (!wallet) return "Error: No wallet client available.";
+      const taskId = Number(args.task_id);
+      const amountWei = parseEther(args.amount_eth as string);
+      await preWriteGuard('AI: fund task', formatEther(amountWei));
+      const escrowAbi = loadAbi("CovenantEscrow");
+      const { request } = await client.simulateContract({
+        address: CONTRACTS.CovenantEscrow,
+        abi: escrowAbi,
+        functionName: "fundTask",
+        args: [BigInt(taskId)],
+        account,
+        value: amountWei,
+      });
+      const hash = await wallet.writeContract(request);
+      const receipt = await client.waitForTransactionReceipt({ hash, timeout: 60_000 });
+      return JSON.stringify({
+        success: true,
+        txHash: hash,
+        block: Number(receipt.blockNumber),
+        taskId,
+        amount: args.amount_eth + " ETH",
+      });
+    }
+
     default:
       return `Error: Unknown tool "${name}"`;
   }
@@ -398,6 +440,7 @@ Available tools:
 - register_agent: Register an agent on-chain (requires wallet + stake)
 - submit_work: Submit a deliverable hash for a task
 - verify_task: Complete a task and release payment
+- fund_task: Fund an existing created task with ETH
 - get_stats: Protocol-wide statistics
 - get_balance: Check wallet ETH balance
 
