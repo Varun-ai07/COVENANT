@@ -2,7 +2,11 @@
   "mcpServers": {
     "covenant": {
       "command": "npx",
-      "args": ["-y", "@varun-ai07/covenant-mcp", "server"]
+      "args": [
+        "-y",
+        "@varun-ai07/covenant-mcp",
+        "server"
+      ]
     }
   }
 }

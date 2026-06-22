@@ -6,7 +6,7 @@
  *
  * Supported platforms:
  *   - Claude Code (claude mcp add)
- *   - OpenClaude (~/.openclaude/config.json)
+ *   - OpenClaude (~/.openclaude/mcp.json)
  *   - Cursor (~/.cursor/mcp.json)
  *   - Cline (~/.cline/mcp.json)
  *   - Windsurf/Codeium (~/.codeium/windsurf/mcp_config.json)
@@ -71,7 +71,7 @@ function getClaudeCodeConfigPath(): string | null {
 
 function getOpenClaudeConfigPath(): string | null {
   const home = homedir();
-  const p = join(home, ".openclaude", "config.json");
+  const p = join(home, ".openclaude", "mcp.json");
   if (existsSync(p)) return p;
   return null;
 }
@@ -471,7 +471,7 @@ function helpCommand(): void {
 
   ${colors.cyan}Platforms:${colors.reset}
     claude-code    Claude Code (via claude CLI or ~/.claude.json)
-    openclaude     OpenClaude (~/.openclaude/config.json)
+    openclaude     OpenClaude (~/.openclaude/mcp.json)
     cursor         Cursor IDE (~/.cursor/mcp.json)
     cline          Cline VS Code extension (~/.cline/mcp.json)
     windsurf       Windsurf/Codeium (~/.codeium/windsurf/mcp_config.json)
