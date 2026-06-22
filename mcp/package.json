@@ -1,6 +1,6 @@
 {
   "name": "@varun-ai07/covenant-mcp",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "COVENANT Protocol MCP Server — AI agent access to on-chain task marketplace",
   "type": "module",
   "main": "dist/index.js",
