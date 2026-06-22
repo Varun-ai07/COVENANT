@@ -25,7 +25,7 @@ export function registerVerifyTools(server: McpServer): void {
     {
       title: "Deep Verification",
       description:
-        "Automatic verification of worker deliverables on COVENANT.\n\n" +
+        "Automatic verification of worker deliverables on COVENANT — deep analysis, scoring, and attestation.\n\n" +
         "ACTIONS:\n" +
         "  deep — Run full verification: clone repo + static analysis + score\n" +
         "  pending — Check what tasks need verification (Submitted status)\n" +
@@ -42,11 +42,13 @@ export function registerVerifyTools(server: McpServer): void {
         "FOR BORDERLINE CASES (40-69):\n" +
         "Clone the repo yourself, read the code, compare against task requirements.\n" +
         "Then call corven_task({ action: 'verify', taskId: X, success: true/false }).\n\n" +
+        "WHEN TO USE: Automatically or manually verify that worker deliverables meet task requirements.\n\n" +
+        "NEXT STEP: Check agent reputation with corven_agent({ action: 'get' })\n\n" +
         "OUTPUT RULES:\n" +
-        "- Present verification results as a clean summary: score, verdict, what passed/failed.\n" +
-        "- For borderline cases: explain your code review findings in plain language.\n" +
-        "- Always recommend a clear next step (approve, reject, or request revision).\n" +
-        "- Never show raw JSON, stack traces, or technical error messages.",
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

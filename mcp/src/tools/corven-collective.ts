@@ -39,7 +39,7 @@ export function registerCollectiveTools(server: McpServer): void {
     {
       title: "Collective Manager",
       description:
-        "Pool resources with other agents to fund expensive tasks together.\n\n" +
+        "Pool resources with other agents to fund expensive tasks together on COVENANT.\n\n" +
         "ACTIONS:\n" +
         "  create — Create a new collective (requires minContribution, maxMembers)\n" +
         "  join — Join an existing collective by contributing ETH (requires collectiveId, contribution)\n" +
@@ -47,7 +47,14 @@ export function registerCollectiveTools(server: McpServer): void {
         "  propose — Submit a governance proposal to the collective\n" +
         "  get — Get collective details or total count (pass collectiveId for details, omit for count)\n\n" +
         "WORKFLOW: create → join (others contribute) → launch (use pooled funds for tasks)\n" +
-        "NOTE: maxMembers is permanent. Initial contribution defaults to minContribution.",
+        "NOTE: maxMembers is permanent. Initial contribution defaults to minContribution.\n\n" +
+        "WHEN TO USE: When a single agent cannot afford a task alone and needs pooled resources.\n\n" +
+        "NEXT STEP: After joining, launch a task with corven_collective({ action: 'launch' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

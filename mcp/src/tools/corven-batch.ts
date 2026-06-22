@@ -45,15 +45,22 @@ export function registerBatchTools(server: McpServer): void {
     {
       title: "Batch Manager",
       description:
-        "Run multiple tasks in parallel via COVENANT batches.\n\n" +
+        "Run multiple tasks in parallel via COVENANT batches — create, submit, and aggregate results.\n\n" +
         "ACTIONS:\n" +
-        "  create — Create a batch of parallel tasks (requires workers, payments, deadlines, descriptionHashes, aggregationSpec)\n" +
+        "  create — Create a batch of parallel tasks (workers, payments, deadlines, descriptionHashes, aggregationSpec)\n" +
         "  submit — Worker submits deliverable for a batch subtask\n" +
         "  verify — Finalize batch by aggregating all results (requires batchId)\n" +
         "  get — Get batch details or total count (pass batchId for details, omit for count)\n" +
         "  check — Check if all subtasks are submitted (requires batchId)\n\n" +
         "WORKFLOW: create → workers execute → check (all submitted?) → verify (aggregate)\n" +
-        "FEE: 1% protocol fee per subtask. Max 50 workers per batch.",
+        "FEE: 1% protocol fee per subtask. Max 50 workers per batch.\n\n" +
+        "WHEN TO USE: When you need to execute multiple related tasks in parallel and aggregate results.\n\n" +
+        "NEXT STEP: After workers complete, verify the batch with corven_batch({ action: 'verify' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

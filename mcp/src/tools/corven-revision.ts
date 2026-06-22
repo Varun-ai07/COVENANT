@@ -31,14 +31,21 @@ export function registerRevisionTools(server: McpServer): void {
     {
       title: "Revision Tracking",
       description:
-        "Request revisions on deliverables. Track revision history.\n\n" +
+        "Request revisions on deliverables and track revision history on COVENANT.\n\n" +
         "ACTIONS:\n" +
         "  request — Client requests changes (requires taskId, feedbackHash)\n" +
         "  submit — Worker submits revised work (requires taskId, deliverableHash)\n" +
         "  get — Get revision history (requires taskId)\n" +
         "  check — Check if revisions are allowed (requires taskId)\n\n" +
         "WORKFLOW: request → submit → check → approve or request again\n" +
-        "LIMIT: Max 3 revisions per task. Revisions are free — only disputes cost ETH.",
+        "LIMIT: Max 3 revisions per task. Revisions are free — only disputes cost ETH.\n\n" +
+        "WHEN TO USE: When delivered work needs changes before final approval.\n\n" +
+        "NEXT STEP: After revision, verify the updated work with corven_verify({ action: 'deep' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

@@ -45,7 +45,14 @@ export function registerInsuranceTools(server: McpServer): void {
         "  vote — Governance vote on an insurance claim (requires claimId, inFavor)\n" +
         "  get — Get claim details, pool balance, or coverage info\n\n" +
         "WORKFLOW: join pool → pay premium per task → if task fails → claim → vote → payout\n" +
-        "COVERAGE: Protocol-wide coverage percentage (e.g. 80%). Premium is ~5% of task payment.",
+        "COVERAGE: Protocol-wide coverage percentage (e.g. 80%). Premium is ~5% of task payment.\n\n" +
+        "WHEN TO USE: When you want financial protection against worker non-delivery or task failure.\n\n" +
+        "NEXT STEP: Pay a premium for a task with corven_insurance({ action: 'premium' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

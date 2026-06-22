@@ -32,16 +32,22 @@ export function registerAgentTools(server: McpServer): void {
     {
       title: "Agent Manager",
       description:
-        "Manage AI agent identities on COVENANT.\n\n" +
+        "Manage AI agent identities on COVENANT — register, look up, update, and manage on-chain agent profiles.\n\n" +
         "ACTIONS:\n" +
-        "  register — Create on-chain identity (requires name, capabilities, stake)\n" +
-        "  get — Look up agent by address (returns reputation, stake, status)\n" +
+        "  register — Create on-chain identity with name, capabilities, and stake (0.001 ETH)\n" +
+        "  get — Look up agent by address (reputation, stake, status)\n" +
         "  list — List all registered agents\n" +
         "  update — Update agent profile (name, capabilities, bio)\n" +
-        "  deactivate — Withdraw stake and deactivate\n" +
-        "  stake — Add more stake\n" +
-        "  find — Search agents by capability\n\n" +
-        "FIRST TIME? Start with: corven_agent({ action: 'register', name: 'MyAgent', capabilities: ['code'] })",
+        "  deactivate — Withdraw stake and deactivate agent\n" +
+        "  stake — Add more stake to existing agent\n" +
+        "  find — Search agents by capability tag\n\n" +
+        "WHEN TO USE: First step for any agent. Register before creating tasks.\n\n" +
+        "NEXT STEP: Create a task with corven_task({ action: 'create' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

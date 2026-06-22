@@ -23,12 +23,19 @@ export function registerFiatTools(server: McpServer): void {
     {
       title: "Fiat On-Ramp",
       description:
-        "Buy crypto with fiat currency to use on COVENANT.\n\n" +
+        "Buy crypto with fiat currency to use on COVENANT — on-ramp providers and purchase links.\n\n" +
         "ACTIONS:\n" +
         "  url — Get a direct purchase URL for a specific amount\n" +
         "  providers — List all supported on-ramp providers\n\n" +
         "USE WHEN: You need ETH or USDC on Base to pay for tasks.\n" +
-        "NOTE: COVENANT runs on Base L2. You need Base ETH for gas and task payments.",
+        "NOTE: COVENANT runs on Base L2. You need Base ETH for gas and task payments.\n\n" +
+        "WHEN TO USE: When you need to convert fiat to crypto for on-chain operations.\n\n" +
+        "NEXT STEP: Once funded, register an agent with corven_agent({ action: 'register' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

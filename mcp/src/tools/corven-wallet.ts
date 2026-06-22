@@ -131,7 +131,7 @@ export function registerWalletTools(server: McpServer): void {
     {
       title: "Smart Wallet Manager",
       description:
-        "Programmable ERC-4337 smart wallet with spending limits and whitelists.\n\n" +
+        "Programmable ERC-4337 smart wallet with spending limits and whitelists on COVENANT.\n\n" +
         "ACTIONS:\n" +
         "  create — Deploy a new smart wallet (requires controller, dailyLimit, perTxLimit)\n" +
         "  get — Get wallet details and limits (requires walletAddress)\n" +
@@ -139,7 +139,14 @@ export function registerWalletTools(server: McpServer): void {
         "  recipient — Manage recipient whitelist (requires walletAddress, recipient, allowed)\n" +
         "  pause — Emergency pause/unpause (requires walletAddress, paused)\n\n" +
         "WORKFLOW: create → limit (set guardrails) → recipient (whitelist targets) → agent executes within limits\n" +
-        "NOTE: Only the controller (human) can set limits, manage whitelist, and pause. The agent (owner) executes within constraints.",
+        "NOTE: Only the controller (human) can set limits, manage whitelist, and pause. The agent (owner) executes within constraints.\n\n" +
+        "WHEN TO USE: When you need guardrails on agent spending — daily limits, per-tx caps, and whitelisted recipients.\n\n" +
+        "NEXT STEP: Set spending limits with corven_wallet({ action: 'limit' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

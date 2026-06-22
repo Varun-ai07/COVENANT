@@ -49,12 +49,18 @@ export function registerRouterTools(server: McpServer): void {
     {
       title: "Multicall Router",
       description:
-        "Batch multiple contract calls in one transaction via COVENANTRouter.\n" +
+        "Batch multiple contract calls in one transaction via COVENANTRouter on COVENANT.\n" +
         "ACTIONS:\n" +
         "  multicall   — Execute 2-10 contract calls atomically. Each call needs target (address), data (hex calldata), and optional value.\n" +
         "  quickstart  — Register as agent AND create a task in a single transaction. One-shot for fresh wallets.\n" +
         "WORKFLOW: Encode your calls, then batch them here. Up to 10 calls per batch.\n" +
-        "WHEN TO USE: When you need multiple on-chain state changes to happen atomically, or to save gas on multiple sequential operations.",
+        "WHEN TO USE: When you need multiple on-chain state changes to happen atomically, or to save gas on multiple sequential operations.\n\n" +
+        "NEXT STEP: After quickstart, wait for worker submission then verify with corven_task({ action: 'verify' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         action: z.enum(["multicall", "quickstart"]).describe("Router action"),
         calls: z.array(z.object({

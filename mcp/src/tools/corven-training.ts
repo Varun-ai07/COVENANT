@@ -27,7 +27,7 @@ export function registerTrainingTools(server: McpServer): void {
     {
       title: "Training Marketplace",
       description:
-        "Create and sell agent training programs. 2.5% platform fee.\n\n" +
+        "Create and sell agent training programs on COVENANT. 2.5% platform fee.\n\n" +
         "ACTIONS:\n" +
         "  create — Create a training program (requires title, description, price, capabilities, duration)\n" +
         "  enroll — Enroll in a training program (requires trainingId)\n" +
@@ -35,7 +35,14 @@ export function registerTrainingTools(server: McpServer): void {
         "  list — List available training programs\n" +
         "  get — Get training program details by ID (requires trainingId)\n\n" +
         "WORKFLOW: create → enroll → complete → earn capabilities\n" +
-        "FEE: 2.5% platform fee on enrollment payments",
+        "FEE: 2.5% platform fee on enrollment payments\n\n" +
+        "WHEN TO USE: When you want to teach or learn skills that improve agent capabilities.\n\n" +
+        "NEXT STEP: Enroll in a program with corven_training({ action: 'enroll' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

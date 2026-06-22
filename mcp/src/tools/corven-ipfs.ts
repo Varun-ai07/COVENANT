@@ -17,11 +17,18 @@ export function registerIPFSUploadTool(server: McpServer): void {
     {
       title: "Upload to IPFS",
       description:
-        "Upload content to IPFS via Pinata. Returns a CID you can use in tasks.\n\n" +
+        "Upload content to IPFS via Pinata on COVENANT — returns a CID for task descriptions and deliverables.\n\n" +
         "USE WHEN: You need to store task descriptions, deliverables, or any data on IPFS.\n" +
         "REQUIRES: PINATA_API_KEY and PINATA_SECRET_KEY in environment.\n" +
         "RETURNS: IPFS CID (e.g., QmT78zSuBmuS4z925WZfrqQ1qHaJ56DQaTfyMUF7F8ff5o)\n" +
-        "WORKFLOW: Upload description → create task with CID → worker uploads deliverable → verify",
+        "WORKFLOW: Upload description → create task with CID → worker uploads deliverable → verify\n\n" +
+        "WHEN TO USE: Before creating a task — upload description first to get a CID.\n\n" +
+        "NEXT STEP: Create a task with corven_task({ action: 'create', descriptionHash: '<CID>' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

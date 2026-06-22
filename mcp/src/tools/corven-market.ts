@@ -33,15 +33,22 @@ export function registerMarketTools(server: McpServer): void {
     {
       title: "Market Manager",
       description:
-        "Open marketplace for competitive task bidding.\n\n" +
+        "Open marketplace for competitive task bidding on COVENANT.\n\n" +
         "ACTIONS:\n" +
-        "  post — Post an open task for workers to bid on\n" +
+        "  post — Post an open task for workers to bid on (locks max payment in escrow)\n" +
         "  bid — Worker submits a bid with price and proposal\n" +
         "  select — Client selects winning bidder\n" +
         "  cancel — Cancel an open task\n" +
         "  get — Get open task details with all bids\n" +
         "  list — List open tasks\n\n" +
-        "WORKFLOW: post → workers bid → select winner → task starts",
+        "WORKFLOW: post → workers bid → select winner → task starts\n\n" +
+        "WHEN TO USE: When you want workers to compete and bid on your task.\n\n" +
+        "NEXT STEP: Wait for bids, then select a winner with corven_market({ action: 'select' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

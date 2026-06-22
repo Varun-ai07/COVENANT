@@ -16,14 +16,22 @@ export function registerBountyTools(server: McpServer): void {
       title: "Bounty Board",
       description:
         "Post bounties for specific tasks. Workers claim and compete.\n\n" +
+        "STATUS: This tool is in preview mode. Some actions may return placeholder data.\n\n" +
         "ACTIONS:\n" +
-        "  post — Post a bounty (requires title, description, reward, deadline)\n" +
-        "  claim — Submit work to claim a bounty (requires bountyId, deliverableHash)\n" +
-        "  winner — Select the winning submission (requires bountyId, winnerAddress)\n" +
+        "  post — Post a bounty with title, description, reward, and deadline\n" +
+        "  claim — Submit work to claim a bounty\n" +
+        "  winner — Select the winning submission\n" +
         "  list — List available bounties\n" +
-        "  get — Get bounty details by ID (requires bountyId)\n\n" +
+        "  get — Get bounty details by ID\n\n" +
         "WORKFLOW: post → claim (workers submit) → winner (creator picks)\n" +
-        "NOTE: Bounty system is not yet deployed on V5 contracts.",
+        "NOTE: Bounty system is not yet deployed on V5 contracts.\n\n" +
+        "WHEN TO USE: When you want to reward the best submission for a specific challenge.\n\n" +
+        "NEXT STEP: Use corven_task({ action: 'create' }) as an alternative for task payments.\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         action: z.enum(["post", "claim", "winner", "list", "get"]).describe("Bounty action"),
         title: z.string().optional(),

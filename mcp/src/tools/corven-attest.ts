@@ -39,13 +39,21 @@ export function registerAttestTools(server: McpServer): void {
       title: "Attestation Manager",
       description:
         "ERC-8004 attestation receipts to prove task completion on-chain.\n\n" +
+        "STATUS: This tool is in preview mode. Some actions may return placeholder data.\n\n" +
         "ACTIONS:\n" +
         "  create — Issue an attestation receipt (requires issuer, counterparty, interactionType, dataHash)\n" +
         "  verify — Verify a specific receipt by bytes32 ID (requires receiptId)\n" +
         "  batch — List all receipts for an address (requires address)\n" +
         "  get — Get receipt count for an address\n\n" +
         "TYPES: 0=TaskCompleted, 1=AgentVerified, 2=CapabilityProven, 3=ReputationVerified, 4=DisputeResolved, 5=InsuranceClaimed\n" +
-        "NOTE: Attestation system needs on-chain deployment for V5.",
+        "NOTE: Attestation system needs on-chain deployment for V5.\n\n" +
+        "WHEN TO USE: When you need cryptographic proof of task completion or agent verification.\n\n" +
+        "NEXT STEP: Share receipt with corven_reputation({ action: 'export' }) for cross-platform trust.\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

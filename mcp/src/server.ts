@@ -32,6 +32,7 @@ import { registerStatsTools } from "./tools/corven-stats.js";
 import { registerFiatTools } from "./tools/corven-fiat.js";
 import { registerMultiTools } from "./tools/corven-multi.js";
 import { registerIPFSUploadTool } from "./tools/corven-ipfs.js";
+import { registerStatusTool } from "./tools/corven-status.js";
 
 // Legacy tools (kept during migration)
 import { registerCovenantHelpTools } from "./tools/covenant-help.js";
@@ -82,9 +83,12 @@ export function createServer(): McpServer {
   registerFiatTools(server);         // corven_fiat: url, providers
   registerIPFSUploadTool(server);    // corven_upload_ipfs: upload to IPFS
 
+  // ── Status ────────────────────────────────────────────────────
+  registerStatusTool(server);        // corven_status: system status dashboard
+
   // ── Help ──────────────────────────────────────────────────────
   registerCovenantHelpTools(server); // corven_help: protocol guide
 
-  info("[SERVER] 25 corven_ domain tools registered");
+  info("[SERVER] 26 corven_ domain tools registered");
   return server;
 }

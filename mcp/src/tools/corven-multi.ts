@@ -69,7 +69,7 @@ export function registerMultiTools(server: McpServer): void {
     {
       title: "Multi-Token Escrow",
       description:
-        "ERC-20 token escrow for task payments. Pay with USDC, DAI, USDT instead of ETH.\n" +
+        "ERC-20 token escrow for task payments on COVENANT — pay with USDC, DAI, USDT instead of ETH.\n" +
         "ACTIONS:\n" +
         "  create  — Create and fund a task with ERC-20 tokens. Requires prior ERC-20 approve() to MultiTokenEscrow.\n" +
         "  submit  — Worker submits deliverable hash for an ERC-20 funded task.\n" +
@@ -77,7 +77,13 @@ export function registerMultiTools(server: McpServer): void {
         "  get     — Get task details from MultiTokenEscrow.\n" +
         "  tokens  — List accepted ERC-20 tokens or check if a specific token is accepted.\n" +
         "WORKFLOW: ERC-20 approve() → corven_multi create → [worker does work] → corven_multi submit → corven_multi verify.\n" +
-        "WHEN TO USE: When you want to pay for tasks with stablecoins (USDC/DAI/USDT) instead of ETH.",
+        "WHEN TO USE: When you want to pay for tasks with stablecoins (USDC/DAI/USDT) instead of ETH.\n\n" +
+        "NEXT STEP: After creation, wait for worker submission then verify with corven_multi({ action: 'verify' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         action: z.enum(["create", "submit", "verify", "get", "tokens"]).describe("Multi-token action"),
         worker: z.string().optional().describe("Worker address (for create)"),

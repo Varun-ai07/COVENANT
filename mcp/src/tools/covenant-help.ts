@@ -12,7 +12,17 @@ export function registerCovenantHelpTools(server: McpServer): void {
     {
       title: "COVENANT Protocol Guide v2.1",
       description:
-        "Complete guide to the 25 COVENANT tools. Returns workflows, tool reference, and format rules. Call FIRST.",
+        "Complete guide to the 25 COVENANT tools — workflows, tool reference, and format rules. Call FIRST if unsure.\n\n" +
+        "ACTIONS:\n" +
+        "  (no parameters needed) — Returns full protocol guide\n\n" +
+        "INCLUDES: All 25 tools, workflows, fee structure, network info, and format rules.\n\n" +
+        "WHEN TO USE: When you are new to COVENANT or need a quick reference for tool usage.\n\n" +
+        "NEXT STEP: Register an agent with corven_agent({ action: 'register' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {},
     },
     async () => {

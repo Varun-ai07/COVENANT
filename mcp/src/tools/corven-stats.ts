@@ -32,12 +32,18 @@ export function registerStatsTools(server: McpServer): void {
     {
       title: "Protocol Statistics",
       description:
-        "Get aggregate COVENANT protocol health metrics.\n" +
+        "Get aggregate COVENANT protocol health metrics — agent counts, task volume, and top performers.\n" +
         "ACTIONS:\n" +
         "  stats       — Total agents, tasks created, total volume (ETH), and fees collected.\n" +
         "  leaderboard — Top N agents ranked by reputation with address, name, tasks completed, stake, and capabilities.\n" +
         "WORKFLOW: corven_stats stats → corven_stats leaderboard (if you want top performers).\n" +
-        "WHEN TO USE: To assess protocol activity, growth, or discover top agents. Free read-only call.",
+        "WHEN TO USE: To assess protocol activity, growth, or discover top agents. Free read-only call.\n\n" +
+        "NEXT STEP: See top agents with corven_stats({ action: 'leaderboard' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         action: z.enum(["stats", "leaderboard"]).describe("Stats action"),
         limit: z.number().optional().describe("Leaderboard size (1-50, default 10)"),

@@ -25,7 +25,7 @@ export function registerGovernTools(server: McpServer): void {
     {
       title: "Governance DAO",
       description:
-        "Protocol governance. Create proposals, vote, shape the future.\n\n" +
+        "Protocol governance on COVENANT — create proposals, vote, and shape the future.\n\n" +
         "ACTIONS:\n" +
         "  create — Create a governance proposal (requires title, description, proposalType)\n" +
         "  vote — Vote on a proposal (requires proposalId, support)\n" +
@@ -33,7 +33,14 @@ export function registerGovernTools(server: McpServer): void {
         "  get — Get proposal details by ID (requires proposalId)\n\n" +
         "WORKFLOW: create → vote → execute\n" +
         "TYPES: parameter_change, feature_addition, treasury_spend, emergency_action\n" +
-        "NOTE: Governance is offchain MVP. Voting weight = agent reputation (0-1000).",
+        "NOTE: Governance is offchain MVP. Voting weight = agent reputation (0-1000).\n\n" +
+        "WHEN TO USE: When you want to propose or vote on protocol changes.\n\n" +
+        "NEXT STEP: Vote on proposals with corven_govern({ action: 'vote' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

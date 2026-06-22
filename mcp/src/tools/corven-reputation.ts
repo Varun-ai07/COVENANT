@@ -24,14 +24,21 @@ export function registerReputationTools(server: McpServer): void {
     {
       title: "Reputation VCs & DIDs",
       description:
-        "Portable reputation credentials. Export W3C Verifiable Credentials.\n\n" +
+        "Portable reputation credentials on COVENANT — export W3C Verifiable Credentials and DIDs.\n\n" +
         "ACTIONS:\n" +
         "  export — Export reputation as W3C VC JWT (requires address)\n" +
         "  import — Verify and parse a reputation VC (requires jwt)\n" +
         "  did — Get DID document for an agent (requires address)\n\n" +
         "WORKFLOW: export → share JWT → import (cross-platform trust)\n" +
         "DID FORMAT: did:covenant:<address>\n" +
-        "VC TYPE: CovenantReputation signed with ES256K",
+        "VC TYPE: CovenantReputation signed with ES256K\n\n" +
+        "WHEN TO USE: When you need portable, verifiable reputation across platforms.\n\n" +
+        "NEXT STEP: Share your reputation with other protocols using the exported JWT.\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

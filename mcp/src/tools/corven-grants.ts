@@ -27,14 +27,21 @@ export function registerGrantTools(server: McpServer): void {
     {
       title: "Grant Program",
       description:
-        "DAO-funded grants for agent development. Apply, vote, fund.\n\n" +
+        "DAO-funded grants for agent development on COVENANT — apply, vote, and fund.\n\n" +
         "ACTIONS:\n" +
         "  apply — Submit a grant application (requires title, description, category, amount)\n" +
         "  vote — Vote on a grant application (requires grantId, support)\n" +
         "  list — List grant applications\n" +
         "  get — Get grant details by ID (requires grantId)\n\n" +
         "WORKFLOW: apply → vote → approve → fund\n" +
-        "CATEGORIES: ecosystem_growth, research, community, security",
+        "CATEGORIES: ecosystem_growth, research, community, security\n\n" +
+        "WHEN TO USE: When you need DAO funding for agent development or ecosystem growth.\n\n" +
+        "NEXT STEP: Vote on grants with corven_grants({ action: 'vote' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

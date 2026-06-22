@@ -45,13 +45,22 @@ export function registerDisputeTools(server: McpServer): void {
     {
       title: "File Dispute",
       description:
-        "File a formal dispute on a task. Requires a bond in ETH. The dispute will be resolved by juror voting.\n" +
+        "File a formal dispute on a task on COVENANT. Requires a bond in ETH. The dispute will be resolved by juror voting.\n\n" +
+        "ACTIONS:\n" +
+        "  file — File a dispute (requires taskId, bond of at least 0.001 ETH)\n\n" +
         "USE WHEN: You disagree with a task outcome — either as client (work was substandard) or worker (verification was unfair).\n" +
         "REQUIRES: Task must be in Submitted or Completed status. DisputeArbitration contract must be deployed.\n" +
         "RETURNS: Transaction hash of the dispute filing. Task status transitions to Disputed and payment release is paused.\n" +
         "COMES AFTER: corven_verify_task (if disputing a verification) or corven_submit_work (if client disputes before verifying).\n" +
         "COMES BEFORE: corven_cast_vote (jurors vote on the dispute).\n" +
-        "NOTE: Bond is refunded if you win the dispute. Minimum bond is 0.001 ETH.",
+        "NOTE: Bond is refunded if you win the dispute. Minimum bond is 0.001 ETH.\n\n" +
+        "WHEN TO USE: When there is a disagreement about task quality or verification fairness.\n\n" +
+        "NEXT STEP: Jurors vote with corven_cast_vote({ action: 'vote' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         taskId: taskIdSchema,
         bond: ethAmount,
@@ -106,13 +115,22 @@ export function registerDisputeTools(server: McpServer): void {
     {
       title: "Cast Vote",
       description:
-        "Cast your vote on a dispute. True = favor worker, False = favor client. Only selected jurors can vote.\n" +
+        "Cast your vote on a dispute on COVENANT. True = favor worker, False = favor client. Only selected jurors can vote.\n\n" +
+        "ACTIONS:\n" +
+        "  vote — Cast a vote (requires disputeId, inFavorOfWorker)\n\n" +
         "USE WHEN: You are a selected juror and a dispute requires your vote to reach resolution.\n" +
         "REQUIRES: You must be selected as a juror for this dispute. The dispute must be in the voting period.\n" +
         "RETURNS: Transaction hash of your vote. Vote is recorded on-chain but not revealed until voting ends.\n" +
         "COMES AFTER: corven_file_dispute was called and jurors were assigned.\n" +
         "COMES BEFORE: corven_get_dispute to check resolution after voting period ends.\n" +
-        "NOTE: Voting is commit-reveal — your vote choice is hidden until the voting period closes.",
+        "NOTE: Voting is commit-reveal — your vote choice is hidden until the voting period closes.\n\n" +
+        "WHEN TO USE: When you are a juror called to resolve a dispute.\n\n" +
+        "NEXT STEP: Check dispute outcome with corven_get_dispute({ action: 'get' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         disputeId: z.number().describe("Numeric dispute ID returned by corven_file_dispute"),
         inFavorOfWorker: z.boolean().describe("True to vote for worker, false for client"),
@@ -167,13 +185,22 @@ export function registerDisputeTools(server: McpServer): void {
     {
       title: "Get Dispute",
       description:
-        "Get dispute details by ID, or total dispute count if no ID provided.\n" +
+        "Get dispute details by ID on COVENANT, or total dispute count if no ID provided.\n\n" +
+        "ACTIONS:\n" +
+        "  get — Get dispute details (requires disputeId) or total count (omit disputeId)\n\n" +
         "USE WHEN: You need to check the status, votes, or resolution of a dispute.\n" +
         "REQUIRES: DisputeArbitration contract must be deployed.\n" +
         "RETURNS: Dispute details including client, worker, jurors, bond, resolution status, and voting deadline. If no ID provided, returns total dispute count.\n" +
         "COMES AFTER: corven_file_dispute created the dispute.\n" +
         "COMES BEFORE: corven_cast_vote (if voting is still open) or corven_pay_claim (if dispute affects insurance).\n" +
-        "NOTE: Omit disputeId to get the total number of disputes.",
+        "NOTE: Omit disputeId to get the total number of disputes.\n\n" +
+        "WHEN TO USE: When you need to check on the status of an existing dispute.\n\n" +
+        "NEXT STEP: If unresolved, vote with corven_cast_vote({ action: 'vote' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         disputeId: z.number().optional().describe("Dispute ID. Omit to get total dispute count."),
       },
@@ -215,12 +242,21 @@ export function registerDisputeTools(server: McpServer): void {
     {
       title: "Claim Juror Reward",
       description:
-        "Claim your accumulated juror rewards from resolved disputes.\n" +
+        "Claim your accumulated juror rewards from resolved disputes on COVENANT.\n\n" +
+        "ACTIONS:\n" +
+        "  claim — Claim juror rewards (no parameters needed)\n\n" +
         "USE WHEN: You are a juror who voted on a dispute and want to collect your reward.\n" +
         "HOW IT WORKS: After a dispute is resolved, juror rewards are credited to your address. " +
         "Call this tool to withdraw them to your wallet.\n" +
         "REQUIRES: You must have unclaimed rewards from previous dispute resolutions.\n" +
-        "RETURNS: Amount of ETH claimed.",
+        "RETURNS: Amount of ETH claimed.\n\n" +
+        "WHEN TO USE: After voting on a dispute that has been resolved.\n\n" +
+        "NEXT STEP: Check your balance with corven_agent({ action: 'get' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {},
     },
     async () => {

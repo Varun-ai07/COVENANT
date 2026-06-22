@@ -37,19 +37,26 @@ export function registerTaskTools(server: McpServer): void {
     {
       title: "Task Manager",
       description:
-        "Manage the full task lifecycle on COVENANT.\n\n" +
+        "Manage the full task lifecycle on COVENANT — create, fund, submit, verify, and dispute tasks.\n\n" +
         "ACTIONS:\n" +
-        "  create — Post a new task\n" +
+        "  create — Post a new task with worker, payment, and deadline\n" +
         "  fund — Fund a created task with ETH\n" +
         "  submit — Worker submits deliverable IPFS CID\n" +
-        "  verify — Client approves or rejects\n" +
-        "  dispute — File a dispute\n" +
+        "  verify — Client approves or rejects completed work\n" +
+        "  dispute — File a dispute on a task\n" +
         "  get — Get task details by ID\n" +
-        "  list — List tasks\n" +
+        "  list — List all tasks\n" +
         "  submit_milestone — Worker submits a milestone\n" +
         "  verify_milestone — Client approves/rejects a milestone\n\n" +
         "WORKFLOW: create → fund → submit → verify\n" +
-        "FEE: 1% protocol fee + priority fee deducted from payment",
+        "FEE: 1% protocol fee + priority fee deducted from payment\n\n" +
+        "WHEN TO USE: Any task that needs payment, delivery, and verification on-chain.\n\n" +
+        "NEXT STEP: Wait for worker to submit, then call corven_task({ action: 'verify' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

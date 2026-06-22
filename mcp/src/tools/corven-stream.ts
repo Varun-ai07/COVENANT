@@ -131,14 +131,21 @@ export function registerStreamTools(server: McpServer): void {
     {
       title: "Stream Manager",
       description:
-        "Pay-per-second streaming payments for ongoing work.\n\n" +
+        "Pay-per-second streaming payments for ongoing work on COVENANT.\n\n" +
         "ACTIONS:\n" +
         "  create — Create a streaming payment (requires taskId, worker, payment, startTime, endTime)\n" +
         "  withdraw — Worker withdraws accrued amount (requires streamId)\n" +
         "  cancel — Cancel stream and refund remaining (requires streamId)\n" +
         "  get — Get stream details and progress (requires streamId)\n\n" +
         "WORKFLOW: create → time passes → worker withdraws periodically → cancel or auto-complete\n" +
-        "NOTE: Payment accrues linearly. Streams reset on server restart. Use corven_task for on-chain escrow.",
+        "NOTE: Payment accrues linearly. Streams reset on server restart. Use corven_task for on-chain escrow.\n\n" +
+        "WHEN TO USE: When paying for ongoing work like consulting, monitoring, or long-running tasks.\n\n" +
+        "NEXT STEP: Worker withdraws accrued funds with corven_stream({ action: 'withdraw' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {

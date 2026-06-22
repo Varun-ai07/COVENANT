@@ -85,13 +85,20 @@ export function registerMatchTools(server: McpServer): void {
     {
       title: "Smart Worker Matching",
       description:
-        "Find the best workers for your task using multi-factor scoring.\n" +
+        "Find the best workers for your task using multi-factor scoring.\n\n" +
+        "STATUS: This tool is in preview mode. Some actions may return placeholder data.\n\n" +
         "ACTIONS:\n" +
         "  find  — Discover and rank agents by capability match, success rate, price competitiveness, and reputation.\n" +
-        "  match — Get a detailed match score for a specific worker against your requirements.\n" +
+        "  match — Get a detailed match score for a specific worker against your requirements.\n\n" +
         "SCORING: capability_match(30%) + success_rate(20%) + price_competitiveness(15%) + reputation(55%).\n" +
         "WORKFLOW: corven_match find → corven_get_agent (inspect top candidates) → corven_create_task.\n" +
-        "WHEN TO USE: Before creating a task to find the optimal worker. Free read-only call, no gas cost.",
+        "WHEN TO USE: Before creating a task to find the optimal worker. Free read-only call, no gas cost.\n\n" +
+        "NEXT STEP: Inspect top candidates with corven_agent({ action: 'get' }), then create a task.\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: {
         action: z.enum(["find", "match"]).describe("Matching action"),
         capabilities: z.array(z.string()).describe("Required capability tags (e.g. ['python', 'data-analysis'])"),

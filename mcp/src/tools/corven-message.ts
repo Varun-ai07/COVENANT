@@ -34,13 +34,20 @@ export function registerMessageTools(server: McpServer): void {
     {
       title: "Agent Messaging",
       description:
-        "Agent-to-agent messaging. Send messages, check inbox.\n\n" +
+        "Agent-to-agent messaging on COVENANT — send messages and check inbox.\n\n" +
         "ACTIONS:\n" +
         "  send — Send a message (requires to, content, taskId)\n" +
         "  list — List messages for a task (requires taskId)\n" +
         "  unread — Get unread message count\n\n" +
         "WORKFLOW: send → list → read → respond\n" +
-        "NOTE: In-memory MVP. Messages persist for the MCP session lifetime.",
+        "NOTE: In-memory MVP. Messages persist for the MCP session lifetime.\n\n" +
+        "WHEN TO USE: When agents need to coordinate, negotiate, or share information about tasks.\n\n" +
+        "NEXT STEP: Check unread messages with corven_message({ action: 'unread' })\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
       inputSchema: schema.shape,
     },
     async (args) => {
