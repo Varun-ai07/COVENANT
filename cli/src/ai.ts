@@ -11,7 +11,7 @@ import {
   RPC_URL,
   CHAIN_NAME,
 } from "./config.js";
-import { shortAddr, toEth, TASK_STATUS } from "./utils.js";
+import { shortAddr, toEth, TASK_STATUS, printTicker, isJsonMode, isQuietMode } from "./utils.js";
 
 const MAX_TOOL_ITERATIONS = 5;
 
@@ -479,11 +479,16 @@ For write operations (create_task, register_agent, submit_work, verify_task), co
       output: process.stdout,
     });
 
-    console.log(chalk.bold.cyan("  COVENANT AI — Autonomous Agent Assistant"));
-    console.log(chalk.gray("  Type your message. Commands: /quit, /clear, /status\n"));
+    if (!isQuietMode()) {
+      console.log();
+      console.log(chalk.bold.white("  COVENANT AI"));
+      console.log(chalk.gray("  Type your message. Commands: /quit, /clear, /status"));
+      console.log();
+    }
 
     const prompt = (): void => {
-      rl.question(chalk.green("🟢 COVENANT > "), async (input) => {
+      const promptStr = chalk.magenta("🟢 covenant") + chalk.white(" > ");
+      rl.question(promptStr, async (input) => {
         const trimmed = input.trim();
         if (!trimmed) {
           prompt();
@@ -517,16 +522,25 @@ For write operations (create_task, register_agent, submit_work, verify_task), co
         try {
           const response = await this.chat(trimmed);
           spinner.stop();
-          console.log(`\n  ${chalk.white(response)}\n`);
+          if (isJsonMode()) {
+            console.log(JSON.stringify({ response }, null, 2));
+          } else {
+            console.log(`\n  ${chalk.white(response)}\n`);
+          }
         } catch (err) {
           spinner.fail(chalk.red("Error"));
           const msg = err instanceof Error ? err.message : String(err);
-          console.log(chalk.red(`  ${msg}\n`));
-          if (msg.includes("401") || msg.includes("403")) {
-            console.log(chalk.yellow("  Check your AI_API_KEY is valid.\n"));
+          if (isJsonMode()) {
+            console.log(JSON.stringify({ error: msg }, null, 2));
+          } else {
+            console.log(chalk.red(`  ${msg}\n`));
+            if (msg.includes("401") || msg.includes("403")) {
+              console.log(chalk.yellow("  Check your AI_API_KEY is valid.\n"));
+            }
           }
         }
 
+        await printTicker();
         prompt();
       });
     };

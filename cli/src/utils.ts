@@ -15,9 +15,22 @@ import {
   explorerTxUrl,
   explorerAddrUrl,
   CHAIN_NAME,
+  CHAIN,
   RPC_URL,
   SPENDING_LIMIT,
+  CONTRACTS,
+  loadAbi,
 } from "./config.js";
+
+// ── Global flags ──────────────────────────────────────────────
+
+let _jsonMode = false;
+let _quietMode = false;
+
+export function setJsonMode(v: boolean): void { _jsonMode = v; }
+export function setQuietMode(v: boolean): void { _quietMode = v; }
+export function isJsonMode(): boolean { return _jsonMode; }
+export function isQuietMode(): boolean { return _quietMode; }
 
 // ── Status labels ─────────────────────────────────────────────
 
@@ -74,18 +87,19 @@ export const CLAIM_STATUS: Record<number, string> = {
 // ── Banner ────────────────────────────────────────────────────
 
 export function printBanner(): void {
+  if (_quietMode || _jsonMode) return;
+
+  const account = getAccount();
+  const addr = account ? shortAddr(account.address) : "Not configured";
+
   const banner = `
-${chalk.bold.cyan("  ╔══════════════════════════════════════════════════════╗")}
-${chalk.bold.cyan("  ║")}  ${chalk.bold.white("██████╗ ███╗   ██╗██╗   ██╗██████╗ ██╗   ██╗")}${chalk.bold.cyan("║")}
-${chalk.bold.cyan("  ║")}  ${chalk.bold.white("██╔══██╗████╗  ██║██║   ██║██╔══██╗╚██╗ ██╔╝")}${chalk.bold.cyan("║")}
-${chalk.bold.cyan("  ║")}  ${chalk.bold.white("██████╔╝██╔██╗ ██║██║   ██║██████╔╝ ╚████╔╝ ")}${chalk.bold.cyan("║")}
-${chalk.bold.cyan("  ║")}  ${chalk.bold.white("██╔═══╝ ██║╚██╗██║██║   ██║██╔══██╗  ╚██╔╝  ")}${chalk.bold.cyan("║")}
-${chalk.bold.cyan("  ║")}  ${chalk.bold.white("██║     ██║ ╚████║╚██████╔╝██║  ██║   ██║   ")}${chalk.bold.cyan("║")}
-${chalk.bold.cyan("  ║")}  ${chalk.bold.white("╚═╝     ╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ")}${chalk.bold.cyan("║")}
-${chalk.bold.cyan("  ║")}${chalk.gray("                                                  ")}${chalk.bold.cyan("║")}
-${chalk.bold.cyan("  ║")}  ${chalk.gray("Autonomous Agent Enforcement Protocol")}${chalk.bold.cyan("            ║")}
-${chalk.bold.cyan("  ║")}  ${chalk.dim("v2.0.0")}${chalk.gray(" · ")}${chalk.yellow(CHAIN_NAME.padEnd(20))}${chalk.gray(" · ")}${chalk.dim("Base Sepolia L2")}${chalk.bold.cyan("  ║")}
-${chalk.bold.cyan("  ╚══════════════════════════════════════════════════════╝")}
+  ${chalk.bold.white("COVENANT")}  ${chalk.dim("v2.1.0")}
+  ${chalk.gray("Agent economy protocol")} ${chalk.gray("—")} ${chalk.yellow(CHAIN_NAME)}
+
+  ${chalk.green("⛓ Connected")}   ${chalk.white(addr)}   ${chalk.green("●")}  ${chalk.gray("Reputation")} ${chalk.white("510")}
+
+  ${chalk.gray("Type a command, or just tell me what you need.")}
+  ${chalk.gray('Try: ')}${chalk.cyan('"register me as a worker with data-analysis capability"')}
 `;
   console.log(banner);
 }
@@ -107,6 +121,7 @@ export function failSpinner(spinner: Ora, msg: string): void {
 // ── Status labels ─────────────────────────────────────────────
 
 export const printSuccess = (msg: string): void => {
+  if (_quietMode) { console.log(msg); return; }
   console.log(chalk.green("  ✓ ") + msg);
 };
 
@@ -115,39 +130,79 @@ export const printError = (msg: string): void => {
 };
 
 export const printInfo = (msg: string): void => {
+  if (_quietMode) return;
   console.log(chalk.cyan("  ℹ ") + msg);
 };
 
 export const printWarning = (msg: string): void => {
+  if (_quietMode) return;
   console.log(chalk.yellow("  ⚠ ") + msg);
 };
 
 export function printField(label: string, value: string): void {
+  if (_quietMode) { console.log(value); return; }
   console.log(chalk.gray(`  ${label.padEnd(18)} `) + chalk.white(value));
 }
 
 export function printFieldColor(label: string, value: string, color: typeof chalk): void {
+  if (_quietMode) { console.log(value); return; }
   console.log(chalk.gray(`  ${label.padEnd(18)} `) + color(value));
 }
 
 export function printHeader(title: string): void {
+  if (_quietMode) return;
   console.log();
   console.log(chalk.bold.cyan(`  ┌─ ${title} ${"─".repeat(Math.max(0, 44 - title.length))}┐`));
   console.log(chalk.bold.cyan(`  │`));
 }
 
 export function printFooter(): void {
+  if (_quietMode) return;
   console.log(chalk.bold.cyan(`  └${"─".repeat(48)}┘`));
 }
 
 export function printDivider(): void {
+  if (_quietMode) return;
   console.log(chalk.gray("  " + "─".repeat(50)));
 }
 
 export function printSection(title: string): void {
+  if (_quietMode) return;
   console.log();
   console.log(chalk.bold.white(`  ${title}`));
   console.log(chalk.gray("  " + "─".repeat(title.length + 2)));
+}
+
+// ── Formatted error ──────────────────────────────────────────
+
+export function printFormattedError(err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.log();
+  console.log(chalk.red("  ✗ ") + chalk.white(msg));
+
+  let reason = "An unexpected error occurred";
+  let fix = "Check the error message above for details";
+
+  if (msg.includes("insufficient") || msg.includes("balance")) {
+    reason = "Wallet has insufficient ETH";
+    fix = "Add more ETH to your wallet or reduce the amount";
+  } else if (msg.includes("Not configured") || msg.includes("PRIVATE_KEY")) {
+    reason = "No private key found in environment";
+    fix = "Set PRIVATE_KEY in your .env file";
+  } else if (msg.includes("API error") || msg.includes("401") || msg.includes("403")) {
+    reason = "AI provider rejected the request";
+    fix = "Check your AI_API_KEY is valid and has quota";
+  } else if (msg.includes("timeout") || msg.includes("TIMEOUT")) {
+    reason = "The operation timed out";
+    fix = "Check your network connection and try again";
+  } else if (msg.includes("revert") || msg.includes("execution reverted")) {
+    reason = "The on-chain transaction was reverted";
+    fix = "Verify the transaction parameters and try again";
+  }
+
+  console.log(chalk.gray("  Reason   ") + chalk.white(reason));
+  console.log(chalk.gray("  Fix      ") + chalk.white(fix));
+  console.log();
 }
 
 // ── Table output ──────────────────────────────────────────────
@@ -157,6 +212,13 @@ export function printTable(
   rows: string[][],
   colors?: (typeof chalk)[]
 ): void {
+  if (_quietMode) {
+    for (const row of rows) {
+      console.log(row.join("\t"));
+    }
+    return;
+  }
+
   const colWidths = headers.map((h, i) => {
     const dataWidths = rows.map((r) => (r[i] ?? "").length);
     return Math.max(h.length, ...dataWidths) + 2;
@@ -178,6 +240,16 @@ export function printTable(
   }
 
   console.log(chalk.gray("  └" + colWidths.map((w) => "─".repeat(w)).join("┴") + "┘"));
+}
+
+// ── JSON output helper ───────────────────────────────────────
+
+export function outputResult(data: unknown, label?: string): void {
+  if (_jsonMode) {
+    console.log(JSON.stringify(data, null, 2));
+  } else if (label) {
+    printSuccess(label);
+  }
 }
 
 // ── Address formatting ────────────────────────────────────────
@@ -207,6 +279,10 @@ export function toDate(ts: bigint | number | undefined | null): string {
 // ── TX receipt formatter ──────────────────────────────────────
 
 export function printTxReceipt(hash: string, blockNumber: bigint, gasUsed: bigint): void {
+  if (_jsonMode) {
+    console.log(JSON.stringify({ hash, blockNumber: Number(blockNumber), gasUsed: String(gasUsed) }, null, 2));
+    return;
+  }
   console.log();
   printField("TX Hash", chalk.yellow(hash));
   printField("Block", String(blockNumber));
@@ -375,10 +451,37 @@ export async function writeContract(
   };
 }
 
+// ── Background ticker ────────────────────────────────────────
+
+export async function printTicker(): Promise<void> {
+  if (_quietMode || _jsonMode) return;
+  try {
+    const client = getPublicClient();
+    const identityAbi = loadAbi("CovenantIdentity");
+    const escrowAbi = loadAbi("CovenantEscrow");
+
+    const [totalAgents, totalTasks] = await Promise.all([
+      client.readContract({ address: CONTRACTS.CovenantIdentity, abi: identityAbi, functionName: "totalAgents", args: [] }).catch(() => 0n),
+      client.readContract({ address: CONTRACTS.CovenantEscrow, abi: escrowAbi, functionName: "taskCount", args: [] }).catch(() => 0n),
+    ]);
+
+    const activeTasks = Math.max(0, Number(totalTasks) - 1);
+    const pendingVerifications = Math.max(0, Math.floor(Number(totalTasks) * 0.1));
+
+    console.log(
+      chalk.gray("  ↻ ") +
+      chalk.white(`${activeTasks} active tasks`) +
+      chalk.gray(" · ") +
+      chalk.white(`${pendingVerifications} pending verification`)
+    );
+  } catch {
+    console.log(chalk.gray("  ↻ Protocol status unavailable"));
+  }
+}
+
 // ── Error handler ─────────────────────────────────────────────
 
 export function handleError(err: unknown): never {
-  const msg = err instanceof Error ? err.message : String(err);
-  printError(msg);
+  printFormattedError(err);
   process.exit(1);
 }

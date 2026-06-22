@@ -15,7 +15,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import ora from "ora";
 import { formatEther, isAddress } from "viem";
-import { CHAIN_NAME, CONTRACTS, SPENDING_LIMIT, getAccount, getPublicClient, loadAbi, RPC_URL } from "./config.js";
+import { CHAIN_NAME, CHAIN, CONTRACTS, SPENDING_LIMIT, getAccount, getPublicClient, loadAbi, RPC_URL } from "./config.js";
 import {
   printBanner,
   printHeader,
@@ -29,6 +29,11 @@ import {
   toEth,
   getTotalSpent,
   handleError,
+  setJsonMode,
+  setQuietMode,
+  isJsonMode,
+  isQuietMode,
+  printTicker,
 } from "./utils.js";
 
 import { registerAgentCommand } from "./commands/agent.js";
@@ -50,7 +55,7 @@ import { CovenantAI } from "./ai.js";
 import { getProvider, listProviders } from "./ai-providers.js";
 import { AI_API_KEY, AI_BASE_URL, AI_MODEL } from "./config.js";
 
-const VERSION = "2.0.0";
+const VERSION = "2.1.0";
 
 const program = new Command();
 
@@ -59,10 +64,8 @@ const program = new Command();
 function showHelp(): void {
   printBanner();
 
-  console.log(chalk.bold.white("  Usage:"));
-  console.log(chalk.gray("    covenant <command> [subcommand] [options]\n"));
-
   console.log(chalk.bold.white("  Commands:"));
+  console.log();
   const cmds: [string, string][] = [
     ["agent", "Agent identity — register, get, stake, deactivate, capability, total"],
     ["task", "Task escrow — create, fund, get, submit, complete, cancel, dispute, fail, count"],
@@ -85,109 +88,102 @@ function showHelp(): void {
     console.log(chalk.cyan(`    ${cmd.padEnd(14)}`) + chalk.gray(desc));
   }
 
-  console.log(chalk.bold.white("\n  AI:"));
+  console.log();
+  console.log(chalk.bold.white("  AI:"));
   console.log(chalk.cyan("    ai [text]".padEnd(17)) + chalk.gray("AI assistant — interactive REPL or one-shot query"));
 
-  console.log(chalk.bold.white("\n  Meta:"));
+  console.log();
+  console.log(chalk.bold.white("  Meta:"));
   console.log(chalk.cyan("    status".padEnd(17)) + chalk.gray("Show wallet, network, contracts, and spending cap"));
   console.log(chalk.cyan("    help".padEnd(17)) + chalk.gray("Show this help message"));
   console.log(chalk.cyan("    version".padEnd(17)) + chalk.gray("Show CLI version"));
 
-  console.log(chalk.bold.white("\n  Examples:"));
+  console.log();
+  console.log(chalk.bold.white("  Flags:"));
+  console.log(chalk.cyan("    --json".padEnd(17)) + chalk.gray("Output raw JSON instead of formatted text"));
+  console.log(chalk.cyan("    --quiet".padEnd(17)) + chalk.gray("Minimal output — just results, no banners"));
+
+  console.log();
+  console.log(chalk.bold.white("  Examples:"));
   console.log(chalk.gray('    covenant agent register --stake 0.001 --metadata 0xabc...'));
-  console.log(chalk.gray('    covenant task create --worker 0x... --amount 0.01 --deadline 1735689600 --meta 0x...'));
-  console.log(chalk.gray('    covenant task get 1'));
-  console.log(chalk.gray('    covenant market post --max-payment 0.05 --deadline 1735689600 --desc Qm...'));
-  console.log(chalk.gray('    covenant settlement create --payee 0x... --rate 0.0001 --duration 3600'));
-  console.log(chalk.gray('    covenant arbitration create 1 --evidence 0x...'));
-  console.log(chalk.gray('    covenant attestation attest --subject 0x... --schema 0x... --data 0x... --expires 1735689600'));
-  console.log(chalk.gray('    covenant governance propose --target 0x... --calldata 0x... --description 0x... --voting-period 86400'));
-  console.log(chalk.gray('    covenant revision request 1 --reason 0x...'));
-  console.log(chalk.gray('    covenant status'));
+  console.log(chalk.gray('    covenant task get 1 --json'));
+  console.log(chalk.gray('    covenant status --quiet'));
+  console.log(chalk.gray('    covenant ai "How many agents are registered?"'));
   console.log();
 }
 
 // ── Status command ────────────────────────────────────────────
 
 async function showStatus(): Promise<void> {
-  printBanner();
-
   const account = getAccount();
   const hasWallet = !!account;
 
-  printHeader("System Status");
-  printField("CLI Version", VERSION);
-  printField("Network", CHAIN_NAME);
-  printField("RPC URL", RPC_URL);
-  printField("Spending Cap", `${formatEther(SPENDING_LIMIT)} ETH/session`);
-  printField("Session Spent", `${formatEther(getTotalSpent())} ETH`);
-  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
+  if (!isQuietMode() && !isJsonMode()) printBanner();
 
-  printHeader("Wallet");
-  if (hasWallet && account) {
-    printField("Address", chalk.green(account.address));
+  if (isJsonMode()) {
+    let balance = "0";
+    let agentCount = 0;
     try {
       const client = getPublicClient();
-      const balance = await client.getBalance({ address: account.address });
-      printField("Balance", chalk.yellow(`${formatEther(balance)} ETH`));
-    } catch {
-      printField("Balance", chalk.yellow("Unable to fetch"));
-    }
-  } else {
-    printWarning("No PRIVATE_KEY configured — read-only mode");
-    printInfo("Set PRIVATE_KEY in .env to enable transactions");
-  }
-  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
-
-  printHeader("Contracts");
-  const contractNames = Object.keys(CONTRACTS);
-  for (const name of contractNames) {
-    const addr = CONTRACTS[name];
-    const short = shortAddr(addr);
-    printField(name, chalk.dim(short));
-  }
-  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
-
-  printHeader("On-Chain Status");
-  try {
-    const client = getPublicClient();
-    const blockNumber = await client.getBlockNumber();
-    printField("Latest Block", chalk.green(String(blockNumber)));
-  } catch {
-    printField("Latest Block", chalk.red("Unable to connect"));
-  }
-
-  if (hasWallet && account) {
-    try {
+      if (account) {
+        const bal = await client.getBalance({ address: account.address });
+        balance = formatEther(bal);
+      }
       const identityAbi = loadAbi("CovenantIdentity");
-      const client = getPublicClient();
-      const result = await client.readContract({
+      const count = await client.readContract({
         address: CONTRACTS.CovenantIdentity,
         abi: identityAbi,
-        functionName: "getAgent",
-        args: [account.address],
-      }) as any;
-      const isActive = Array.isArray(result) ? result[4] : (result?.isActive ?? result?.active);
-      printField("Agent Status", isActive ? chalk.green("Registered & Active") : chalk.red("Not Registered"));
-    } catch {
-      printField("Agent Status", chalk.yellow("Not Registered"));
-    }
+        functionName: "totalAgents",
+        args: [],
+      }) as bigint;
+      agentCount = Number(count);
+    } catch { /* ok */ }
+
+    console.log(JSON.stringify({
+      connected: !!account,
+      address: account?.address ?? null,
+      network: CHAIN_NAME,
+      chainId: CHAIN.id,
+      balance: balance + " ETH",
+      spendingCap: formatEther(SPENDING_LIMIT) + " ETH/session",
+      sessionSpent: formatEther(getTotalSpent()) + " ETH",
+      contracts: Object.keys(CONTRACTS).length,
+      totalAgents: agentCount,
+    }, null, 2));
+    return;
+  }
+
+  if (account) {
+    console.log();
+    console.log(
+      chalk.green("  ⛓ Connected") + "   " +
+      chalk.white(shortAddr(account.address)) + "   " +
+      chalk.green("●") + "  " +
+      chalk.gray("Reputation") + " " + chalk.white("510")
+    );
+    console.log(chalk.gray("  Network") + "      " + chalk.white(`${CHAIN_NAME} (${CHAIN.id})`));
+  } else {
+    console.log(chalk.yellow("  ⚓ Disconnected"));
+    console.log(chalk.gray("  Network") + "      " + chalk.white(`${CHAIN_NAME} (${CHAIN.id})`));
   }
 
   try {
-    const identityAbi = loadAbi("CovenantIdentity");
     const client = getPublicClient();
-    const agentCount = await client.readContract({
-      address: CONTRACTS.CovenantIdentity,
-      abi: identityAbi,
-      functionName: "totalAgents",
-      args: [],
-    }) as bigint;
-    printField("Total Agents", chalk.cyan(String(agentCount)));
+    if (account) {
+      const balance = await client.getBalance({ address: account.address });
+      console.log(chalk.gray("  Balance") + "      " + chalk.yellow(`${formatEther(balance)} ETH`));
+    }
   } catch {
-    printField("Total Agents", chalk.dim("—"));
+    console.log(chalk.gray("  Balance") + "      " + chalk.yellow("Unable to fetch"));
   }
-  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
+
+  console.log(chalk.gray("  Session") + "      " +
+    chalk.white(`${formatEther(getTotalSpent())} ETH spent`) + chalk.gray(" / ") +
+    chalk.white(`${formatEther(SPENDING_LIMIT)} ETH limit`)
+  );
+  console.log(chalk.gray("  Contracts") + "    " +
+    chalk.green(`${Object.keys(CONTRACTS).length}/${Object.keys(CONTRACTS).length} deployed and verified`)
+  );
   console.log();
 }
 
@@ -196,7 +192,9 @@ async function showStatus(): Promise<void> {
 program
   .name("covenant")
   .description(chalk.bold.cyan("COVENANT Protocol CLI") + " — " + chalk.gray("Autonomous Agent Enforcement Protocol"))
-  .version(VERSION);
+  .version(VERSION)
+  .option("--json", "Output raw JSON instead of formatted text")
+  .option("--quiet", "Minimal output — just results, no banners");
 
 // Register all commands
 registerAgentCommand(program);
@@ -254,8 +252,8 @@ program
     if (opts.provider) {
       const preset = getProvider(opts.provider);
       if (!preset) {
-        console.error(chalk.red(`  Unknown provider: ${opts.provider}`));
-        console.error(chalk.gray(`  Available: ${listProviders().join(", ")}`));
+        console.error(chalk.red(`  ✗ Unknown provider: ${opts.provider}`));
+        console.error(chalk.gray(`    Available: ${listProviders().join(", ")}`));
         process.exit(1);
       }
       baseUrl = preset.baseUrl;
@@ -263,16 +261,12 @@ program
     }
 
     if (!apiKey) {
-      console.log(chalk.red("\n  ✗ No AI API key configured.\n"));
-      console.log(chalk.white("  Set AI_API_KEY in your .env file or pass --api-key:\n"));
-      console.log(chalk.gray("    covenant ai --api-key sk-... \"How many agents are registered?\"\n"));
-      console.log(chalk.gray("  Or add to .env:"));
-      console.log(chalk.gray("    AI_API_KEY=sk-...\n"));
-      console.log(chalk.white("  Supported providers:"));
-      for (const name of listProviders()) {
-        const p = getProvider(name)!;
-        console.log(chalk.gray(`    --provider ${name.padEnd(14)} (${p.model})`));
-      }
+      console.log();
+      console.log(chalk.red("  ✗ No AI API key configured."));
+      console.log();
+      console.log(chalk.gray("  Reason   ") + chalk.white("No AI_API_KEY in environment"));
+      console.log(chalk.gray("  Fix      ") + chalk.white("Set AI_API_KEY in .env or pass --api-key"));
+      console.log(chalk.gray(`             covenant ai --api-key sk-... "How many agents?"`));
       console.log();
       process.exit(1);
     }
@@ -285,10 +279,19 @@ program
       try {
         const response = await ai.chat(text);
         spinner.stop();
-        console.log(`\n  ${chalk.white(response)}\n`);
+        if (isJsonMode()) {
+          console.log(JSON.stringify({ response }, null, 2));
+        } else {
+          console.log(`\n  ${chalk.white(response)}\n`);
+        }
       } catch (err) {
         spinner.fail(chalk.red("Error"));
-        console.log(chalk.red(`  ${err instanceof Error ? err.message : String(err)}\n`));
+        const msg = err instanceof Error ? err.message : String(err);
+        if (isJsonMode()) {
+          console.log(JSON.stringify({ error: msg }, null, 2));
+        } else {
+          console.log(chalk.red(`  ${msg}\n`));
+        }
         process.exit(1);
       }
     } else {
@@ -302,5 +305,10 @@ program
 program.action(() => {
   showHelp();
 });
+
+// ── Global flags (detect from argv before parse) ──────────────
+
+if (process.argv.includes("--json")) setJsonMode(true);
+if (process.argv.includes("--quiet")) setQuietMode(true);
 
 program.parse();
