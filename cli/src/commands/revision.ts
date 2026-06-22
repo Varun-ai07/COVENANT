@@ -12,6 +12,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -33,6 +34,11 @@ async function requestRevision(
 ): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Request revision for task #${id}.`,
+    "0"
+  );
 
   printHeader("Requesting Revision");
   printField("Task ID", String(id));
@@ -58,6 +64,11 @@ async function submitRevision(
 ): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Submit revision for task #${id}.`,
+    "0"
+  );
 
   printHeader("Submitting Revision");
   printField("Task ID", String(id));

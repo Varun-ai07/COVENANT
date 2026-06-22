@@ -15,6 +15,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -42,6 +43,11 @@ async function propose(
   if (isNaN(periodNum) || periodNum <= 0) {
     throw new Error("Voting period must be a positive integer (seconds)");
   }
+
+  await preWriteGuard(
+    `Create governance proposal targeting ${shortAddr(target)}.`,
+    "0"
+  );
 
   printHeader("Creating Proposal");
   printField("Target", shortAddr(target));
@@ -80,6 +86,11 @@ async function submitVotes(
   const forNum = parseInt(forVotes, 10);
   const againstNum = parseInt(againstVotes, 10);
 
+  await preWriteGuard(
+    `Submit votes on proposal #${id}.`,
+    "0"
+  );
+
   printHeader("Submitting Votes");
   printField("Proposal ID", String(id));
   printField("For Votes", String(forNum));
@@ -103,6 +114,11 @@ async function executeProposal(proposalId: string): Promise<void> {
   const id = parseInt(proposalId, 10);
   if (isNaN(id) || id < 0) throw new Error("Proposal ID must be a non-negative integer");
 
+  await preWriteGuard(
+    `Execute proposal #${id}. This will call the target contract.`,
+    "0"
+  );
+
   printHeader("Executing Proposal");
   printField("Proposal ID", String(id));
 
@@ -123,6 +139,11 @@ async function executeProposal(proposalId: string): Promise<void> {
 async function vetoProposal(proposalId: string): Promise<void> {
   const id = parseInt(proposalId, 10);
   if (isNaN(id) || id < 0) throw new Error("Proposal ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Veto proposal #${id}.`,
+    "0"
+  );
 
   printHeader("Vetoing Proposal");
   printField("Proposal ID", String(id));

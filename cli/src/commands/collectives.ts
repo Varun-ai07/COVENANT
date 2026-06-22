@@ -12,6 +12,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -36,6 +37,11 @@ async function create(
   if (isNaN(max) || max < 2 || max > 100) {
     throw new Error("Max members must be between 2 and 100");
   }
+
+  await preWriteGuard(
+    `Create collective with min contribution ${minContribution} ETH, max ${max} members.`,
+    minContribution
+  );
 
   printHeader("Creating Collective");
   printField("Min Contribution", `${minContribution} ETH`);
@@ -62,6 +68,11 @@ async function join(collectiveId: string, contribution: string): Promise<void> {
     throw new Error("Collective ID must be a non-negative integer");
 
   const contributionWei = parseEther(contribution);
+
+  await preWriteGuard(
+    `Join collective #${id} with ${contribution} ETH contribution.`,
+    contribution
+  );
 
   printHeader("Joining Collective");
   printField("Collective ID", String(id));

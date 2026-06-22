@@ -13,6 +13,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -62,10 +63,16 @@ async function create(
     return BigInt(n);
   });
   const totalPayment = paymentWeiList.reduce((sum, p) => sum + p, 0n);
+  const totalEth = (Number(totalPayment) / 1e18).toFixed(6);
+
+  await preWriteGuard(
+    `Create batch of ${workerList.length} tasks with total payment ${totalEth} ETH.`,
+    totalEth
+  );
 
   printHeader("Creating Batch");
   printField("Workers", String(workerList.length));
-  printField("Total Payment", `${Number(totalPayment) / 1e18} ETH`);
+  printField("Total Payment", `${totalEth} ETH`);
   printField("Aggregation Spec", aggregationSpec);
 
   for (let i = 0; i < workerList.length; i++) {
@@ -160,6 +167,11 @@ async function aggregate(batchId: string): Promise<void> {
   const id = parseInt(batchId, 10);
   if (isNaN(id) || id < 0)
     throw new Error("Batch ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Aggregate results for batch #${id}.`,
+    "0"
+  );
 
   printHeader("Aggregating Batch Results");
   printField("Batch ID", String(id));

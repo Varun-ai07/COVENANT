@@ -2,7 +2,7 @@
  * COVENANT CLI — configuration and viem client setup.
  *
  * Loads ABIs from the sibling mcp/src/abis/ directory.
- * Reads .env for PRIVATE_KEY and RPC_URL.
+ * Reads .env for PRIVATE_KEY, RPC_URL, and SPENDING_LIMIT.
  */
 import * as dotenv from "dotenv";
 import { readFileSync } from "node:fs";
@@ -12,6 +12,7 @@ import {
   createPublicClient,
   createWalletClient,
   http,
+  parseEther,
   type Address,
   type Abi,
   defineChain,
@@ -63,6 +64,12 @@ export const CHAIN_NAME = (() => {
   return "Base Sepolia";
 })();
 
+// ── Spending limit (Fix 5) ────────────────────────────────────
+
+export const SPENDING_LIMIT: bigint = process.env.SPENDING_LIMIT
+  ? parseEther(process.env.SPENDING_LIMIT)
+  : parseEther("0.1"); // Default 0.1 ETH per session
+
 // ── Contract addresses (V5 + Legacy) ──────────────────────────
 
 export const CONTRACTS: Record<string, Address> = {
@@ -92,9 +99,19 @@ export const CONTRACTS: Record<string, Address> = {
     "0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A") as Address,
   RevisionManager: (process.env.REVISION_ADDRESS ||
     "0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76") as Address,
-  // Legacy (still deployed)
+  // Legacy (still deployed, needed for some commands)
   OpenTaskMarket: (process.env.MARKET_ADDRESS ||
     "0xF163007a42f00dB4D1296186A9BD07B28fe2a4a7") as Address,
+  DisputeArbitration: (process.env.DISPUTE_ARBITRATION_ADDRESS ||
+    "0x37A62C6eDd18461CCe00B6772Da8640C75DE740e") as Address,
+  AgentInsurance: (process.env.AGENT_INSURANCE_ADDRESS ||
+    "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55") as Address,
+  TaskEscrow: (process.env.TASK_ESCROW_ADDRESS ||
+    "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3") as Address,
+  ReceiptVerifier: (process.env.RECEIPT_VERIFIER_ADDRESS ||
+    "0xa47D15099be6aC516B53a6859D468E9004eEf76b") as Address,
+  AgentRegistry: (process.env.AGENT_REGISTRY_ADDRESS ||
+    "0x0003072b15d2c299d46bC5FfE7785E803895E614") as Address,
 };
 
 // ── Viem clients ──────────────────────────────────────────────

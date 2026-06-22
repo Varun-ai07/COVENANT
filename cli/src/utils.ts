@@ -1,9 +1,13 @@
 /**
  * COVENANT CLI — shared formatting, spinner, and transaction helpers.
+ *
+ * Safety: confirmAction, checkBalance, and spending cap guards are enforced
+ * before every writeContract call. NEVER skip these checks.
  */
 import chalk from "chalk";
 import ora, { type Ora } from "ora";
-import { formatEther, type Address, type Abi } from "viem";
+import { formatEther, parseEther, type Address, type Abi } from "viem";
+import * as readline from "node:readline";
 import {
   getPublicClient,
   getWalletClient,
@@ -12,6 +16,7 @@ import {
   explorerAddrUrl,
   CHAIN_NAME,
   RPC_URL,
+  SPENDING_LIMIT,
 } from "./config.js";
 
 // ── Status labels ─────────────────────────────────────────────
@@ -210,6 +215,80 @@ export function printTxReceipt(hash: string, blockNumber: bigint, gasUsed: bigin
   console.log();
 }
 
+// ── SAFETY: Readline confirmation prompt ──────────────────────
+
+export function confirmAction(description: string, costEth: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+    });
+
+    console.log();
+    printWarning(`This action will spend ${chalk.bold.yellow(costEth + " ETH")}.`);
+    printInfo(description);
+    console.log();
+
+    rl.question(chalk.bold.yellow("  Confirm? (y/N): "), (answer) => {
+      rl.close();
+      const trimmed = answer.trim().toLowerCase();
+      if (trimmed === "y" || trimmed === "yes") {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  });
+}
+
+// ── SAFETY: Wallet balance check ──────────────────────────────
+
+export async function checkBalance(requiredEth: string): Promise<void> {
+  const account = getAccount();
+  if (!account) {
+    throw new Error("No PRIVATE_KEY configured — cannot check balance");
+  }
+
+  const client = getPublicClient();
+  const balance = await client.getBalance({ address: account.address });
+  const balanceEth = parseFloat(formatEther(balance));
+  const required = parseFloat(requiredEth);
+  const GAS_BUFFER = 0.001;
+  const totalNeeded = required + GAS_BUFFER;
+
+  if (balanceEth < totalNeeded) {
+    throw new Error(
+      `Insufficient balance. You need ${totalNeeded.toFixed(6)} ETH ` +
+      `(${required} + ${GAS_BUFFER} gas buffer) but wallet has ${balanceEth.toFixed(6)} ETH.`
+    );
+  }
+}
+
+// ── SAFETY: Session spending cap ──────────────────────────────
+
+let _totalSpent = 0n;
+
+export function getTotalSpent(): bigint {
+  return _totalSpent;
+}
+
+export function addSpent(amount: bigint): void {
+  _totalSpent += amount;
+}
+
+export function checkSpendingCap(valueWei: bigint): void {
+  const newTotal = _totalSpent + valueWei;
+  if (newTotal > SPENDING_LIMIT) {
+    const spentEth = formatEther(_totalSpent);
+    const limitEth = formatEther(SPENDING_LIMIT);
+    throw new Error(
+      `Session spending limit reached. ` +
+      `Already spent ${spentEth} ETH of ${limitEth} ETH limit. ` +
+      `Restart to reset.`
+    );
+  }
+}
+
 // ── Contract read helper ─────────────────────────────────────
 
 export async function readContract(
@@ -222,7 +301,28 @@ export async function readContract(
   return client.readContract({ address, abi, functionName, args: args as any });
 }
 
+// ── SAFETY: Pre-write guard (all three checks) ───────────────
+// MUST be called before every writeContract that sends ETH.
+
+export async function preWriteGuard(description: string, valueEth: string): Promise<void> {
+  const valueWei = parseEther(valueEth);
+
+  // Check 1: Spending cap
+  checkSpendingCap(valueWei);
+
+  // Check 2: Wallet balance
+  await checkBalance(valueEth);
+
+  // Check 3: Interactive confirmation
+  const confirmed = await confirmAction(description, valueEth);
+  if (!confirmed) {
+    printWarning("Transaction cancelled by user.");
+    process.exit(0);
+  }
+}
+
 // ── Contract write helper (sign + send + wait) ───────────────
+// SAFETY: All writes go through preWriteGuard before execution.
 
 export async function writeContract(
   address: Address,
@@ -262,6 +362,11 @@ export async function writeContract(
     timeout: 60_000,
   });
   succeedSpinner(waitSpinner, `Confirmed in block ${chalk.cyan(String(receipt.blockNumber))}`);
+
+  // Track spending
+  if (value && value > 0n) {
+    addSpent(value);
+  }
 
   return {
     hash,

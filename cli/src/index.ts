@@ -14,7 +14,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { formatEther, isAddress } from "viem";
-import { CHAIN_NAME, CONTRACTS, getAccount, getPublicClient, loadAbi, RPC_URL } from "./config.js";
+import { CHAIN_NAME, CONTRACTS, SPENDING_LIMIT, getAccount, getPublicClient, loadAbi, RPC_URL } from "./config.js";
 import {
   printBanner,
   printHeader,
@@ -26,6 +26,7 @@ import {
   printWarning,
   shortAddr,
   toEth,
+  getTotalSpent,
   handleError,
 } from "./utils.js";
 
@@ -63,16 +64,16 @@ function showHelp(): void {
     ["task", "Task escrow — create, fund, get, submit, complete, cancel, dispute, fail, count"],
     ["market", "Open task marketplace — post, bid, select, get"],
     ["settlement", "Payment streams — create, withdraw, cancel, get, count"],
-    ["disputes", "Dispute arbitration — file, vote, get"],
-    ["arbitration", "Dispute resolution — create, stake, rule, settle, get, count"],
+    ["disputes", "Dispute arbitration (V1) — file, vote, get"],
+    ["arbitration", "Dispute resolution (V5) — create, stake, rule, settle, get, count"],
     ["attestation", "Attestations — attest, verify, revoke, list, count"],
     ["governance", "DAO governance — propose, vote, execute, veto, get, count"],
     ["revision", "Task revisions — request, submit, get, count"],
     ["batches", "Parallel task batches — create, get, status, aggregate"],
     ["collectives", "Agent collectives — create, join, get"],
-    ["insurance", "Insurance pool — join, pay, claim, balance"],
-    ["receipts", "ERC-8004 receipts — get, count"],
-    ["milestones", "Milestone tasks — create, submit, verify"],
+    ["insurance", "Insurance pool (V5) — join, file-claim, vote, approve, balance, count"],
+    ["receipts", "ERC-8004 receipts (V1) — get, count"],
+    ["milestones", "Milestone tasks (V1) — create, submit, verify"],
     ["protocol", "Protocol stats — stats, leaderboard"],
   ];
 
@@ -81,12 +82,13 @@ function showHelp(): void {
   }
 
   console.log(chalk.bold.white("\n  Meta:"));
-  console.log(chalk.cyan("    status".padEnd(17)) + chalk.gray("Show wallet, network, and contract status"));
+  console.log(chalk.cyan("    status".padEnd(17)) + chalk.gray("Show wallet, network, contracts, and spending cap"));
   console.log(chalk.cyan("    help".padEnd(17)) + chalk.gray("Show this help message"));
   console.log(chalk.cyan("    version".padEnd(17)) + chalk.gray("Show CLI version"));
 
   console.log(chalk.bold.white("\n  Examples:"));
   console.log(chalk.gray('    covenant agent register --stake 0.001 --metadata 0xabc...'));
+  console.log(chalk.gray('    covenant task create --worker 0x... --amount 0.01 --deadline 1735689600 --meta 0x...'));
   console.log(chalk.gray('    covenant task get 1'));
   console.log(chalk.gray('    covenant market post --max-payment 0.05 --deadline 1735689600 --desc Qm...'));
   console.log(chalk.gray('    covenant settlement create --payee 0x... --rate 0.0001 --duration 3600'));
@@ -110,6 +112,8 @@ async function showStatus(): Promise<void> {
   printField("CLI Version", VERSION);
   printField("Network", CHAIN_NAME);
   printField("RPC URL", RPC_URL);
+  printField("Spending Cap", `${formatEther(SPENDING_LIMIT)} ETH/session`);
+  printField("Session Spent", `${formatEther(getTotalSpent())} ETH`);
   console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
 
   printHeader("Wallet");
@@ -164,12 +168,12 @@ async function showStatus(): Promise<void> {
   }
 
   try {
-    const registryAbi = loadAbi("AgentRegistry");
+    const identityAbi = loadAbi("CovenantIdentity");
     const client = getPublicClient();
     const agentCount = await client.readContract({
-      address: CONTRACTS.AgentRegistry,
-      abi: registryAbi,
-      functionName: "getAgentCount",
+      address: CONTRACTS.CovenantIdentity,
+      abi: identityAbi,
+      functionName: "totalAgents",
       args: [],
     }) as bigint;
     printField("Total Agents", chalk.cyan(String(agentCount)));

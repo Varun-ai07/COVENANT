@@ -13,6 +13,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -42,6 +43,14 @@ async function createStream(
     throw new Error("Duration must be a positive integer (seconds)");
   }
 
+  // Calculate total cost: rate * duration
+  const totalEth = (Number(rateWei) * durationNum / 1e18).toFixed(6);
+
+  await preWriteGuard(
+    `Create payment stream to ${shortAddr(payee)}: ${ratePerSecond} ETH/sec for ${durationNum} seconds (≈${totalEth} ETH total).`,
+    totalEth
+  );
+
   printHeader("Creating Payment Stream");
   printField("Payee", shortAddr(payee));
   printField("Rate", `${ratePerSecond} ETH/sec`);
@@ -65,6 +74,11 @@ async function withdrawStream(streamId: string): Promise<void> {
   const id = parseInt(streamId, 10);
   if (isNaN(id) || id < 0) throw new Error("Stream ID must be a non-negative integer");
 
+  await preWriteGuard(
+    `Withdraw from stream #${id}.`,
+    "0"
+  );
+
   printHeader("Withdrawing from Stream");
   printField("Stream ID", String(id));
 
@@ -85,6 +99,11 @@ async function withdrawStream(streamId: string): Promise<void> {
 async function cancelStream(streamId: string): Promise<void> {
   const id = parseInt(streamId, 10);
   if (isNaN(id) || id < 0) throw new Error("Stream ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Cancel stream #${id}.`,
+    "0"
+  );
 
   printHeader("Cancelling Stream");
   printField("Stream ID", String(id));

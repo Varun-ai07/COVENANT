@@ -10,10 +10,12 @@
 import { Command } from "commander";
 import { parseEther, type Address, isAddress } from "viem";
 import chalk from "chalk";
+import * as readline from "node:readline";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -26,6 +28,19 @@ import {
 
 const ABI = loadAbi("OpenTaskMarket");
 
+function promptUser(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+    });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
 // ──────────────────────────────────────────────────────────────
 // post
 // ──────────────────────────────────────────────────────────────
@@ -35,11 +50,33 @@ async function post(
   deadline: string,
   desc: string
 ): Promise<void> {
+  if (!maxPayment) {
+    maxPayment = await promptUser("  Enter max payment amount (ETH): ");
+  }
+  if (!deadline) {
+    const input = await promptUser("  Enter deadline (YYYY-MM-DD or Unix timestamp): ");
+    if (input.includes("-")) {
+      const ts = Math.floor(new Date(input).getTime() / 1000);
+      if (isNaN(ts) || ts <= 0) throw new Error(`Invalid date: ${input}`);
+      deadline = String(ts);
+    } else {
+      deadline = input;
+    }
+  }
+  if (!desc) {
+    desc = await promptUser("  Enter IPFS CID for task description: ");
+  }
+
   const paymentWei = parseEther(maxPayment);
   const deadlineNum = parseInt(deadline, 10);
   if (isNaN(deadlineNum) || deadlineNum <= 0) {
     throw new Error("Deadline must be a positive Unix timestamp");
   }
+
+  await preWriteGuard(
+    `Post an open task with max payment ${maxPayment} ETH.`,
+    maxPayment
+  );
 
   printHeader("Posting Open Task");
   printField("Max Payment", `${maxPayment} ETH`);
@@ -76,6 +113,11 @@ async function bid(
     throw new Error("Time estimate must be a positive integer (seconds)");
   }
 
+  await preWriteGuard(
+    `Submit bid on task #${id} for ${price} ETH.`,
+    "0"
+  );
+
   printHeader("Submitting Bid");
   printField("Task ID", String(id));
   printField("Price", `${price} ETH`);
@@ -100,6 +142,11 @@ async function select(taskId: string, worker: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
   if (!isAddress(worker)) throw new Error(`Invalid worker address: ${worker}`);
+
+  await preWriteGuard(
+    `Select worker ${shortAddr(worker)} for task #${id}.`,
+    "0"
+  );
 
   printHeader("Selecting Worker");
   printField("Task ID", String(id));
@@ -168,12 +215,12 @@ export function registerMarketCommand(parent: Command): void {
   market
     .command("post")
     .description("Post an open task for competitive bidding")
-    .requiredOption("--max-payment <eth>", "Maximum payment in ETH")
-    .requiredOption("--deadline <ts>", "Unix timestamp deadline (seconds)")
-    .requiredOption("--desc <cid>", "IPFS CID for task description")
+    .option("--max-payment <eth>", "Maximum payment in ETH")
+    .option("--deadline <ts>", "Unix timestamp deadline (seconds)")
+    .option("--desc <cid>", "IPFS CID for task description")
     .action(async (opts) => {
       try {
-        await post(opts.maxPayment, opts.deadline, opts.desc);
+        await post(opts.maxPayment || "", opts.deadline || "", opts.desc || "");
       } catch (e) {
         handleError(e);
       }

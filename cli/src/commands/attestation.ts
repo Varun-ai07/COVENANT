@@ -14,6 +14,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -40,6 +41,11 @@ async function attest(
   if (isNaN(expiryNum) || expiryNum <= 0) {
     throw new Error("Expiry must be a positive Unix timestamp");
   }
+
+  await preWriteGuard(
+    `Create attestation for ${shortAddr(subject)}.`,
+    "0"
+  );
 
   printHeader("Creating Attestation");
   printField("Subject", shortAddr(subject));
@@ -84,6 +90,11 @@ async function verifyAttestation(attestationId: string): Promise<void> {
 // ──────────────────────────────────────────────────────────────
 
 async function revokeAttestation(attestationId: string): Promise<void> {
+  await preWriteGuard(
+    `Revoke attestation ${attestationId}.`,
+    "0"
+  );
+
   printHeader("Revoking Attestation");
   printField("Attestation ID", attestationId);
 

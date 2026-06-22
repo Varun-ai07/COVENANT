@@ -1,5 +1,5 @@
 /**
- * covenant receipts — ReceiptVerifier subcommands.
+ * covenant receipts — ReceiptVerifier subcommands (Legacy V1).
  *
  *   get   — get all receipts for an address
  *   count — get receipt count for an address
@@ -31,7 +31,7 @@ async function get(address: string): Promise<void> {
   const data = (await readContract(
     CONTRACTS.ReceiptVerifier,
     ABI,
-    "getReceipts",
+    "getReceiptsByAgent",
     [address as Address]
   )) as any[];
 
@@ -71,7 +71,7 @@ async function count(address: string): Promise<void> {
   const data = await readContract(
     CONTRACTS.ReceiptVerifier,
     ABI,
-    "getReceiptCount",
+    "getAgentReceiptCount",
     [address as Address]
   );
 
@@ -86,7 +86,7 @@ async function count(address: string): Promise<void> {
 export function registerReceiptsCommand(parent: Command): void {
   const receipts = parent
     .command("receipts")
-    .description("ERC-8004 attestation receipt operations");
+    .description("ERC-8004 attestation receipt operations (ReceiptVerifier — Legacy V1)");
 
   receipts
     .command("get <address>")

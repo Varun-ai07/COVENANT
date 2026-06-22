@@ -1,5 +1,5 @@
 /**
- * covenant disputes — DisputeArbitration subcommands.
+ * covenant disputes — DisputeArbitration subcommands (Legacy V1).
  *
  *   file  — file a dispute on a task
  *   vote  — cast a vote on a dispute
@@ -12,6 +12,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -32,6 +33,11 @@ async function fileDispute(taskId: string, bond: string): Promise<void> {
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
 
   const bondWei = parseEther(bond);
+
+  await preWriteGuard(
+    `File dispute on task #${id} with ${bond} ETH bond.`,
+    bond
+  );
 
   printHeader("Filing Dispute");
   printField("Task ID", String(id));
@@ -57,6 +63,11 @@ async function vote(disputeId: string, forWorker: string): Promise<void> {
   if (isNaN(id) || id < 0) throw new Error("Dispute ID must be a non-negative integer");
 
   const inFavor = forWorker.toLowerCase() === "true" || forWorker === "1";
+
+  await preWriteGuard(
+    `Cast vote on dispute #${id} (${inFavor ? "for worker" : "for client"}).`,
+    "0"
+  );
 
   printHeader("Casting Vote");
   printField("Dispute ID", String(id));
@@ -113,7 +124,7 @@ async function getDispute(disputeId: string): Promise<void> {
 export function registerDisputesCommand(parent: Command): void {
   const disputes = parent
     .command("disputes")
-    .description("Dispute arbitration operations");
+    .description("Dispute arbitration operations (DisputeArbitration — Legacy V1)");
 
   disputes
     .command("file <taskId>")

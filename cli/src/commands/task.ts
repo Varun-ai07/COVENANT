@@ -12,13 +12,16 @@
  */
 import { Command } from "commander";
 import { parseEther, type Address, isAddress } from "viem";
+import * as readline from "node:readline";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
+  printInfo,
   shortAddr,
   toEth,
   toDate,
@@ -27,6 +30,21 @@ import {
 } from "../utils.js";
 
 const ABI = loadAbi("CovenantEscrow");
+
+// ── Interactive prompt helpers ─────────────────────────────────
+
+function promptUser(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+    });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
 
 // ──────────────────────────────────────────────────────────────
 // create
@@ -38,13 +56,38 @@ async function create(
   deadline: string,
   metaHash: string
 ): Promise<void> {
+  // Interactive prompts for missing args
+  if (!worker) {
+    worker = await promptUser("  Enter worker address (0x...): ");
+  }
   if (!isAddress(worker)) throw new Error(`Invalid worker address: ${worker}`);
+
+  if (!payment) {
+    payment = await promptUser("  Enter payment amount (ETH): ");
+  }
+
+  if (!deadline) {
+    const input = await promptUser("  Enter deadline (YYYY-MM-DD or Unix timestamp): ");
+    // Check if it looks like a date string
+    if (input.includes("-")) {
+      const ts = Math.floor(new Date(input).getTime() / 1000);
+      if (isNaN(ts) || ts <= 0) throw new Error(`Invalid date: ${input}`);
+      deadline = String(ts);
+    } else {
+      deadline = input;
+    }
+  }
 
   const amountWei = parseEther(payment);
   const deadlineNum = parseInt(deadline, 10);
   if (isNaN(deadlineNum) || deadlineNum <= 0) {
     throw new Error("Deadline must be a positive Unix timestamp");
   }
+
+  await preWriteGuard(
+    `Create a task for worker ${shortAddr(worker)} with ${payment} ETH payment.`,
+    payment
+  );
 
   printHeader("Creating Task");
   printField("Worker", shortAddr(worker));
@@ -71,6 +114,11 @@ async function fund(taskId: string, payment: string): Promise<void> {
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
 
   const amountWei = parseEther(payment);
+
+  await preWriteGuard(
+    `Fund task #${id} with ${payment} ETH.`,
+    payment
+  );
 
   printHeader("Funding Task");
   printField("Task ID", String(id));
@@ -137,6 +185,11 @@ async function submit(taskId: string, deliverable: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
 
+  await preWriteGuard(
+    `Submit deliverable for task #${id}.`,
+    "0"
+  );
+
   printHeader("Submitting Work");
   printField("Task ID", String(id));
   printField("Deliverable Hash", deliverable);
@@ -159,6 +212,11 @@ async function complete(taskId: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
 
+  await preWriteGuard(
+    `Complete task #${id} and release payment.`,
+    "0"
+  );
+
   printHeader("Completing Task");
   printField("Task ID", String(id));
 
@@ -179,6 +237,11 @@ async function complete(taskId: string): Promise<void> {
 async function cancel(taskId: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Cancel task #${id}.`,
+    "0"
+  );
 
   printHeader("Cancelling Task");
   printField("Task ID", String(id));
@@ -201,6 +264,11 @@ async function dispute(taskId: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
 
+  await preWriteGuard(
+    `Dispute task #${id}. This will lock funds in escrow.`,
+    "0"
+  );
+
   printHeader("Disputing Task");
   printField("Task ID", String(id));
 
@@ -221,6 +289,11 @@ async function dispute(taskId: string): Promise<void> {
 async function fail(taskId: string, reason: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Mark task #${id} as failed.`,
+    "0"
+  );
 
   printHeader("Failing Task");
   printField("Task ID", String(id));
@@ -262,13 +335,13 @@ export function registerTaskCommand(parent: Command): void {
   task
     .command("create")
     .description("Create a new task (must fund separately)")
-    .requiredOption("--worker <addr>", "Worker agent's Ethereum address")
-    .requiredOption("--amount <eth>", "Payment amount in ETH")
-    .requiredOption("--deadline <ts>", "Unix timestamp deadline (seconds)")
-    .requiredOption("--meta <hash>", "Metadata hash (bytes32)")
+    .option("--worker <addr>", "Worker agent's Ethereum address")
+    .option("--amount <eth>", "Payment amount in ETH")
+    .option("--deadline <ts>", "Unix timestamp deadline (seconds)")
+    .option("--meta <hash>", "Metadata hash (bytes32)")
     .action(async (opts) => {
       try {
-        await create(opts.worker, opts.amount, opts.deadline, opts.meta);
+        await create(opts.worker || "", opts.amount || "", opts.deadline || "", opts.meta || "0x");
       } catch (e) {
         handleError(e);
       }

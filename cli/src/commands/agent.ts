@@ -14,6 +14,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -32,6 +33,11 @@ const ABI = loadAbi("CovenantIdentity");
 async function register(stake: string, metadata: string): Promise<void> {
   const stakeWei = parseEther(stake);
   const metadataRoot = metadata as `0x${string}`;
+
+  await preWriteGuard(
+    `Register a new agent with ${stake} ETH stake.`,
+    stake
+  );
 
   printHeader("Registering Agent");
   printField("Stake", `${stake} ETH`);
@@ -92,6 +98,11 @@ async function get(address: string): Promise<void> {
 async function stake(amount: string): Promise<void> {
   const amountWei = parseEther(amount);
 
+  await preWriteGuard(
+    `Increase agent stake by ${amount} ETH.`,
+    amount
+  );
+
   printHeader("Increasing Stake");
   printField("Amount", `${amount} ETH`);
 
@@ -111,6 +122,11 @@ async function stake(amount: string): Promise<void> {
 // ──────────────────────────────────────────────────────────────
 
 async function deactivate(): Promise<void> {
+  await preWriteGuard(
+    "Deactivate your agent. This cannot be undone.",
+    "0"
+  );
+
   printHeader("Deactivating Agent");
 
   const result = await writeContract(

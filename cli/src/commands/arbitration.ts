@@ -15,6 +15,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -34,6 +35,11 @@ const ABI = loadAbi("CovenantArbitration");
 async function createDispute(taskId: string, evidenceHash: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Create dispute for task #${id}.`,
+    "0"
+  );
 
   printHeader("Creating Dispute");
   printField("Task ID", String(id));
@@ -56,6 +62,11 @@ async function createDispute(taskId: string, evidenceHash: string): Promise<void
 async function stakeDispute(disputeId: string): Promise<void> {
   const id = parseInt(disputeId, 10);
   if (isNaN(id) || id < 0) throw new Error("Dispute ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Stake on dispute #${id}.`,
+    "0"
+  );
 
   printHeader("Staking on Dispute");
   printField("Dispute ID", String(id));
@@ -93,6 +104,11 @@ async function submitRuling(
     throw new Error("Split must be 0-10000 basis points");
   }
 
+  await preWriteGuard(
+    `Submit ruling on dispute #${id}.`,
+    "0"
+  );
+
   printHeader("Submitting Ruling");
   printField("Dispute ID", String(id));
   printField("Ruling", ["Reject", "Client", "Worker"][rulingNum] ?? String(rulingNum));
@@ -115,6 +131,11 @@ async function submitRuling(
 async function settleDispute(disputeId: string): Promise<void> {
   const id = parseInt(disputeId, 10);
   if (isNaN(id) || id < 0) throw new Error("Dispute ID must be a non-negative integer");
+
+  await preWriteGuard(
+    `Settle dispute #${id}. Funds will be distributed.`,
+    "0"
+  );
 
   printHeader("Settling Dispute");
   printField("Dispute ID", String(id));

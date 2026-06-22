@@ -1,5 +1,5 @@
 /**
- * covenant milestones — Milestone-based task subcommands.
+ * covenant milestones — Milestone-based task subcommands (Legacy TaskEscrow).
  *
  *   create — create a milestone-based task
  *   submit — submit a milestone deliverable
@@ -12,6 +12,7 @@ import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
   writeContract,
+  preWriteGuard,
   printHeader,
   printField,
   printSuccess,
@@ -68,6 +69,11 @@ async function create(
     );
   }
 
+  await preWriteGuard(
+    `Create milestone task for ${shortAddr(worker)} with ${totalPayment} ETH (${descriptions.length} milestones).`,
+    totalPayment
+  );
+
   printHeader("Creating Milestone Task");
   printField("Worker", worker);
   printField("Total Payment", `${totalPayment} ETH`);
@@ -82,7 +88,7 @@ async function create(
   const result = await writeContract(
     CONTRACTS.TaskEscrow,
     ABI,
-    "createMilestoneTask",
+    "createTaskWithMilestones",
     [
       worker as Address,
       totalWei,
@@ -112,6 +118,11 @@ async function submit(
   const idx = parseInt(index, 10);
   if (isNaN(idx) || idx < 0)
     throw new Error("Milestone index must be a non-negative integer");
+
+  await preWriteGuard(
+    `Submit milestone ${idx} for task #${id}.`,
+    "0"
+  );
 
   printHeader("Submitting Milestone");
   printField("Task ID", String(id));
@@ -147,6 +158,11 @@ async function verify(
   const approved =
     success.toLowerCase() === "true" || success === "1";
 
+  await preWriteGuard(
+    `Verify milestone ${idx} for task #${id} (${approved ? "approve" : "reject"}).`,
+    "0"
+  );
+
   printHeader("Verifying Milestone");
   printField("Task ID", String(id));
   printField("Milestone Index", String(idx));
@@ -169,7 +185,7 @@ async function verify(
 export function registerMilestonesCommand(parent: Command): void {
   const milestones = parent
     .command("milestones")
-    .description("Milestone-based task operations");
+    .description("Milestone-based task operations (TaskEscrow — Legacy V1)");
 
   milestones
     .command("create")
