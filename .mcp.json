@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "covenant": {
-      "command": "node",
-      "args": ["/home/vxrun/Projects/varun/mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@varun-ai07/covenant-mcp", "server"]
     }
   }
 }
