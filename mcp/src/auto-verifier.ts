@@ -135,9 +135,9 @@ export class AutoVerifier {
     if (this.running) return;
     this.running = true;
 
-    console.log("[AutoVerifier] Starting...");
-    console.log(`[AutoVerifier] Poll interval: ${pollIntervalMs}ms`);
-    console.log(`[AutoVerifier] Wallet: ${this.walletClient ? "configured" : "read-only"}`);
+    console.error("[AutoVerifier] Starting...");
+    console.error(`[AutoVerifier] Poll interval: ${pollIntervalMs}ms`);
+    console.error(`[AutoVerifier] Wallet: ${this.walletClient ? "configured" : "read-only"}`);
 
     // Get current block as starting point
     this.lastProcessedBlock = await this.publicClient.getBlockNumber();
@@ -152,7 +152,7 @@ export class AutoVerifier {
       }
     }, pollIntervalMs);
 
-    console.log("[AutoVerifier] Started. Waiting for TaskSubmitted events...");
+    console.error("[AutoVerifier] Started. Waiting for TaskSubmitted events...");
   }
 
   stop(): void {
@@ -161,7 +161,7 @@ export class AutoVerifier {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
     }
-    console.log("[AutoVerifier] Stopped.");
+    console.error("[AutoVerifier] Stopped.");
   }
 
   // ─── Event Polling ─────────────────────────────────────────
@@ -181,11 +181,11 @@ export class AutoVerifier {
 
     for (const event of events) {
       const { taskId, worker, deliverableHash } = event.args;
-      console.log(`[AutoVerifier] TaskSubmitted: taskId=${taskId}, worker=${worker}`);
+      console.error(`[AutoVerifier] TaskSubmitted: taskId=${taskId}, worker=${worker}`);
 
       // Skip if already processing
       if (this.jobs.has(Number(taskId))) {
-        console.log(`[AutoVerifier] Task ${taskId} already being processed, skipping.`);
+        console.error(`[AutoVerifier] Task ${taskId} already being processed, skipping.`);
         continue;
       }
 
@@ -224,7 +224,7 @@ export class AutoVerifier {
     job.status = "running";
     job.startedAt = Date.now();
 
-    console.log(`[AutoVerifier] Verifying task ${job.taskId}...`);
+    console.error(`[AutoVerifier] Verifying task ${job.taskId}...`);
 
     try {
       // Step 1: Validate worker is registered
@@ -262,8 +262,8 @@ export class AutoVerifier {
       if (this.walletClient) {
         await this.autoDecide(job, result);
       } else {
-        console.log(`[AutoVerifier] Score: ${result.score}/100 (${result.verdict})`);
-        console.log(`[AutoVerifier] No wallet configured — skipping auto-decision.`);
+        console.error(`[AutoVerifier] Score: ${result.score}/100 (${result.verdict})`);
+        console.error(`[AutoVerifier] No wallet configured — skipping auto-decision.`);
       }
 
       job.status = "completed";
@@ -271,7 +271,7 @@ export class AutoVerifier {
       job.completedAt = Date.now();
 
       const duration = (job.completedAt - job.startedAt!) / 1000;
-      console.log(`[AutoVerifier] Task ${job.taskId} verified: ${result.score}/100 (${result.verdict}) in ${duration.toFixed(1)}s`);
+      console.error(`[AutoVerifier] Task ${job.taskId} verified: ${result.score}/100 (${result.verdict}) in ${duration.toFixed(1)}s`);
 
     } catch (e) {
       job.status = "failed";
@@ -483,7 +483,7 @@ export class AutoVerifier {
 
   private async autoDecide(job: VerificationJob, result: VerificationResult): Promise<void> {
     if (!this.walletClient || !this.walletClient.account) {
-      console.log(`[AutoVerifier] No wallet — cannot auto-decide task ${job.taskId}`);
+      console.error(`[AutoVerifier] No wallet — cannot auto-decide task ${job.taskId}`);
       return;
     }
 
@@ -500,7 +500,7 @@ export class AutoVerifier {
           account: this.walletClient.account,
         });
 
-        console.log(`[AutoVerifier] Task ${job.taskId} APPROVED. TX: ${hash}`);
+        console.error(`[AutoVerifier] Task ${job.taskId} APPROVED. TX: ${hash}`);
       } else if (result.verdict === "fail") {
         // Reject the task
         const reason = keccak256(toBytes(`Verification failed: score ${result.score}/100`));
@@ -513,10 +513,10 @@ export class AutoVerifier {
           account: this.walletClient.account,
         });
 
-        console.log(`[AutoVerifier] Task ${job.taskId} REJECTED. TX: ${hash}`);
+        console.error(`[AutoVerifier] Task ${job.taskId} REJECTED. TX: ${hash}`);
       } else {
         // Partial — needs manual review
-        console.log(`[AutoVerifier] Task ${job.taskId} PARTIAL (${result.score}/100) — needs manual review`);
+        console.error(`[AutoVerifier] Task ${job.taskId} PARTIAL (${result.score}/100) — needs manual review`);
       }
     } catch (e) {
       console.error(`[AutoVerifier] Auto-decision failed for task ${job.taskId}:`, e);
