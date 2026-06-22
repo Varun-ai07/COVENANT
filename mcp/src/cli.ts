@@ -42,8 +42,11 @@ function log(message: string, color: string = colors.reset) {
 }
 
 const NPM_PACKAGE = "@varun-ai07/covenant-mcp@latest";
-const SERVER_ARGS = ["-y", NPM_PACKAGE, "server"];
-const SERVER_COMMAND = "npx";
+const IS_WINDOWS = platform() === "win32";
+const SERVER_COMMAND = IS_WINDOWS ? "cmd" : "npx";
+const SERVER_ARGS = IS_WINDOWS
+  ? ["/c", "npx", "-y", NPM_PACKAGE, "server"]
+  : ["-y", NPM_PACKAGE, "server"];
 
 // ============================================================
 // Platform Detection & Config
