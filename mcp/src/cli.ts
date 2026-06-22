@@ -44,6 +44,15 @@ function log(message: string, color: string = colors.reset) {
 const NPM_PACKAGE = "@varun-ai07/covenant-mcp";
 const SERVER_ARGS = (() => {
   try {
+    // When running via npx, __dirname points to dist/
+    // index.js is in the same directory as cli.js
+    const { fileURLToPath } = require("url");
+    const cliDir = __dirname || fileURLToPath(import.meta.url);
+    const indexPath = require("path").join(cliDir, "index.js");
+    if (require("fs").existsSync(indexPath)) {
+      return [indexPath];
+    }
+    // Fallback: try to resolve from node_modules
     return [require.resolve("@varun-ai07/covenant-mcp/dist/index.js")];
   } catch {
     return ["-y", NPM_PACKAGE, "server"];
