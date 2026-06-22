@@ -331,7 +331,13 @@ function addCommand(targetPlatform?: string): void {
         success = addToClaudeCode();
         break;
       case "openclaude":
-        if (p.configPath) success = addToJsonPlatform(p.configPath);
+        try {
+            execSync(`openclaude mcp add --scope user covenant -- ${SERVER_ARGS.join(" ")}`, { stdio: "ignore" });
+            success = true;
+          } catch {
+            if (p.configPath) success = addToJsonPlatform(p.configPath);
+          }
+          break;
         break;
       case "cursor":
         if (p.configPath) success = addToJsonPlatform(p.configPath);
