@@ -134,7 +134,7 @@ function getPrivateKey(): `0x${string}` | null {
   const normalized = key.startsWith("0x") ? key : `0x${key}`;
   if (!/^0x[0-9a-fA-F]{64}$/.test(normalized)) {
     throw new Error(
-      `PRIVATE_KEY must be a 64-character hex string. Got ${normalized.length} chars.`
+      "PRIVATE_KEY must be a 64-character hex string."
     );
   }
   return normalized as `0x${string}`;

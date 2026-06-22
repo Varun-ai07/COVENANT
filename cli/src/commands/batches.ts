@@ -7,7 +7,7 @@
  *   aggregate — aggregate results after all tasks complete
  */
 import { Command } from "commander";
-import { parseEther, type Address, isAddress } from "viem";
+import { parseEther, formatEther, type Address, isAddress } from "viem";
 import chalk from "chalk";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
@@ -63,7 +63,7 @@ async function create(
     return BigInt(n);
   });
   const totalPayment = paymentWeiList.reduce((sum, p) => sum + p, 0n);
-  const totalEth = (Number(totalPayment) / 1e18).toFixed(6);
+  const totalEth = formatEther(totalPayment);
 
   await preWriteGuard(
     `Create batch of ${workerList.length} tasks with total payment ${totalEth} ETH.`,

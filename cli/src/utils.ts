@@ -327,15 +327,14 @@ export async function checkBalance(requiredEth: string): Promise<void> {
 
   const client = getPublicClient();
   const balance = await client.getBalance({ address: account.address });
-  const balanceEth = parseFloat(formatEther(balance));
-  const required = parseFloat(requiredEth);
-  const GAS_BUFFER = 0.001;
-  const totalNeeded = required + GAS_BUFFER;
+  const requiredWei = parseEther(requiredEth);
+  const gasBufferWei = parseEther("0.001");
+  const totalNeededWei = requiredWei + gasBufferWei;
 
-  if (balanceEth < totalNeeded) {
+  if (balance < totalNeededWei) {
     throw new Error(
-      `Insufficient balance. You need ${totalNeeded.toFixed(6)} ETH ` +
-      `(${required} + ${GAS_BUFFER} gas buffer) but wallet has ${balanceEth.toFixed(6)} ETH.`
+      `Insufficient balance. You need ${formatEther(totalNeededWei)} ETH ` +
+      `(${requiredEth} + 0.001 gas buffer) but wallet has ${formatEther(balance)} ETH.`
     );
   }
 }

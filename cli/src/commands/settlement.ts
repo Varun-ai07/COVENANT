@@ -8,7 +8,7 @@
  *   count    — get stream count
  */
 import { Command } from "commander";
-import { parseEther, type Address, isAddress } from "viem";
+import { parseEther, formatEther, type Address, isAddress } from "viem";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
   readContract,
@@ -44,7 +44,7 @@ async function createStream(
   }
 
   // Calculate total cost: rate * duration
-  const totalEth = (Number(rateWei) * durationNum / 1e18).toFixed(6);
+  const totalEth = formatEther(rateWei * BigInt(durationNum));
 
   await preWriteGuard(
     `Create payment stream to ${shortAddr(payee)}: ${ratePerSecond} ETH/sec for ${durationNum} seconds (≈${totalEth} ETH total).`,

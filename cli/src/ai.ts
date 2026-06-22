@@ -8,10 +8,9 @@ import {
   getPublicClient,
   getWalletClient,
   loadAbi,
-  RPC_URL,
   CHAIN_NAME,
 } from "./config.js";
-import { shortAddr, toEth, TASK_STATUS, printTicker, isJsonMode, isQuietMode } from "./utils.js";
+import { shortAddr, toEth, TASK_STATUS, printTicker, isJsonMode, isQuietMode, preWriteGuard, printError } from "./utils.js";
 
 const MAX_TOOL_ITERATIONS = 5;
 
@@ -241,6 +240,7 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       const amountWei = parseEther(args.amount_eth as string);
       const deadline = BigInt(args.deadline as string);
       const meta = (args.meta_hash as string) || "0x";
+      await preWriteGuard('AI: create task', formatEther(amountWei));
       const escrowAbi = loadAbi("CovenantEscrow");
       const { request } = await client.simulateContract({
         address: CONTRACTS.CovenantEscrow,
@@ -248,6 +248,7 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         functionName: "createTask",
         args: [worker as Address, amountWei, deadline, meta as `0x${string}`],
         account,
+        value: amountWei,
       });
       const hash = await wallet.writeContract(request);
       const receipt = await client.waitForTransactionReceipt({ hash, timeout: 60_000 });
@@ -266,6 +267,7 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       if (!wallet) return "Error: No wallet client available.";
       const stakeWei = parseEther(args.stake_eth as string);
       const metadata = args.metadata as `0x${string}`;
+      await preWriteGuard('AI: register agent', formatEther(stakeWei));
       const identityAbi = loadAbi("CovenantIdentity");
       const { request } = await client.simulateContract({
         address: CONTRACTS.CovenantIdentity,
@@ -346,7 +348,6 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         totalTasks: Number(totalTasks),
         protocolFees: toEth(fees as bigint),
         network: CHAIN_NAME,
-        rpc: RPC_URL,
       });
     }
 
@@ -454,7 +455,13 @@ For write operations (create_task, register_agent, submit_work, verify_task), co
       });
 
       for (const tc of message.tool_calls) {
-        const args = JSON.parse(tc.function.arguments);
+        let args: Record<string, unknown>;
+        try {
+          args = JSON.parse(tc.function.arguments || "{}");
+        } catch (e) {
+          printError(`AI returned invalid JSON for ${tc.function.name}`);
+          continue;
+        }
         let result: string;
         try {
           result = await executeTool(tc.function.name, args);
@@ -477,6 +484,12 @@ For write operations (create_task, register_agent, submit_work, verify_task), co
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
+    });
+
+    process.on("SIGINT", () => {
+      console.log(chalk.gray("\n  Goodbye.\n"));
+      rl.close();
+      process.exit(0);
     });
 
     if (!isQuietMode()) {
