@@ -5,7 +5,7 @@ import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const ABI = loadAbi("AgentRegistry");
+const ABI = loadAbi("CovenantGovernance");
 
 const actionSchema = z.enum(["create", "vote", "list", "get"]);
 
@@ -51,7 +51,7 @@ export function registerGovernTools(server: McpServer): void {
             }, "CONFIRMATION REQUIRED");
           }
           const result = await executeOrPrepare(
-            CONTRACTS.AgentRegistry, ABI, "createProposal",
+            (CONTRACTS as any).CovenantGovernance, ABI, "propose",
             [args.title!, args.description!, args.proposalType!],
             0n
           );
@@ -69,7 +69,7 @@ export function registerGovernTools(server: McpServer): void {
             }, "CONFIRMATION REQUIRED");
           }
           const result = await executeOrPrepare(
-            CONTRACTS.AgentRegistry, ABI, "voteProposal",
+            (CONTRACTS as any).CovenantGovernance, ABI, "submitVotes",
             [BigInt(args.proposalId!), args.support!],
             0n
           );
@@ -77,12 +77,12 @@ export function registerGovernTools(server: McpServer): void {
         }
 
         if (action === "list") {
-          const count = await readContract(CONTRACTS.AgentRegistry, ABI, "getProposalCount", []);
+          const count = await readContract((CONTRACTS as any).CovenantGovernance, ABI, "proposalCount", []);
           return formatReadResult({ totalProposals: Number(count) }, "Governance Proposals");
         }
 
         if (action === "get") {
-          const data = await readContract(CONTRACTS.AgentRegistry, ABI, "getProposal", [BigInt(args.proposalId!)]);
+          const data = await readContract((CONTRACTS as any).CovenantGovernance, ABI, "getProposal", [BigInt(args.proposalId!)]);
           return formatReadResult({
             id: Number((data as any).id),
             title: (data as any).title,

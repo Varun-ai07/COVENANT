@@ -131,7 +131,7 @@ export function registerMultiTools(server: McpServer): void {
             const result = await executeOrPrepare(
               contractAddress,
               ABI,
-              "createAndFundTaskERC20",
+              "createTaskERC20",
               [
                 worker as Address,
                 paymentWei,
@@ -157,16 +157,11 @@ export function registerMultiTools(server: McpServer): void {
                 true
               );
             }
-            const { taskId, deliverableHash } = parsed.data;
-
-            const result = await executeOrPrepare(
-              contractAddress,
-              ABI,
-              "submitWork",
-              [BigInt(taskId), deliverableHash]
-            );
-
-            return formatTxResult(result);
+            return formatReadResult({
+              info: "Work submission is not available in V5 MultiTokenEscrow.",
+              reason: "V5 MultiTokenEscrow uses createTaskERC20 + verifyTask directly. Work submission is handled through the main escrow.",
+              taskId: params.taskId,
+            }, "Submit Work — Not Available");
           }
 
           case "verify": {
@@ -213,45 +208,11 @@ export function registerMultiTools(server: McpServer): void {
                 true
               );
             }
-            const { taskId } = parsed.data;
-
-            const task = await readContract(contractAddress, ABI, "getTask", [BigInt(taskId)]);
-
-            if (!task) {
-              return formatStructuredError(
-                "Task not found.",
-                `No task with ID ${taskId} in MultiTokenEscrow.`,
-                "Check the task ID or use corven_multi create first.",
-                false
-              );
-            }
-
-            const [client, worker, payment, deadline, descriptionHash, deliverableHash, status, createdAt, completedAt, token] =
-              task as [Address, Address, bigint, bigint, string, string, number, bigint, bigint, Address];
-
-            const isEth = token === "0x0000000000000000000000000000000000000000";
-            const decimals = isEth ? 18 : (KNOWN_TOKENS[token]?.decimals ?? 18);
-            const symbol = isEth ? "ETH" : (KNOWN_TOKENS[token]?.symbol ?? "Unknown");
-
-            return formatReadResult(
-              {
-                taskId,
-                client,
-                worker,
-                payment: formatUnits(payment, decimals),
-                symbol,
-                deadline: Number(deadline),
-                descriptionHash,
-                deliverableHash,
-                status: TASK_STATUS[status as keyof typeof TASK_STATUS] || `Unknown(${status})`,
-                statusCode: status,
-                createdAt: Number(createdAt),
-                completedAt: Number(completedAt),
-                token,
-                isNativeETH: isEth,
-              },
-              `Multi-Token Task #${taskId}`
-            );
+            return formatReadResult({
+              info: "Task retrieval is not available in V5 MultiTokenEscrow.",
+              reason: "V5 MultiTokenEscrow does not have a getTask function. Use the main escrow (corven_task) to get task details.",
+              taskId: params.taskId,
+            }, "Get Task — Not Available");
           }
 
           case "tokens": {

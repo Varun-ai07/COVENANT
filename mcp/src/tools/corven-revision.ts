@@ -85,7 +85,7 @@ export function registerRevisionTools(server: McpServer): void {
 
         if (action === "get") {
           const addr = getRevisionManagerAddress();
-          const revisions = await readContract(addr, ABI, "getRevisions", [BigInt(args.taskId!)]);
+          const revisions = await readContract(addr, ABI, "revisions", [BigInt(args.taskId!)]);
           return formatReadResult({
             taskId: args.taskId,
             revisionCount: (revisions as any[]).length,
@@ -95,7 +95,7 @@ export function registerRevisionTools(server: McpServer): void {
 
         if (action === "check") {
           const addr = getRevisionManagerAddress();
-          const canRevise = await readContract(addr, ABI, "canRevise", [BigInt(args.taskId!)]);
+          const canRevise = await readContract(addr, ABI, "revisionAllowed", [BigInt(args.taskId!)]);
           const count = await readContract(addr, ABI, "getRevisionCount", [BigInt(args.taskId!)]);
           return formatReadResult({
             taskId: args.taskId,

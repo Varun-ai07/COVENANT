@@ -121,111 +121,14 @@ export function registerMatchTools(server: McpServer): void {
             }
             const { capabilities: reqCaps, minReputation: minRep, limit: maxResults } = parsed.data;
 
-            const addresses = (await readContract(
-              CONTRACTS.AgentRegistry,
-              ABI,
-              "getAgentsPaginated",
-              [0, 100]
-            )) as string[];
-
-            if (!addresses || addresses.length === 0) {
-              return formatReadResult(
-                { count: 0, matches: [], query: { capabilities: reqCaps, minReputation: minRep, limit: maxResults } },
-                "No agents registered on the protocol."
-              );
-            }
-
-            const profiles = await Promise.all(
-              addresses.map(async (addr: string) => {
-                try {
-                  const agent = (await readContract(CONTRACTS.AgentRegistry, ABI, "getAgent", [addr])) as any;
-                  return { address: addr, ...agent };
-                } catch {
-                  return null;
-                }
-              })
-            );
-
-            const candidates = profiles.filter((a: any) => {
-              if (!a) return false;
-              const active = a.isActive === 1 || a.isActive === true;
-              if (!active) return false;
-              if (minRep !== undefined && Number(a.reputation) < minRep) return false;
-              return true;
-            });
-
-            if (candidates.length === 0) {
-              return formatReadResult(
-                { count: 0, matches: [], query: { capabilities: reqCaps, minReputation: minRep, limit: maxResults } },
-                "No agents match the specified filters."
-              );
-            }
-
-            let maxStake = 0n;
-            for (const a of candidates) {
-              const s = BigInt(a.stakedAmount ?? 0);
-              if (s > maxStake) maxStake = s;
-            }
-
-            const scored: ScoredAgent[] = candidates.map((a: any) => {
-              const caps: string[] = a.capabilities ?? [];
-              const completed = Number(a.tasksCompleted ?? 0);
-              const failed = Number(a.tasksFailed ?? 0);
-              const stake = BigInt(a.stakedAmount ?? 0);
-              const rep = Number(a.reputation ?? 0);
-
-              const capScore = capabilityMatchScore(caps, reqCaps);
-              const srScore = successRateScore(completed, failed);
-              const priceScore = priceCompetitivenessScore(stake, maxStake);
-              const repScore = reputationScore(rep);
-
-              const total =
-                capScore * W_CAPABILITY +
-                srScore * W_SUCCESS_RATE +
-                priceScore * W_PRICE +
-                repScore * W_REPUTATION;
-
-              return {
-                address: a.address ?? a.wallet,
-                name: a.name ?? "Unknown",
-                reputation: rep,
-                capabilities: caps,
-                tasksCompleted: completed,
-                tasksFailed: failed,
-                stakedAmountEth: (() => {
-                  try { return formatEther(stake); } catch { return "0"; }
-                })(),
-                score: Math.round(total * 10000) / 10000,
-                scoreBreakdown: {
-                  capabilityMatch: Math.round(capScore * 10000) / 10000,
-                  successRate: Math.round(srScore * 10000) / 10000,
-                  priceCompetitiveness: Math.round(priceScore * 10000) / 10000,
-                  reputation: Math.round(repScore * 10000) / 10000,
-                },
-              };
-            });
-
-            scored.sort((a, b) => {
-              if (b.score !== a.score) return b.score - a.score;
-              return b.reputation - a.reputation;
-            });
-
-            const top = scored.slice(0, maxResults);
-
             return formatReadResult(
               {
-                count: top.length,
-                totalCandidates: candidates.length,
-                query: { capabilities: reqCaps, minReputation: minRep ?? null, limit: maxResults },
-                weights: {
-                  capabilityMatch: W_CAPABILITY,
-                  successRate: W_SUCCESS_RATE,
-                  priceCompetitiveness: W_PRICE,
-                  reputation: W_REPUTATION,
-                },
-                matches: top,
+                count: 0,
+                matches: [],
+                query: { capabilities: reqCaps, minReputation: minRep, limit: maxResults },
+                info: "Agent iteration is not available in V5 CovenantIdentity. Use corven_match match with a specific worker address.",
               },
-              `Top ${top.length} agent matches for [${reqCaps.join(", ")}]`
+              "Agent Discovery — Not Available in V5"
             );
           }
 

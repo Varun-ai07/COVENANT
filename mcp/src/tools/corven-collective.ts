@@ -114,7 +114,7 @@ export function registerCollectiveTools(server: McpServer): void {
           }
           const descBytes32 = stringToBytes32(args.descriptionHash);
           const result = await executeOrPrepare(
-            CONTRACTS.AgentCollective, ABI, "launchTask",
+            CONTRACTS.AgentCollective, ABI, "launchCollectiveTask",
             [
               BigInt(args.collectiveId),
               args.worker as Address,
@@ -131,13 +131,11 @@ export function registerCollectiveTools(server: McpServer): void {
           if (args.collectiveId === undefined || !args.descriptionHash) {
             return formatStructuredError("Missing required fields.", "propose requires collectiveId and descriptionHash.", "Provide both parameters.", false);
           }
-          const descBytes32 = stringToBytes32(args.descriptionHash);
-          const result = await executeOrPrepare(
-            CONTRACTS.AgentCollective, ABI, "submitProposal",
-            [BigInt(args.collectiveId), descBytes32],
-            0n
-          );
-          return formatTxResult(result);
+          return formatReadResult({
+            info: "Collective proposals are not available in V5 AgentCollective.",
+            reason: "V5 AgentCollective does not have a submitProposal function. Governance features will be added in a future release.",
+            collectiveId: args.collectiveId,
+          }, "Submit Proposal — Not Available");
         }
 
         if (action === "get") {

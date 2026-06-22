@@ -79,12 +79,12 @@ export function registerGrantTools(server: McpServer): void {
         }
 
         if (action === "list") {
-          const count = await readContract(CONTRACTS.GrantProgram, ABI, "getGrantCount", []);
+          const count = await readContract(CONTRACTS.GrantProgram, ABI, "grantCount", []);
           return formatReadResult({ totalGrants: Number(count) }, "Grant Applications");
         }
 
         if (action === "get") {
-          const data = await readContract(CONTRACTS.GrantProgram, ABI, "getGrant", [BigInt(args.grantId!)]);
+          const data = await readContract(CONTRACTS.GrantProgram, ABI, "grants", [BigInt(args.grantId!)]);
           return formatReadResult({
             id: Number((data as any).id),
             title: (data as any).title,

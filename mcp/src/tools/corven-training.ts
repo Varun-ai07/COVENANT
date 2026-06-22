@@ -54,7 +54,7 @@ export function registerTrainingTools(server: McpServer): void {
             }, "CONFIRMATION REQUIRED");
           }
           const result = await executeOrPrepare(
-            CONTRACTS.TrainingMarketplace, ABI, "createProgram",
+            CONTRACTS.TrainingMarketplace, ABI, "createTraining",
             [args.title!, args.description!, priceWei,
              args.capabilities || [], args.duration || 10],
             0n
@@ -63,7 +63,7 @@ export function registerTrainingTools(server: McpServer): void {
         }
 
         if (action === "enroll") {
-          const program = await readContract(CONTRACTS.TrainingMarketplace, ABI, "getProgram", [BigInt(args.trainingId!)]);
+          const program = await readContract(CONTRACTS.TrainingMarketplace, ABI, "trainings", [BigInt(args.trainingId!)]);
           const enrollPrice = parseEther((program as any).price?.toString() || "0");
           if (!args.confirm) {
             return formatReadResult({
@@ -83,21 +83,20 @@ export function registerTrainingTools(server: McpServer): void {
         }
 
         if (action === "complete") {
-          const result = await executeOrPrepare(
-            CONTRACTS.TrainingMarketplace, ABI, "complete",
-            [BigInt(args.trainingId!)],
-            0n
-          );
-          return formatTxResult(result);
+          return formatReadResult({
+            info: "Training completion is not available in V5 contracts.",
+            reason: "V5 TrainingMarketplace does not have a complete function. Training completion will be handled through a different mechanism.",
+            trainingId: args.trainingId,
+          }, "Training Complete — Not Available");
         }
 
         if (action === "list") {
-          const count = await readContract(CONTRACTS.TrainingMarketplace, ABI, "getProgramCount", []);
+          const count = await readContract(CONTRACTS.TrainingMarketplace, ABI, "trainingCount", []);
           return formatReadResult({ totalPrograms: Number(count) }, "Training Programs");
         }
 
         if (action === "get") {
-          const data = await readContract(CONTRACTS.TrainingMarketplace, ABI, "getProgram", [BigInt(args.trainingId!)]);
+          const data = await readContract(CONTRACTS.TrainingMarketplace, ABI, "trainings", [BigInt(args.trainingId!)]);
           return formatReadResult({
             id: Number((data as any).id),
             title: (data as any).title,

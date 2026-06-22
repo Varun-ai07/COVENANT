@@ -14,7 +14,7 @@ import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const ABI = loadAbi("AgentInsurance");
+const ABI = loadAbi("InsurancePool");
 
 const actionSchema = z.enum([
   "join", "premium", "claim", "vote", "get",
@@ -76,22 +76,11 @@ export function registerInsuranceTools(server: McpServer): void {
           if (args.taskId === undefined || !args.premium) {
             return formatStructuredError("Missing required fields.", "premium requires taskId and premium.", "Provide both parameters.", false);
           }
-          const premiumWei = parseEther(args.premium);
-          if (!args.confirm) {
-            return formatReadResult({
-              confirmationRequired: true,
-              action: "Pay insurance premium for task #" + args.taskId,
-              cost: formatEther(premiumWei) + " ETH premium",
-              reason: "Premium provides coverage against task failure",
-              toProceed: "Call corven_insurance again with confirm: true",
-            }, "CONFIRMATION REQUIRED");
-          }
-          const result = await executeOrPrepare(
-            CONTRACTS.AgentInsurance, ABI, "payPremium",
-            [BigInt(args.taskId)],
-            premiumWei
-          );
-          return formatTxResult(result);
+          return formatReadResult({
+            info: "Premium payment is not available in V5 InsurancePool.",
+            reason: "V5 InsurancePool uses a different premium model. Use joinPool to contribute to the pool.",
+            taskId: args.taskId,
+          }, "Premium Payment — Not Available");
         }
 
         if (action === "claim") {
@@ -108,7 +97,7 @@ export function registerInsuranceTools(server: McpServer): void {
             }, "CONFIRMATION REQUIRED");
           }
           const result = await executeOrPrepare(
-            CONTRACTS.AgentInsurance, ABI, "claimInsurance",
+            CONTRACTS.AgentInsurance, ABI, "fileClaim",
             [BigInt(args.taskId)],
             0n
           );
@@ -138,12 +127,12 @@ export function registerInsuranceTools(server: McpServer): void {
 
         if (action === "get") {
           if (args.claimId !== undefined) {
-            const data = await readContract(CONTRACTS.AgentInsurance, ABI, "getClaim", [BigInt(args.claimId)]);
+            const data = await readContract(CONTRACTS.AgentInsurance, ABI, "claims", [BigInt(args.claimId)]);
             const enriched = { ...(data as any), amountEth: (data as any).amount ? formatEther((data as any).amount) : "0" };
             return formatReadResult(enriched, `Insurance Claim #${args.claimId}`);
           }
           if (args.agent) {
-            const data = await readContract(CONTRACTS.AgentInsurance, ABI, "getMemberInfo", [args.agent as Address]);
+            const data = await readContract(CONTRACTS.AgentInsurance, ABI, "members", [args.agent as Address]);
             return formatReadResult(data, `Insurance Info for ${args.agent}`);
           }
           // Default: show pool balance and coverage
@@ -154,7 +143,7 @@ export function registerInsuranceTools(server: McpServer): void {
           return formatReadResult({
             poolBalanceEth: formatEther(balance as bigint),
             coveragePercent: Number(coverage),
-            claimCount: Number(await readContract(CONTRACTS.AgentInsurance, ABI, "claimCounter", [])),
+            claimCount: Number(await readContract(CONTRACTS.AgentInsurance, ABI, "claimCount", [])),
           }, "Insurance Pool");
         }
 

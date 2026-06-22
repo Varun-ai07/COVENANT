@@ -16,7 +16,7 @@ import { parseContractError, formatStructuredError } from "../lib/formatResponse
 import { taskId as taskIdSchema, ethAmount } from "../lib/schemaHelpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const ABI = loadAbi("DisputeArbitration");
+const ABI = loadAbi("CovenantArbitration");
 
 // Check if DisputeArbitration is deployed (not zero address)
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -86,7 +86,7 @@ export function registerDisputeTools(server: McpServer): void {
         const result = await executeOrPrepare(
           CONTRACTS.DisputeArbitration,
           ABI,
-          "disputeTask",
+          "createDispute",
           [BigInt(taskId)],
           bondWei
         );
@@ -146,8 +146,8 @@ export function registerDisputeTools(server: McpServer): void {
         const result = await executeOrPrepare(
           CONTRACTS.DisputeArbitration,
           ABI,
-          "castVote",
-          [BigInt(disputeId), inFavorOfWorker],
+          "submitRuling",
+          [BigInt(disputeId), inFavorOfWorker ? 1 : 2],
           undefined,
           "DisputeArbitration"
         );
@@ -184,7 +184,7 @@ export function registerDisputeTools(server: McpServer): void {
           return formatError(new Error("DisputeArbitration contract is not deployed on this network."));
         }
         if (disputeId === undefined) {
-          const count = await readContract(CONTRACTS.DisputeArbitration, ABI, "disputeCounter", []);
+          const count = await readContract(CONTRACTS.DisputeArbitration, ABI, "disputeCount", []);
           return formatReadResult({ disputeCount: Number(count) }, "Total Disputes");
         }
         const data = await readContract(CONTRACTS.DisputeArbitration, ABI, "getDispute", [BigInt(disputeId)]);
@@ -228,14 +228,10 @@ export function registerDisputeTools(server: McpServer): void {
         if (!isDisputeDeployed()) {
           return formatError(new Error("DisputeArbitration contract is not deployed on this network."));
         }
-        const result = await executeOrPrepare(
-          CONTRACTS.DisputeArbitration,
-          ABI,
-          "claimReward",
-          [],
-          0n
-        );
-        return formatTxResult(result);
+        return formatReadResult({
+          info: "Juror reward claiming is not available in V5 CovenantArbitration.",
+          reason: "V5 uses a different reward distribution model. Rewards are handled through settleDispute.",
+        }, "Claim Reward — Not Available");
       } catch (e) {
         const parsed = parseContractError(e);
         return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);

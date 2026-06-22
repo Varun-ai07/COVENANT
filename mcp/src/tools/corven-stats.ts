@@ -11,8 +11,8 @@ import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { parseContractError, formatStructuredError } from "../lib/formatResponse.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-const registryAbi = loadAbi("AgentRegistry");
-const escrowAbi = loadAbi("TaskEscrow");
+const identityAbi = loadAbi("CovenantIdentity");
+const escrowAbi = loadAbi("CovenantEscrow");
 
 // ─── Input Schemas ───────────────────────────────────────────
 
@@ -49,17 +49,16 @@ export function registerStatsTools(server: McpServer): void {
 
         switch (action) {
           case "stats": {
-            const [totalAgents, totalTasks, accumulatedFees] = await Promise.all([
-              readContract(CONTRACTS.AgentRegistry, registryAbi, "agentCount", []),
-              readContract(CONTRACTS.TaskEscrow, escrowAbi, "taskCounter", []),
-              readContract(CONTRACTS.TaskEscrow, escrowAbi, "accumulatedFees", []),
+            const [totalAgents, totalTasks] = await Promise.all([
+              readContract(CONTRACTS.AgentRegistry, identityAbi, "totalAgents", []),
+              readContract(CONTRACTS.TaskEscrow, escrowAbi, "taskCount", []),
             ]);
 
             return formatReadResult(
               {
                 totalAgents: Number(totalAgents),
                 totalTasks: Number(totalTasks),
-                totalFeesEth: formatEther(accumulatedFees as bigint),
+                totalFeesEth: "0",
               },
               "COVENANT Protocol Statistics"
             );
@@ -78,7 +77,7 @@ export function registerStatsTools(server: McpServer): void {
             const { limit: topN } = parsed.data;
 
             const totalAgents = Number(
-              await readContract(CONTRACTS.AgentRegistry, registryAbi, "agentCount", [])
+              await readContract(CONTRACTS.AgentRegistry, identityAbi, "totalAgents", [])
             );
 
             if (totalAgents === 0) {
@@ -88,39 +87,13 @@ export function registerStatsTools(server: McpServer): void {
               );
             }
 
-            const agentPromises = [];
-            const count = Math.min(totalAgents, 200);
-            for (let i = 0; i < count; i++) {
-              agentPromises.push(
-                readContract(CONTRACTS.AgentRegistry, registryAbi, "getAgentByIndex", [BigInt(i)]).catch(() => null)
-              );
-            }
-
-            const results = await Promise.all(agentPromises);
-            const agents: any[] = [];
-            for (const agent of results) {
-              if (agent && (agent as any).isActive) {
-                agents.push(agent);
-              }
-            }
-
-            agents.sort(
-              (a: any, b: any) => Number(b.reputation ?? 0) - Number(a.reputation ?? 0)
-            );
-
-            const topAgents = agents.slice(0, topN).map((a: any, i: number) => ({
-              rank: i + 1,
-              address: a.addr ?? a.address ?? "unknown",
-              name: a.name,
-              reputation: Number(a.reputation),
-              tasksCompleted: Number(a.tasksCompleted ?? 0),
-              tasksFailed: Number(a.tasksFailed ?? 0),
-              stakedEth: formatEther(a.stakedAmount ?? 0n),
-              capabilities: a.capabilities ?? [],
-            }));
-
             return formatReadResult(
-              { totalAgents, showing: topAgents.length, agents: topAgents },
+              {
+                totalAgents,
+                showing: 0,
+                agents: [],
+                note: "Agent iteration not available in V5. Use corven_agent get with a specific address.",
+              },
               "COVENANT Agent Leaderboard"
             );
           }

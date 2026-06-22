@@ -99,12 +99,11 @@ export function registerBatchTools(server: McpServer): void {
           if (args.batchId === undefined) {
             return formatStructuredError("Missing required field.", "submit requires batchId.", "Provide the batchId.", false);
           }
-          const result = await executeOrPrepare(
-            CONTRACTS.ParallelTaskBatch, ABI, "submitSubtask",
-            [BigInt(args.batchId)],
-            0n
-          );
-          return formatTxResult(result);
+          return formatReadResult({
+            info: "Batch subtask submission is not available in V5 ParallelTaskBatch.",
+            reason: "V5 batches use createBatch + aggregateResults. Individual subtask submission is handled differently.",
+            batchId: args.batchId,
+          }, "Batch Submit — Not Available");
         }
 
         if (action === "verify") {
@@ -124,7 +123,7 @@ export function registerBatchTools(server: McpServer): void {
             const count = await readContract(CONTRACTS.ParallelTaskBatch, ABI, "batchCounter", []);
             return formatReadResult({ totalBatches: Number(count) }, "Batch Count");
           }
-          const data = await readContract(CONTRACTS.ParallelTaskBatch, ABI, "getBatchDetails", [BigInt(args.batchId)]);
+          const data = await readContract(CONTRACTS.ParallelTaskBatch, ABI, "getBatch", [BigInt(args.batchId)]);
           const enriched = {
             client: (data as any).client,
             totalBudgetEth: formatEther((data as any).totalBudget),
@@ -140,10 +139,9 @@ export function registerBatchTools(server: McpServer): void {
           if (args.batchId === undefined) {
             return formatStructuredError("Missing required field.", "check requires batchId.", "Provide the batchId.", false);
           }
-          const allSubmitted = await readContract(
-            CONTRACTS.ParallelTaskBatch, ABI, "areAllSubtasksSubmitted", [BigInt(args.batchId)]
-          );
-          return formatReadResult({ batchId: args.batchId, allSubmitted }, `Batch #${args.batchId} Status`);
+          const batch = await readContract(CONTRACTS.ParallelTaskBatch, ABI, "getBatch", [BigInt(args.batchId)]);
+          const status = BATCH_STATUS[(batch as any).status] ?? "Unknown";
+          return formatReadResult({ batchId: args.batchId, status, allSubmitted: status === "Completed" || status === "Aggregated" }, `Batch #${args.batchId} Status`);
         }
 
         return formatReadResult({ error: "Unknown action" }, "Error");
