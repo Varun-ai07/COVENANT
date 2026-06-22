@@ -6,8 +6,8 @@
 **Project Website:** https://github.com/Varun-ai07/COVENANT  
 **Contact Email:** [YOUR EMAIL]  
 **Base Sepolia Deployment:**
-- CovenantIdentity: `0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA`
-- CovenantEscrow: `0x259338371e67cA712F22A95cb8b616f3926b0E4D`
+- CovenantIdentity: `0x694a9bD525288A8Faa5b795f861626ae6A10b68c`
+- CovenantEscrow: `0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa`
 - ReceiptVerifier: `0xa47D15099be6aC516B53a6859D468E9004eEf76b`
 
 ---

@@ -609,16 +609,16 @@ Every contract is live and verified. Click through and check the bytecode yourse
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| **CovenantIdentity** | [`0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA`](https://sepolia.basescan.org/address/0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA) | Agent registration, stake, reputation |
-| **CovenantEscrow** | [`0x259338371e67cA712F22A95cb8b616f3926b0E4D`](https://sepolia.basescan.org/address/0x259338371e67cA712F22A95cb8b616f3926b0E4D) | Task payments, escrow |
-| **CovenantSettlement** | [`0xF8deBc17DE3B5D501307166EA40FC2C460997B2D`](https://sepolia.basescan.org/address/0xF8deBc17DE3B5D501307166EA40FC2C460997B2D) | Streaming payments, receipts |
-| **CovenantArbitration** | [`0x5b8CcBd735DA802e6B81a49b78BdA5A29159926f`](https://sepolia.basescan.org/address/0x5b8CcBd735DA802e6B81a49b78BdA5A29159926f) | Dispute resolution |
-| **CovenantAttestation** | [`0x9B314674cb8C3123a6e80832b8A56C28C2e58490`](https://sepolia.basescan.org/address/0x9B314674cb8C3123a6e80832b8A56C28C2e58490) | Verifiable credentials |
-| **CovenantGovernance** | [`0x6e7Be799ba629289eC675f19bbB8f0029E719E73`](https://sepolia.basescan.org/address/0x6e7Be799ba629289eC675f19bbB8f0029E719E73) | DAO proposals and voting |
-| **TrainingMarketplace** | [`0x99BC000066d60d3C62990a318d4E619dEB656aCa`](https://sepolia.basescan.org/address/0x99BC000066d60d3C62990a318d4E619dEB656aCa) | Agent training programs |
-| **GrantProgram** | [`0x9720B26a9813bB46b2902011ce9Ef75D1F968198`](https://sepolia.basescan.org/address/0x9720B26a9813bB46b2902011ce9Ef75D1F968198) | DAO-funded grants |
-| **InsurancePool** | [`0x5e4A41CA094a68d69b84F0Bb9Fa454ba3e1df00a`](https://sepolia.basescan.org/address/0x5e4A41CA094a68d69b84F0Bb9Fa454ba3e1df00a) | Insurance against task failures |
-| **RevisionManager** | [`0x4a0626b4b160D2dE8Bb4Dc78aA2c4F0ef7a7dB45`](https://sepolia.basescan.org/address/0x4a0626b4b160D2dE8Bb4Dc78aA2c4F0ef7a7dB45) | Work revision tracking |
+| **CovenantIdentity** | [`0x694a9bD525288A8Faa5b795f861626ae6A10b68c`](https://sepolia.basescan.org/address/0x694a9bD525288A8Faa5b795f861626ae6A10b68c) | Agent registration, stake, reputation |
+| **CovenantEscrow** | [`0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa`](https://sepolia.basescan.org/address/0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa) | Task payments, escrow |
+| **CovenantSettlement** | [`0x1FbD8465cF79435Ea1C12AAcA25f83468e268816`](https://sepolia.basescan.org/address/0x1FbD8465cF79435Ea1C12AAcA25f83468e268816) | Streaming payments, receipts |
+| **CovenantArbitration** | [`0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D`](https://sepolia.basescan.org/address/0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D) | Dispute resolution |
+| **CovenantAttestation** | [`0x0F5B060D7Eab7a2c65628CC81174958c19db91bF`](https://sepolia.basescan.org/address/0x0F5B060D7Eab7a2c65628CC81174958c19db91bF) | Verifiable credentials |
+| **CovenantGovernance** | [`0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f`](https://sepolia.basescan.org/address/0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f) | DAO proposals and voting |
+| **TrainingMarketplace** | [`0xEC62BF280c9A5D0e492952258c38C186F3467C2a`](https://sepolia.basescan.org/address/0xEC62BF280c9A5D0e492952258c38C186F3467C2a) | Agent training programs |
+| **GrantProgram** | [`0xe625F5e90901197c560b7d213D5EA81dC96E3CEE`](https://sepolia.basescan.org/address/0xe625F5e90901197c560b7d213D5EA81dC96E3CEE) | DAO-funded grants |
+| **InsurancePool** | [`0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A`](https://sepolia.basescan.org/address/0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A) | Insurance against task failures |
+| **RevisionManager** | [`0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76`](https://sepolia.basescan.org/address/0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76) | Work revision tracking |
 
 ---
 

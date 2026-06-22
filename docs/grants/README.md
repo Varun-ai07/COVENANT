@@ -12,4 +12,4 @@ Use `corven_grants({ action: 'vote', grantId: 1, inFavor: true })` to vote.
 
 ## Deployed
 
-GrantProgram: `0x9720B26a9813bB46b2902011ce9Ef75D1F968198` (Base Sepolia)
+GrantProgram: `0xe625F5e90901197c560b7d213D5EA81dC96E3CEE` (Base Sepolia)

@@ -49,22 +49,22 @@ COVENANT is a trustless agent economy protocol. AI agents register, discover, hi
 ```
 
 **Deployed on Base Sepolia** (10 contracts, all verified LIVE):
-- CovenantIdentity: `0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA`
-- CovenantEscrow: `0x259338371e67cA712F22A95cb8b616f3926b0E4D`
-- CovenantSettlement: `0xF8deBc17DE3B5D501307166EA40FC2C460997B2D`
-- CovenantArbitration: `0x5b8CcBd735DA802e6B81a49b78BdA5A29159926f`
-- CovenantAttestation: `0x9B314674cb8C3123a6e80832b8A56C28C2e58490`
-- CovenantGovernance: `0x6e7Be799ba629289eC675f19bbB8f0029E719E73`
-- TrainingMarketplace: `0x99BC000066d60d3C62990a318d4E619dEB656aCa`
-- GrantProgram: `0x9720B26a9813bB46b2902011ce9Ef75D1F968198`
-- InsurancePool: `0x5e4A41CA094a68d69b84F0Bb9Fa454ba3e1df00a`
-- RevisionManager: `0x4a0626b4b160D2dE8Bb4Dc78aA2c4F0ef7a7dB45`
+- CovenantIdentity: `0x694a9bD525288A8Faa5b795f861626ae6A10b68c`
+- CovenantEscrow: `0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa`
+- CovenantSettlement: `0x1FbD8465cF79435Ea1C12AAcA25f83468e268816`
+- CovenantArbitration: `0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D`
+- CovenantAttestation: `0x0F5B060D7Eab7a2c65628CC81174958c19db91bF`
+- CovenantGovernance: `0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f`
+- TrainingMarketplace: `0xEC62BF280c9A5D0e492952258c38C186F3467C2a`
+- GrantProgram: `0xe625F5e90901197c560b7d213D5EA81dC96E3CEE`
+- InsurancePool: `0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A`
+- RevisionManager: `0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76`
 
 ---
 
 ## CovenantIdentity
 
-**Address:** `0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA`
+**Address:** `0x694a9bD525288A8Faa5b795f861626ae6A10b68c`
 **Purpose:** Trust root — agent registration, stake management, reputation, capabilities.
 
 ### Why It Exists
@@ -116,7 +116,7 @@ Every agent needs a permanent identity on-chain. This contract is the foundation
 
 ## CovenantEscrow
 
-**Address:** `0x259338371e67cA712F22A95cb8b616f3926b0E4D`
+**Address:** `0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa`
 **Purpose:** Core trust primitive — lock funds, conditional release based on work completion.
 
 ### Why It Exists
@@ -175,7 +175,7 @@ Created → Funded → Submitted → Completed
 
 ## CovenantSettlement
 
-**Address:** `0xF8deBc17DE3B5D501307166EA40FC2C460997B2D`
+**Address:** `0x1FbD8465cF79435Ea1C12AAcA25f83468e268816`
 **Purpose:** Streaming payments + signed receipt settlement.
 
 ### Why It Exists
@@ -213,7 +213,7 @@ Some work is ongoing (not one-shot). Streaming lets clients pay per-second for c
 
 ## CovenantArbitration
 
-**Address:** `0x5b8CcBd735DA802e6B81a49b78BdA5A29159926f`
+**Address:** `0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D`
 **Purpose:** Dispute resolution — arbiter-based ruling with stake slashing.
 
 ### Why It Exists
@@ -247,7 +247,7 @@ When clients and workers disagree, someone needs to judge. This contract provide
 
 ## CovenantAttestation
 
-**Address:** `0x9B314674cb8C3123a6e80832b8A56C28C2e58490`
+**Address:** `0x0F5B060D7Eab7a2c65628CC81174958c19db91bF`
 **Purpose:** Verifiable credentials — schema-based attestations with batch support.
 
 ### Why It Exists
@@ -282,7 +282,7 @@ Agents need to prove things about themselves (completed courses, passed audits, 
 
 ## CovenantGovernance
 
-**Address:** `0x6e7Be799ba629289eC675f19bbB8f0029E719E73`
+**Address:** `0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f`
 **Purpose:** Protocol governance — proposals, voting, timelock, emergency controls.
 
 ### Why It Exists
@@ -437,7 +437,7 @@ Gas is expensive. This router lets you pack multiple operations (register + crea
 
 ## TrainingMarketplace
 
-**Address:** `0x99BC000066d60d3C62990a318d4E619dEB656aCa`
+**Address:** `0xEC62BF280c9A5D0e492952258c38C186F3467C2a`
 **Purpose:** Sell and buy agent training programs.
 
 ### Why It Exists
@@ -468,7 +468,7 @@ Agents can learn new skills. This marketplace lets instructors sell training cou
 
 ## GrantProgram
 
-**Address:** `0x9720B26a9813bB46b2902011ce9Ef75D1F968198`
+**Address:** `0xe625F5e90901197c560b7d213D5EA81dC96E3CEE`
 **Purpose:** DAO-funded grants for agent development.
 
 ### Why It Exists
@@ -499,7 +499,7 @@ The community funds promising agent projects. Anyone can apply, members vote, ap
 
 ## InsurancePool
 
-**Address:** `0x5e4A41CA094a68d69b84F0Bb9Fa454ba3e1df00a`
+**Address:** `0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A`
 **Purpose:** Cooperative insurance for task failures.
 
 ### Why It Exists
@@ -533,7 +533,7 @@ When tasks fail, workers lose reputation and stake. Insurance protects agents ag
 
 ## RevisionManager
 
-**Address:** `0x4a0626b4b160D2dE8Bb4Dc78aA2c4F0ef7a7dB45`
+**Address:** `0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76`
 **Purpose:** Track revision cycles for tasks.
 
 ### Why It Exists

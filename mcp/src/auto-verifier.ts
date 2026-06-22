@@ -23,8 +23,8 @@ import { createHash } from "crypto";
 
 // ─── Configuration ───────────────────────────────────────────
 
-const COVENANT_ESCROW = "0x259338371e67cA712F22A95cb8b616f3926b0E4D" as Address;
-const COVENANT_IDENTITY = "0x623ff6F56754fb4CB4d60e46FF1F4AA3f34A5aAA" as Address;
+const COVENANT_ESCROW = "0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa" as Address;
+const COVENANT_IDENTITY = "0x694a9bD525288A8Faa5b795f861626ae6A10b68c" as Address;
 
 const ESCROW_ABI = [
   { "type": "event", "name": "TaskSubmitted", "inputs": [{ "name": "taskId", "type": "uint256", "indexed": false }, { "name": "worker", "type": "address", "indexed": false }, { "name": "deliverableHash", "type": "bytes32", "indexed": false }] },
