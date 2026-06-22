@@ -1,10 +1,14 @@
 /**
- * covenant task — TaskEscrow subcommands.
+ * covenant task — CovenantEscrow subcommands.
  *
- *   create  — create and fund a task
- *   get     — read task details by ID
- *   submit  — submit deliverable hash
- *   verify  — verify/approve a submitted task
+ *   create   — create a task
+ *   fund     — fund a created task
+ *   get      — read task details by ID
+ *   submit   — submit deliverable hash
+ *   complete — complete a task (client confirms)
+ *   cancel   — cancel a task
+ *   dispute  — dispute a task
+ *   fail     — fail a task
  */
 import { Command } from "commander";
 import { parseEther, type Address, isAddress } from "viem";
@@ -22,7 +26,7 @@ import {
   handleError,
 } from "../utils.js";
 
-const ABI = loadAbi("TaskEscrow");
+const ABI = loadAbi("CovenantEscrow");
 
 // ──────────────────────────────────────────────────────────────
 // create
@@ -32,40 +36,55 @@ async function create(
   worker: string,
   payment: string,
   deadline: string,
-  desc: string,
-  priority: number
+  metaHash: string
 ): Promise<void> {
   if (!isAddress(worker)) throw new Error(`Invalid worker address: ${worker}`);
 
-  const paymentWei = parseEther(payment);
+  const amountWei = parseEther(payment);
   const deadlineNum = parseInt(deadline, 10);
   if (isNaN(deadlineNum) || deadlineNum <= 0) {
     throw new Error("Deadline must be a positive Unix timestamp");
   }
 
-  // Calculate total value: payment + protocol fee (1%) + priority fee
-  const PROTOCOL_FEE_BPS = 100n;
-  const PRIORITY_FEES = [50n, 100n, 200n, 500n];
-  const priorityFeeBps = PRIORITY_FEES[priority] ?? 100n;
-  const totalFeeBps = PROTOCOL_FEE_BPS + priorityFeeBps;
-  const feeAmount = (paymentWei * totalFeeBps) / 10000n;
-  const totalValue = paymentWei + feeAmount;
-
   printHeader("Creating Task");
-  printField("Worker", worker);
+  printField("Worker", shortAddr(worker));
   printField("Payment", `${payment} ETH`);
   printField("Deadline", toDate(deadlineNum));
-  printField("Description CID", desc);
+  printField("Meta Hash", metaHash);
 
   const result = await writeContract(
-    CONTRACTS.TaskEscrow,
+    CONTRACTS.CovenantEscrow,
     ABI,
-    "createAndFundTask",
-    [worker as Address, paymentWei, BigInt(deadlineNum), desc],
-    totalValue
+    "createTask",
+    [worker as Address, amountWei, BigInt(deadlineNum), metaHash as `0x${string}`]
   );
 
   printSuccess(`Task created — block ${result.blockNumber}`);
+}
+
+// ──────────────────────────────────────────────────────────────
+// fund
+// ──────────────────────────────────────────────────────────────
+
+async function fund(taskId: string, payment: string): Promise<void> {
+  const id = parseInt(taskId, 10);
+  if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  const amountWei = parseEther(payment);
+
+  printHeader("Funding Task");
+  printField("Task ID", String(id));
+  printField("Amount", `${payment} ETH`);
+
+  const result = await writeContract(
+    CONTRACTS.CovenantEscrow,
+    ABI,
+    "fundTask",
+    [BigInt(id)],
+    amountWei
+  );
+
+  printSuccess(`Task funded — block ${result.blockNumber}`);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -77,24 +96,37 @@ async function get(taskId: string): Promise<void> {
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
 
   const data = (await readContract(
-    CONTRACTS.TaskEscrow,
+    CONTRACTS.CovenantEscrow,
     ABI,
     "getTask",
     [BigInt(id)]
   )) as any;
 
-  const statusNum = Number(data.status);
+  const statusNum = Number(data.status ?? data[5]);
 
   printHeader(`Task #${id}`);
-  printField("Client", data.client ? shortAddr(data.client) : "—");
-  printField("Worker", data.worker ? shortAddr(data.worker) : "—");
-  printField("Payment", toEth(data.payment));
-  printField("Status", TASK_STATUS[statusNum] ?? `Unknown(${statusNum})`);
-  printField("Deadline", toDate(data.deadline));
-  printField("Description", data.descriptionHash ?? "—");
-  printField("Deliverable", data.deliverableHash ?? "—");
-  printField("Created", toDate(data.createdAt));
-  printField("Completed", toDate(data.completedAt));
+
+  if (Array.isArray(data)) {
+    printField("Client", data[0] ? shortAddr(data[0]) : "—");
+    printField("Worker", data[1] ? shortAddr(data[1]) : "—");
+    printField("Amount", toEth(data[2]));
+    printField("Deadline", toDate(data[3]));
+    printField("Meta Hash", data[4] ?? "—");
+    printField("Status", TASK_STATUS[statusNum] ?? `Unknown(${statusNum})`);
+    printField("Deliverable", data[6] ?? "—");
+    printField("Created", toDate(data[7]));
+    printField("Completed", toDate(data[8]));
+  } else {
+    printField("Client", data.client ? shortAddr(data.client) : "—");
+    printField("Worker", data.worker ? shortAddr(data.worker) : "—");
+    printField("Amount", toEth(data.amount ?? data.payment));
+    printField("Deadline", toDate(data.deadline));
+    printField("Meta Hash", data.metaHash ?? data.descriptionHash ?? "—");
+    printField("Status", TASK_STATUS[statusNum] ?? `Unknown(${statusNum})`);
+    printField("Deliverable", data.deliverableHash ?? "—");
+    printField("Created", toDate(data.createdAt));
+    printField("Completed", toDate(data.completedAt));
+  }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -107,39 +139,117 @@ async function submit(taskId: string, deliverable: string): Promise<void> {
 
   printHeader("Submitting Work");
   printField("Task ID", String(id));
-  printField("Deliverable CID", deliverable);
+  printField("Deliverable Hash", deliverable);
 
   const result = await writeContract(
-    CONTRACTS.TaskEscrow,
+    CONTRACTS.CovenantEscrow,
     ABI,
     "submitWork",
-    [BigInt(id), deliverable]
+    [BigInt(id), deliverable as `0x${string}`]
   );
 
   printSuccess(`Work submitted — block ${result.blockNumber}`);
 }
 
 // ──────────────────────────────────────────────────────────────
-// verify
+// complete
 // ──────────────────────────────────────────────────────────────
 
-async function verify(taskId: string, success: boolean): Promise<void> {
+async function complete(taskId: string): Promise<void> {
   const id = parseInt(taskId, 10);
   if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
 
-  printHeader("Verifying Task");
+  printHeader("Completing Task");
   printField("Task ID", String(id));
-  printField("Result", success ? "Approved" : "Rejected");
 
   const result = await writeContract(
-    CONTRACTS.TaskEscrow,
+    CONTRACTS.CovenantEscrow,
     ABI,
-    "verifyTask",
-    [BigInt(id), success],
-    undefined,
+    "completeTask",
+    [BigInt(id), "0x"]
   );
 
-  printSuccess(`Task verified — block ${result.blockNumber}`);
+  printSuccess(`Task completed — block ${result.blockNumber}`);
+}
+
+// ──────────────────────────────────────────────────────────────
+// cancel
+// ──────────────────────────────────────────────────────────────
+
+async function cancel(taskId: string): Promise<void> {
+  const id = parseInt(taskId, 10);
+  if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  printHeader("Cancelling Task");
+  printField("Task ID", String(id));
+
+  const result = await writeContract(
+    CONTRACTS.CovenantEscrow,
+    ABI,
+    "cancelTask",
+    [BigInt(id)]
+  );
+
+  printSuccess(`Task cancelled — block ${result.blockNumber}`);
+}
+
+// ──────────────────────────────────────────────────────────────
+// dispute
+// ──────────────────────────────────────────────────────────────
+
+async function dispute(taskId: string): Promise<void> {
+  const id = parseInt(taskId, 10);
+  if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  printHeader("Disputing Task");
+  printField("Task ID", String(id));
+
+  const result = await writeContract(
+    CONTRACTS.CovenantEscrow,
+    ABI,
+    "disputeTask",
+    [BigInt(id)]
+  );
+
+  printSuccess(`Task disputed — block ${result.blockNumber}`);
+}
+
+// ──────────────────────────────────────────────────────────────
+// fail
+// ──────────────────────────────────────────────────────────────
+
+async function fail(taskId: string, reason: string): Promise<void> {
+  const id = parseInt(taskId, 10);
+  if (isNaN(id) || id < 0) throw new Error("Task ID must be a non-negative integer");
+
+  printHeader("Failing Task");
+  printField("Task ID", String(id));
+  printField("Reason", reason);
+
+  const result = await writeContract(
+    CONTRACTS.CovenantEscrow,
+    ABI,
+    "failTask",
+    [BigInt(id), reason as `0x${string}`]
+  );
+
+  printSuccess(`Task failed — block ${result.blockNumber}`);
+}
+
+// ──────────────────────────────────────────────────────────────
+// taskCount
+// ──────────────────────────────────────────────────────────────
+
+async function taskCount(): Promise<void> {
+  const count = (await readContract(
+    CONTRACTS.CovenantEscrow,
+    ABI,
+    "taskCount",
+    []
+  )) as bigint;
+
+  printHeader("Task Count");
+  printField("Total", String(count));
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -147,25 +257,30 @@ async function verify(taskId: string, success: boolean): Promise<void> {
 // ──────────────────────────────────────────────────────────────
 
 export function registerTaskCommand(parent: Command): void {
-  const task = parent.command("task").description("Task escrow operations");
+  const task = parent.command("task").description("Task escrow operations (CovenantEscrow)");
 
   task
     .command("create")
-    .description("Create and fund a new task")
+    .description("Create a new task (must fund separately)")
     .requiredOption("--worker <addr>", "Worker agent's Ethereum address")
-    .requiredOption("--payment <eth>", "Payment amount in ETH")
+    .requiredOption("--amount <eth>", "Payment amount in ETH")
     .requiredOption("--deadline <ts>", "Unix timestamp deadline (seconds)")
-    .requiredOption("--desc <cid>", "IPFS CID for task description")
-    .option("--priority <level>", "Priority 0-3 (Low/Medium/High/Urgent)", "1")
+    .requiredOption("--meta <hash>", "Metadata hash (bytes32)")
     .action(async (opts) => {
       try {
-        await create(
-          opts.worker,
-          opts.payment,
-          opts.deadline,
-          opts.desc,
-          parseInt(opts.priority, 10)
-        );
+        await create(opts.worker, opts.amount, opts.deadline, opts.meta);
+      } catch (e) {
+        handleError(e);
+      }
+    });
+
+  task
+    .command("fund <id>")
+    .description("Fund a created task")
+    .requiredOption("--amount <eth>", "Amount to fund in ETH")
+    .action(async (id, opts) => {
+      try {
+        await fund(id, opts.amount);
       } catch (e) {
         handleError(e);
       }
@@ -185,23 +300,66 @@ export function registerTaskCommand(parent: Command): void {
   task
     .command("submit <id>")
     .description("Submit deliverable for a task")
-    .requiredOption("--deliverable <cid>", "IPFS CID of the deliverable")
+    .requiredOption("--hash <deliverableHash>", "Deliverable hash (bytes32)")
     .action(async (id, opts) => {
       try {
-        await submit(id, opts.deliverable);
+        await submit(id, opts.hash);
       } catch (e) {
         handleError(e);
       }
     });
 
   task
-    .command("verify <id>")
-    .description("Verify and approve/reject a submitted task")
-    .option("--success", "Approve the task (default)", true)
-    .option("--reject", "Reject the task")
+    .command("complete <id>")
+    .description("Complete a task (client confirms)")
+    .action(async (id) => {
+      try {
+        await complete(id);
+      } catch (e) {
+        handleError(e);
+      }
+    });
+
+  task
+    .command("cancel <id>")
+    .description("Cancel a task")
+    .action(async (id) => {
+      try {
+        await cancel(id);
+      } catch (e) {
+        handleError(e);
+      }
+    });
+
+  task
+    .command("dispute <id>")
+    .description("Dispute a task")
+    .action(async (id) => {
+      try {
+        await dispute(id);
+      } catch (e) {
+        handleError(e);
+      }
+    });
+
+  task
+    .command("fail <id>")
+    .description("Mark a task as failed")
+    .requiredOption("--reason <hash>", "Failure reason hash (bytes32)")
     .action(async (id, opts) => {
       try {
-        await verify(id, !opts.reject);
+        await fail(id, opts.reason);
+      } catch (e) {
+        handleError(e);
+      }
+    });
+
+  task
+    .command("count")
+    .description("Get total task count")
+    .action(async () => {
+      try {
+        await taskCount();
       } catch (e) {
         handleError(e);
       }

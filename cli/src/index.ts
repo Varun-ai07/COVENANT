@@ -3,49 +3,32 @@
  * COVENANT CLI — command-line interface for the COVENANT protocol.
  *
  * Usage:
- *   covenant agent register --name "MyAgent" --capabilities "python,security" --stake 0.001
+ *   covenant agent register --stake 0.001 --metadata 0x...
  *   covenant agent get <address>
- *   covenant agent find --capability "python"
- *   covenant agent list
- *
- *   covenant task create --worker <addr> --payment 0.01 --deadline 1735689600 --desc <cid>
+ *   covenant task create --worker <addr> --amount 0.01 --deadline 1735689600 --meta 0x...
  *   covenant task get <id>
- *   covenant task submit <id> --deliverable <cid>
- *   covenant task verify <id> --success
- *
  *   covenant market post --max-payment 0.05 --deadline 1735689600 --desc <cid>
- *   covenant market bid <id> --price 0.03 --time 3600 --proposal <cid>
- *   covenant market select <id> --worker <addr>
- *
- *   covenant disputes file <taskId> --bond 0.01
- *   covenant disputes vote <disputeId> --for-worker true
- *   covenant disputes get <disputeId>
- *
- *   covenant batches create --workers ... --payments ... --deadlines ... --hashes ... --aggregation ...
- *   covenant batches get <batchId>
- *   covenant batches status <batchId>
- *   covenant batches aggregate <batchId>
- *
- *   covenant collectives create --min-contribution 0.01 --max-members 10
- *   covenant collectives join <collectiveId> --contribution 0.01
- *   covenant collectives get <collectiveId>
- *
- *   covenant insurance join --contribution 0.01
- *   covenant insurance pay <taskId> --premium 0.001
- *   covenant insurance claim <taskId>
- *   covenant insurance balance
- *
- *   covenant receipts get <address>
- *   covenant receipts count <address>
- *
- *   covenant milestones create --worker ... --payment ... --deadline ... --desc ... --milestone-descs ... --milestone-pays ...
- *   covenant milestones submit <taskId> <index> --hash <cid>
- *   covenant milestones verify <taskId> <index>
- *
  *   covenant protocol stats
- *   covenant protocol leaderboard
+ *   covenant status
  */
 import { Command } from "commander";
+import chalk from "chalk";
+import { formatEther, isAddress } from "viem";
+import { CHAIN_NAME, CONTRACTS, getAccount, getPublicClient, loadAbi, RPC_URL } from "./config.js";
+import {
+  printBanner,
+  printHeader,
+  printFooter,
+  printField,
+  printFieldColor,
+  printSuccess,
+  printInfo,
+  printWarning,
+  shortAddr,
+  toEth,
+  handleError,
+} from "./utils.js";
+
 import { registerAgentCommand } from "./commands/agent.js";
 import { registerTaskCommand } from "./commands/task.js";
 import { registerMarketCommand } from "./commands/market.js";
@@ -56,14 +39,155 @@ import { registerCollectivesCommand } from "./commands/collectives.js";
 import { registerInsuranceCommand } from "./commands/insurance.js";
 import { registerReceiptsCommand } from "./commands/receipts.js";
 import { registerMilestonesCommand } from "./commands/milestones.js";
+import { registerSettlementCommand } from "./commands/settlement.js";
+import { registerArbitrationCommand } from "./commands/arbitration.js";
+import { registerAttestationCommand } from "./commands/attestation.js";
+import { registerGovernanceCommand } from "./commands/governance.js";
+import { registerRevisionCommand } from "./commands/revision.js";
+
+const VERSION = "2.0.0";
 
 const program = new Command();
 
+// ── Custom help ───────────────────────────────────────────────
+
+function showHelp(): void {
+  printBanner();
+
+  console.log(chalk.bold.white("  Usage:"));
+  console.log(chalk.gray("    covenant <command> [subcommand] [options]\n"));
+
+  console.log(chalk.bold.white("  Commands:"));
+  const cmds: [string, string][] = [
+    ["agent", "Agent identity — register, get, stake, deactivate, capability, total"],
+    ["task", "Task escrow — create, fund, get, submit, complete, cancel, dispute, fail, count"],
+    ["market", "Open task marketplace — post, bid, select, get"],
+    ["settlement", "Payment streams — create, withdraw, cancel, get, count"],
+    ["disputes", "Dispute arbitration — file, vote, get"],
+    ["arbitration", "Dispute resolution — create, stake, rule, settle, get, count"],
+    ["attestation", "Attestations — attest, verify, revoke, list, count"],
+    ["governance", "DAO governance — propose, vote, execute, veto, get, count"],
+    ["revision", "Task revisions — request, submit, get, count"],
+    ["batches", "Parallel task batches — create, get, status, aggregate"],
+    ["collectives", "Agent collectives — create, join, get"],
+    ["insurance", "Insurance pool — join, pay, claim, balance"],
+    ["receipts", "ERC-8004 receipts — get, count"],
+    ["milestones", "Milestone tasks — create, submit, verify"],
+    ["protocol", "Protocol stats — stats, leaderboard"],
+  ];
+
+  for (const [cmd, desc] of cmds) {
+    console.log(chalk.cyan(`    ${cmd.padEnd(14)}`) + chalk.gray(desc));
+  }
+
+  console.log(chalk.bold.white("\n  Meta:"));
+  console.log(chalk.cyan("    status".padEnd(17)) + chalk.gray("Show wallet, network, and contract status"));
+  console.log(chalk.cyan("    help".padEnd(17)) + chalk.gray("Show this help message"));
+  console.log(chalk.cyan("    version".padEnd(17)) + chalk.gray("Show CLI version"));
+
+  console.log(chalk.bold.white("\n  Examples:"));
+  console.log(chalk.gray('    covenant agent register --stake 0.001 --metadata 0xabc...'));
+  console.log(chalk.gray('    covenant task get 1'));
+  console.log(chalk.gray('    covenant market post --max-payment 0.05 --deadline 1735689600 --desc Qm...'));
+  console.log(chalk.gray('    covenant settlement create --payee 0x... --rate 0.0001 --duration 3600'));
+  console.log(chalk.gray('    covenant arbitration create 1 --evidence 0x...'));
+  console.log(chalk.gray('    covenant attestation attest --subject 0x... --schema 0x... --data 0x... --expires 1735689600'));
+  console.log(chalk.gray('    covenant governance propose --target 0x... --calldata 0x... --description 0x... --voting-period 86400'));
+  console.log(chalk.gray('    covenant revision request 1 --reason 0x...'));
+  console.log(chalk.gray('    covenant status'));
+  console.log();
+}
+
+// ── Status command ────────────────────────────────────────────
+
+async function showStatus(): Promise<void> {
+  printBanner();
+
+  const account = getAccount();
+  const hasWallet = !!account;
+
+  printHeader("System Status");
+  printField("CLI Version", VERSION);
+  printField("Network", CHAIN_NAME);
+  printField("RPC URL", RPC_URL);
+  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
+
+  printHeader("Wallet");
+  if (hasWallet && account) {
+    printField("Address", chalk.green(account.address));
+    try {
+      const client = getPublicClient();
+      const balance = await client.getBalance({ address: account.address });
+      printField("Balance", chalk.yellow(`${formatEther(balance)} ETH`));
+    } catch {
+      printField("Balance", chalk.yellow("Unable to fetch"));
+    }
+  } else {
+    printWarning("No PRIVATE_KEY configured — read-only mode");
+    printInfo("Set PRIVATE_KEY in .env to enable transactions");
+  }
+  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
+
+  printHeader("Contracts");
+  const contractNames = Object.keys(CONTRACTS);
+  for (const name of contractNames) {
+    const addr = CONTRACTS[name];
+    const short = shortAddr(addr);
+    printField(name, chalk.dim(short));
+  }
+  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
+
+  printHeader("On-Chain Status");
+  try {
+    const client = getPublicClient();
+    const blockNumber = await client.getBlockNumber();
+    printField("Latest Block", chalk.green(String(blockNumber)));
+  } catch {
+    printField("Latest Block", chalk.red("Unable to connect"));
+  }
+
+  if (hasWallet && account) {
+    try {
+      const identityAbi = loadAbi("CovenantIdentity");
+      const client = getPublicClient();
+      const result = await client.readContract({
+        address: CONTRACTS.CovenantIdentity,
+        abi: identityAbi,
+        functionName: "getAgent",
+        args: [account.address],
+      }) as any;
+      const isActive = Array.isArray(result) ? result[4] : (result?.isActive ?? result?.active);
+      printField("Agent Status", isActive ? chalk.green("Registered & Active") : chalk.red("Not Registered"));
+    } catch {
+      printField("Agent Status", chalk.yellow("Not Registered"));
+    }
+  }
+
+  try {
+    const registryAbi = loadAbi("AgentRegistry");
+    const client = getPublicClient();
+    const agentCount = await client.readContract({
+      address: CONTRACTS.AgentRegistry,
+      abi: registryAbi,
+      functionName: "getAgentCount",
+      args: [],
+    }) as bigint;
+    printField("Total Agents", chalk.cyan(String(agentCount)));
+  } catch {
+    printField("Total Agents", chalk.dim("—"));
+  }
+  console.log(chalk.bold.cyan("  └" + "─".repeat(48) + "┘"));
+  console.log();
+}
+
+// ── Program setup ─────────────────────────────────────────────
+
 program
   .name("covenant")
-  .description("COVENANT Protocol CLI — on-chain agent marketplace")
-  .version("1.0.0");
+  .description(chalk.bold.cyan("COVENANT Protocol CLI") + " — " + chalk.gray("Autonomous Agent Enforcement Protocol"))
+  .version(VERSION);
 
+// Register all commands
 registerAgentCommand(program);
 registerTaskCommand(program);
 registerMarketCommand(program);
@@ -74,5 +198,38 @@ registerCollectivesCommand(program);
 registerInsuranceCommand(program);
 registerReceiptsCommand(program);
 registerMilestonesCommand(program);
+registerSettlementCommand(program);
+registerArbitrationCommand(program);
+registerAttestationCommand(program);
+registerGovernanceCommand(program);
+registerRevisionCommand(program);
+
+// ── Custom help command ───────────────────────────────────────
+
+program
+  .command("help")
+  .description("Show help message")
+  .action(() => {
+    showHelp();
+  });
+
+// ── Status command ────────────────────────────────────────────
+
+program
+  .command("status")
+  .description("Show wallet, network, and contract status")
+  .action(async () => {
+    try {
+      await showStatus();
+    } catch (e) {
+      handleError(e);
+    }
+  });
+
+// ── Default action (no command) ───────────────────────────────
+
+program.action(() => {
+  showHelp();
+});
 
 program.parse();

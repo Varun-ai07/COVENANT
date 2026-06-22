@@ -4,9 +4,11 @@
  *   post    — post an open task for competitive bidding
  *   bid     — submit a bid on an open task
  *   select  — select a winning bidder
+ *   get     — view open task details
+ *   cancel  — cancel an open task
  */
 import { Command } from "commander";
-import { parseEther, formatEther, type Address, isAddress } from "viem";
+import { parseEther, type Address, isAddress } from "viem";
 import chalk from "chalk";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
@@ -101,7 +103,7 @@ async function select(taskId: string, worker: string): Promise<void> {
 
   printHeader("Selecting Worker");
   printField("Task ID", String(id));
-  printField("Worker", worker);
+  printField("Worker", shortAddr(worker));
 
   const result = await writeContract(
     CONTRACTS.OpenTaskMarket,
@@ -114,7 +116,7 @@ async function select(taskId: string, worker: string): Promise<void> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// get (bonus: view open task details)
+// get
 // ──────────────────────────────────────────────────────────────
 
 async function getOpenTask(taskId: string): Promise<void> {
@@ -128,7 +130,6 @@ async function getOpenTask(taskId: string): Promise<void> {
     [BigInt(id)]
   )) as any;
 
-  // Contract returns a tuple
   const isTuple = Array.isArray(data);
   const client = isTuple ? data[0] : data.client;
   const maxPayment = isTuple ? data[1] : data.maxPayment;

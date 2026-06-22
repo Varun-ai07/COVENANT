@@ -56,25 +56,45 @@ export const CHAIN =
     ? hardhatLocal
     : baseSepolia;
 
-// ── Contract addresses ────────────────────────────────────────
+export const CHAIN_NAME = (() => {
+  const id = CHAIN.id as number;
+  if (id === 31337) return "Hardhat Local";
+  if (id === 8453) return "Base Mainnet";
+  return "Base Sepolia";
+})();
+
+// ── Contract addresses (V5 + Legacy) ──────────────────────────
 
 export const CONTRACTS: Record<string, Address> = {
-  AgentRegistry: (process.env.REGISTRY_ADDRESS ||
-    "0x0003072b15d2c299d46bC5FfE7785E803895E614") as Address,
-  TaskEscrow: (process.env.ESCROW_ADDRESS ||
-    "0xFD081B5cB8bAE37DC878078bE3165932b0bC0BB3") as Address,
-  ReceiptVerifier: (process.env.VERIFIER_ADDRESS ||
-    "0xa47D15099be6aC516B53a6859D468E9004eEf76b") as Address,
-  OpenTaskMarket: (process.env.MARKET_ADDRESS ||
-    "0x5ccF09469222E5046b0830c6d71ed6B912bE70e6") as Address,
+  // V5 Core
+  CovenantIdentity: (process.env.COVENANT_IDENTITY_ADDRESS ||
+    "0x694a9bD525288A8Faa5b795f861626ae6A10b68c") as Address,
+  CovenantEscrow: (process.env.COVENANT_ESCROW_ADDRESS ||
+    "0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa") as Address,
+  CovenantSettlement: (process.env.COVENANT_SETTLEMENT_ADDRESS ||
+    "0x1FbD8465cF79435Ea1C12AAcA25f83468e268816") as Address,
+  CovenantArbitration: (process.env.COVENANT_ARBITRATION_ADDRESS ||
+    "0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D") as Address,
+  CovenantAttestation: (process.env.COVENANT_ATTESTATION_ADDRESS ||
+    "0x0F5B060D7Eab7a2c65628CC81174958c19db91bF") as Address,
+  CovenantGovernance: (process.env.COVENANT_GOVERNANCE_ADDRESS ||
+    "0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f") as Address,
+  // V5 Extensions
   ParallelTaskBatch: (process.env.BATCH_ADDRESS ||
-    "0xaf23D40668f0e33426824Bf2027A0E9cD26c11Bc") as Address,
+    "0xaE8C7897ED19A38B416b7B32E58F820d8D5Cd5D8") as Address,
   AgentCollective: (process.env.COLLECTIVE_ADDRESS ||
-    "0x0CDE9560D2E95338922c40A52A2c81cdd20613d1") as Address,
-  AgentInsurance: (process.env.INSURANCE_ADDRESS ||
-    "0x1798d370e3C566001A84F38EbDc0F6F1Db6bdd55") as Address,
-  DisputeArbitration: (process.env.DISPUTE_ADDRESS ||
-    "0x37A62C6eDd18461CCe00B6772Da8640C75DE740e") as Address,
+    "0xfc5E4f36e7477F744D1d99dEf13caC02e1C0f9cE") as Address,
+  TrainingMarketplace: (process.env.TRAINING_ADDRESS ||
+    "0xEC62BF280c9A5D0e492952258c38C186F3467C2a") as Address,
+  GrantProgram: (process.env.GRANT_ADDRESS ||
+    "0xe625F5e90901197c560b7d213D5EA81dC96E3CEE") as Address,
+  InsurancePool: (process.env.INSURANCE_ADDRESS ||
+    "0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A") as Address,
+  RevisionManager: (process.env.REVISION_ADDRESS ||
+    "0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76") as Address,
+  // Legacy (still deployed)
+  OpenTaskMarket: (process.env.MARKET_ADDRESS ||
+    "0xF163007a42f00dB4D1296186A9BD07B28fe2a4a7") as Address,
 };
 
 // ── Viem clients ──────────────────────────────────────────────

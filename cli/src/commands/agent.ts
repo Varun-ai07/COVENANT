@@ -1,13 +1,14 @@
 /**
- * covenant agent — AgentRegistry subcommands.
+ * covenant agent — CovenantIdentity subcommands.
  *
- *   register  — register a new agent on-chain
- *   get       — look up an agent profile by address
- *   find      — find agents by capability
- *   list      — list all registered agent addresses
+ *   register    — register a new agent on-chain
+ *   get         — look up an agent profile by address
+ *   stake       — increase stake
+ *   deactivate  — deactivate agent
+ *   capability  — check if agent has a capability
  */
 import { Command } from "commander";
-import { parseEther, type Address, isAddress } from "viem";
+import { parseEther, type Address, isAddress, toBytes } from "viem";
 import chalk from "chalk";
 import { loadAbi, CONTRACTS } from "../config.js";
 import {
@@ -22,38 +23,25 @@ import {
   handleError,
 } from "../utils.js";
 
-const ABI = loadAbi("AgentRegistry");
+const ABI = loadAbi("CovenantIdentity");
 
 // ──────────────────────────────────────────────────────────────
 // register
 // ──────────────────────────────────────────────────────────────
 
-async function register(
-  name: string,
-  capabilities: string,
-  stake: string
-): Promise<void> {
-  const caps = capabilities
-    .split(",")
-    .map((c) => c.trim())
-    .filter(Boolean);
-
-  if (caps.length === 0) {
-    throw new Error("At least one capability is required");
-  }
-
+async function register(stake: string, metadata: string): Promise<void> {
   const stakeWei = parseEther(stake);
+  const metadataRoot = metadata as `0x${string}`;
 
   printHeader("Registering Agent");
-  printField("Name", name);
-  printField("Capabilities", caps.join(", "));
   printField("Stake", `${stake} ETH`);
+  printField("Metadata Root", metadataRoot);
 
   const result = await writeContract(
-    CONTRACTS.AgentRegistry,
+    CONTRACTS.CovenantIdentity,
     ABI,
     "register",
-    [name, caps],
+    [stakeWei, metadataRoot],
     stakeWei
   );
 
@@ -70,84 +58,106 @@ async function get(address: string): Promise<void> {
   }
 
   const data = (await readContract(
-    CONTRACTS.AgentRegistry,
+    CONTRACTS.CovenantIdentity,
     ABI,
     "getAgent",
     [address as Address]
   )) as any;
 
   printHeader(`Agent Profile — ${shortAddr(address)}`);
-  printField("Name", data.name ?? "—");
-  printField("DID", data.did ? shortAddr(data.did) : "—");
-  printField("Reputation", String(data.reputation ?? 0));
-  printField("Stake", toEth(data.stakedAmount));
-  printField(
-    "Capabilities",
-    Array.isArray(data.capabilities) ? data.capabilities.join(", ") : "—"
+
+  if (Array.isArray(data)) {
+    printField("Stake", toEth(data[0]));
+    printField("Reputation", String(data[1] ?? 0));
+    printField("Registered", toDate(data[2]));
+    printField("Metadata Root", data[3] ?? "—");
+    printField("Active", data[4] ? "Yes" : "No");
+    printField("Tasks Completed", String(data[5] ?? 0));
+    printField("Tasks Failed", String(data[6] ?? 0));
+  } else {
+    printField("Stake", toEth(data.stakedAmount ?? data.stake));
+    printField("Reputation", String(data.reputation ?? 0));
+    printField("Registered", toDate(data.registeredAt ?? data.registered));
+    printField("Metadata Root", data.metadataRoot ?? data.metadata ?? "—");
+    printField("Active", (data.isActive ?? data.active) ? "Yes" : "No");
+    printField("Tasks Completed", String(data.tasksCompleted ?? 0));
+    printField("Tasks Failed", String(data.tasksFailed ?? 0));
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// stake
+// ──────────────────────────────────────────────────────────────
+
+async function stake(amount: string): Promise<void> {
+  const amountWei = parseEther(amount);
+
+  printHeader("Increasing Stake");
+  printField("Amount", `${amount} ETH`);
+
+  const result = await writeContract(
+    CONTRACTS.CovenantIdentity,
+    ABI,
+    "increaseStake",
+    [],
+    amountWei
   );
-  printField("Active", data.isActive ? "Yes" : "No");
-  printField("Tasks Completed", String(data.tasksCompleted ?? 0));
-  printField("Tasks Failed", String(data.tasksFailed ?? 0));
-  printField("Registered", toDate(data.registeredAt));
+
+  printSuccess(`Stake increased — block ${result.blockNumber}`);
 }
 
 // ──────────────────────────────────────────────────────────────
-// find
+// deactivate
 // ──────────────────────────────────────────────────────────────
 
-async function find(capability: string): Promise<void> {
-  const addresses = (await readContract(
-    CONTRACTS.AgentRegistry,
+async function deactivate(): Promise<void> {
+  printHeader("Deactivating Agent");
+
+  const result = await writeContract(
+    CONTRACTS.CovenantIdentity,
     ABI,
-    "getAgentsByCapability",
-    [capability]
-  )) as Address[];
-
-  printHeader(`Workers with capability "${capability}"`);
-  printField("Found", String(addresses.length));
-
-  if (addresses.length === 0) return;
-
-  for (const addr of addresses) {
-    try {
-      const profile = (await readContract(
-        CONTRACTS.AgentRegistry,
-        ABI,
-        "getAgent",
-        [addr]
-      )) as any;
-      console.log(
-        chalk.gray(`  ${shortAddr(addr)}  `) +
-          chalk.white(profile.name ?? "?") +
-          chalk.gray(`  rep: ${profile.reputation ?? 0}  `) +
-          chalk.gray(`tasks: ${profile.tasksCompleted ?? 0}`)
-      );
-    } catch {
-      console.log(chalk.gray(`  ${shortAddr(addr)}  (profile unavailable)`));
-    }
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-// list
-// ──────────────────────────────────────────────────────────────
-
-async function list(): Promise<void> {
-  const addresses = (await readContract(
-    CONTRACTS.AgentRegistry,
-    ABI,
-    "getAllAgents",
+    "deactivate",
     []
-  )) as Address[];
+  );
 
-  printHeader("All Registered Agents");
-  printField("Total", String(addresses.length));
+  printSuccess(`Agent deactivated — block ${result.blockNumber}`);
+}
 
-  if (addresses.length === 0) return;
+// ──────────────────────────────────────────────────────────────
+// capability
+// ──────────────────────────────────────────────────────────────
 
-  for (const addr of addresses) {
-    console.log(chalk.gray(`  ${addr}`));
+async function capability(address: string, capHash: string): Promise<void> {
+  if (!isAddress(address)) {
+    throw new Error(`Invalid Ethereum address: ${address}`);
   }
+
+  const result = (await readContract(
+    CONTRACTS.CovenantIdentity,
+    ABI,
+    "hasCapability",
+    [address as Address, capHash as `0x${string}`]
+  )) as boolean;
+
+  printHeader(`Capability Check — ${shortAddr(address)}`);
+  printField("Capability Hash", capHash);
+  printField("Has Capability", result ? chalk.green("Yes") : chalk.red("No"));
+}
+
+// ──────────────────────────────────────────────────────────────
+// total
+// ──────────────────────────────────────────────────────────────
+
+async function total(): Promise<void> {
+  const count = (await readContract(
+    CONTRACTS.CovenantIdentity,
+    ABI,
+    "totalAgents",
+    []
+  )) as bigint;
+
+  printHeader("Total Agents");
+  printField("Count", String(count));
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -155,20 +165,16 @@ async function list(): Promise<void> {
 // ──────────────────────────────────────────────────────────────
 
 export function registerAgentCommand(parent: Command): void {
-  const agent = parent.command("agent").description("Agent registry operations");
+  const agent = parent.command("agent").description("Agent identity operations (CovenantIdentity)");
 
   agent
     .command("register")
     .description("Register a new agent on-chain")
-    .requiredOption("--name <name>", "Agent display name")
-    .requiredOption(
-      "--capabilities <caps>",
-      "Comma-separated capability tags (e.g. python,security)"
-    )
-    .option("--stake <eth>", "Stake amount in ETH", "0.001")
+    .requiredOption("--stake <eth>", "Stake amount in ETH")
+    .requiredOption("--metadata <hash>", "Metadata root hash (bytes32)")
     .action(async (opts) => {
       try {
-        await register(opts.name, opts.capabilities, opts.stake);
+        await register(opts.stake, opts.metadata);
       } catch (e) {
         handleError(e);
       }
@@ -186,23 +192,45 @@ export function registerAgentCommand(parent: Command): void {
     });
 
   agent
-    .command("find")
-    .description("Find agents by capability")
-    .requiredOption("--capability <cap>", "Capability to search for")
+    .command("stake")
+    .description("Increase agent stake")
+    .requiredOption("--amount <eth>", "Amount to stake in ETH")
     .action(async (opts) => {
       try {
-        await find(opts.capability);
+        await stake(opts.amount);
       } catch (e) {
         handleError(e);
       }
     });
 
   agent
-    .command("list")
-    .description("List all registered agent addresses")
+    .command("deactivate")
+    .description("Deactivate your agent")
     .action(async () => {
       try {
-        await list();
+        await deactivate();
+      } catch (e) {
+        handleError(e);
+      }
+    });
+
+  agent
+    .command("capability <address> <capHash>")
+    .description("Check if agent has a capability")
+    .action(async (address, capHash) => {
+      try {
+        await capability(address, capHash);
+      } catch (e) {
+        handleError(e);
+      }
+    });
+
+  agent
+    .command("total")
+    .description("Get total number of registered agents")
+    .action(async () => {
+      try {
+        await total();
       } catch (e) {
         handleError(e);
       }
