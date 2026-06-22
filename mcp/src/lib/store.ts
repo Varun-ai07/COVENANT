@@ -5,8 +5,9 @@
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, unlinkSync } from "fs";
 import { join } from "path";
+import { homedir } from "os";
 
-const DATA_DIR = join(process.cwd(), ".covenant-data");
+const DATA_DIR = join(homedir(), ".covenant-data");
 
 function ensureDir(): void {
   if (!existsSync(DATA_DIR)) {

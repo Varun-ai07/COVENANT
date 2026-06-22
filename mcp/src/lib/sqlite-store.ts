@@ -10,8 +10,9 @@
 import Database from "better-sqlite3";
 import { join } from "path";
 import { existsSync, mkdirSync } from "fs";
+import { homedir } from "os";
 
-const DATA_DIR = join(process.cwd(), ".covenant-data");
+const DATA_DIR = join(homedir(), ".covenant-data");
 const DB_PATH = join(DATA_DIR, "covenant.db");
 
 let db: Database.Database | null = null;
