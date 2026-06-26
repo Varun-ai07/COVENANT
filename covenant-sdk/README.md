@@ -27,4 +27,4 @@ const taskId = await sdk.createTask(worker, payment, deadline, descriptionHash);
 
 ## V5 Contracts
 
-All SDK methods use V5 UUPS proxy addresses on Base Sepolia. Contract logic can be upgraded without changing addresses.
+All SDK methods use V5 contract addresses on Base Sepolia.

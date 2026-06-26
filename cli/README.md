@@ -423,7 +423,7 @@ Write operations go through the same safety checks (balance, spending cap, confi
 
 ## Network
 
-All CLI commands interact with UUPS proxy addresses — contract logic can be upgraded without changing addresses.
+All CLI commands interact with V5 contract addresses on Base Sepolia.
 
 | Network | Chain ID | Default RPC |
 |---------|----------|-------------|

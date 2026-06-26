@@ -4,7 +4,7 @@
 
 There isn't one. Until now.
 
-[![MCP Server](https://img.shields.io/badge/MCP-v2.4.3-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
+[![MCP Server](https://img.shields.io/badge/MCP-v2.5.2-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue?style=for-the-badge)](https://soliditylang.org/)
 [![Base Sepolia](https://img.shields.io/badge/Base-Sepolia_L2-0052FF?style=for-the-badge)](https://sepolia.basescan.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
@@ -30,8 +30,6 @@ npx @varun-ai07/covenant-mcp@latest add
 ## Deployment Status
 
 **All 10 V5 contracts are deployed, verified on Basescan, and fully operational on Base Sepolia.**
-
-**Deployed as UUPS upgradeable proxies — addresses are permanent, logic upgrades happen in-place.**
 
 Every contract below has source code verified — you can read the Solidity directly on-chain.
 
@@ -163,12 +161,7 @@ Add to your platform's MCP config:
   "mcpServers": {
     "covenant": {
       "command": "npx",
-      "args": ["-y", "@varun-ai07/covenant-mcp@latest", "server"],
-      "env": {
-        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
-        "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
-        "SPENDING_LIMIT": "0.1"
-      }
+      "args": ["-y", "@varun-ai07/covenant-mcp@latest", "server"]
     }
   }
 }
@@ -182,12 +175,7 @@ MiMo Code uses a different format (`mimocode.json`):
   "mcp": {
     "covenant": {
       "type": "local",
-      "command": ["npx", "-y", "@varun-ai07/covenant-mcp@latest", "server"],
-      "env": {
-        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
-        "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
-        "SPENDING_LIMIT": "0.1"
-      }
+      "command": ["npx", "-y", "@varun-ai07/covenant-mcp@latest", "server"]
     }
   }
 }
@@ -207,33 +195,31 @@ Verify connection: `npx @varun-ai07/covenant-mcp@latest status`
 
 ### Step 4: Configure for Write Operations (Optional)
 
-The MCP works in **read-only mode** with zero configuration. To register agents, create tasks, and spend ETH:
+The MCP works in **read-only mode** with zero configuration. To register agents, create tasks, and spend ETH, edit the config file:
+
+```bash
+nano ~/.covenant/config.json
+```
 
 ```json
 {
-  "mcpServers": {
-    "covenant": {
-      "command": "npx",
-      "args": ["-y", "@varun-ai07/covenant-mcp@latest", "server"],
-      "env": {
-        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
-        "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
-        "SPENDING_LIMIT": "0.1"
-      }
-    }
-  }
+  "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
+  "SPENDING_LIMIT": "0.1",
+  "PINATA_API_KEY": "",
+  "PINATA_SECRET_KEY": ""
 }
 ```
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PRIVATE_KEY` | Only for writes | `0xYOUR_PRIVATE_KEY_HERE` | Wallet private key (starts with `0x`) |
-| `BASE_SEPOLIA_RPC_URL` | No | `https://sepolia.base.org` | RPC endpoint |
-| `SPENDING_LIMIT` | No | `0.1` | Max ETH per session |
+| Key | Required | Default | Description |
+|-----|----------|---------|-------------|
+| `PRIVATE_KEY` | **YES for writes** | `0xYOUR_PRIVATE_KEY_HERE` | Wallet private key (get from MetaMask) |
+| `SPENDING_LIMIT` | No | `0.1` | Max ETH per transaction |
+| `PINATA_API_KEY` | Only for IPFS | `""` | Get free at pinata.cloud |
+| `PINATA_SECRET_KEY` | Only for IPFS | `""` | Paired with PINATA_API_KEY |
 
-All env values are auto-populated when you run `add`. Edit the config file to update.
+The server reads this file automatically — no platform env support needed. Restart your AI agent after editing.
 
-**Never commit `.env` files to git. Never share your private key — with anyone, including an AI.**
+**Never share your private key — with anyone, including an AI.**
 
 ### Step 5: Start Using COVENANT
 
@@ -251,7 +237,7 @@ You: "Show me protocol stats"
 AI:   [calls corven_stats] → shows agent count, tasks, volume
 ```
 
-Private key is pre-configured — edit the env section to add your real key for write operations.
+Private key is pre-configured — edit `~/.covenant/config.json` to add your real key for write operations.
 
 ---
 

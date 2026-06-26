@@ -8,8 +8,8 @@ Solidity 0.8.24 | Base Sepolia L2 | OpenZeppelin Upgradeable | MIT License
 contracts/
 ├── V1/           (13 contracts — deployed, MCP uses these)
 ├── V5/
-│   ├── core/     (6 contracts — upgradeable architecture)
-│   ├── extensions/ (8 contracts — upgradeable extensions)
+│   ├── core/     (6 contracts)
+│   ├── extensions/ (8 contracts)
 │   └── interfaces/ (6 files)
 └── test/         (2 files)
 ```
@@ -40,20 +40,8 @@ contracts/
 | MultiTokenEscrow | `0x1930240Ab0c6D6a2d42733a4715067F355761DC1` | ERC-20 payments |
 | COVENANTRouter | `0xD139a54CcE4d34ebD893E47d8bFA4fcA14f6d022` | Batch multicall |
 
-## UUPS Upgradeable Proxies
-
-All contracts are deployed as UUPS upgradeable proxies (OpenZeppelin). Addresses are permanent — to upgrade logic, use `upgrades.upgradeProxy(proxyAddr, NewFactory)`: same address, new code.
-
-**Upgrade instructions:**
-1. Create a new implementation contract (e.g. `CovenantIdentityV2.sol`)
-2. Deploy it: `npx hardhat run scripts/deploy-impl.cjs --network baseSepolia`
-3. Upgrade: `upgrades.upgradeProxy(proxyAddr, NewFactory)`
-
-**Storage rules:** Append-only. Never reorder state vars. Reduce `__gap` for new vars.
-
 ## V5 Features
 
-- **Upgradeable** via UUPS proxy pattern (OpenZeppelin Upgradeable)
 - **CEI compliant** — state updates before external calls
 - **nonReentrant** on all ETH-transferring functions
 - **Emergency controls** — Pausable + emergency withdraw

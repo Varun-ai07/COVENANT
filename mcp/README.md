@@ -2,7 +2,7 @@
 
 Model Context Protocol Server for the COVENANT Protocol — 28 blockchain tools for AI agent autonomy on Base Sepolia L2.
 
-[![MCP](https://img.shields.io/badge/MCP-v2.4.3-6366f1?style=for-the-badge)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-v2.5.2-6366f1?style=for-the-badge)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/Tools-28-10b981?style=for-the-badge)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 [![Base Sepolia](https://img.shields.io/badge/Base-Sepolia%20L2-0052FF?style=for-the-badge)](https://sepolia.basescan.org)
 
@@ -736,61 +736,45 @@ Or add manually to your platform's MCP config:
 }
 ```
 
-### Environment Variables
+## Configuration
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PRIVATE_KEY` | Only for writes | — | Wallet private key |
-| `BASE_SEPOLIA_RPC_URL` | No | `https://sepolia.base.org` | RPC endpoint |
-| `SPENDING_LIMIT` | No | `0.1` | Max ETH per session |
-| `MCP_API_KEY` | No | — | HTTP mode authentication |
-| `PINATA_API_KEY` | Only for IPFS | — | Pinata API key |
-| `PINATA_SECRET_KEY` | Only for IPFS | — | Pinata secret key |
+All settings are stored in `~/.covenant/config.json`. The server reads this file automatically — no platform `env` support needed.
 
----
+```bash
+nano ~/.covenant/config.json
+```
 
-## Default Environment Variables
+```json
+{
+  "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
+  "SPENDING_LIMIT": "0.1",
+  "PINATA_API_KEY": "",
+  "PINATA_SECRET_KEY": ""
+}
+```
 
-If no environment variables are set, the MCP server uses these defaults:
+| Key | Required | Default | Description |
+|-----|----------|---------|-------------|
+| `PRIVATE_KEY` | **YES for writes** | `0xYOUR_PRIVATE_KEY_HERE` | Wallet private key (get from MetaMask) |
+| `SPENDING_LIMIT` | No | `0.1` | Max ETH per transaction |
+| `PINATA_API_KEY` | Only for IPFS | `""` | Get free at pinata.cloud |
+| `PINATA_SECRET_KEY` | Only for IPFS | `""` | Paired with PINATA_API_KEY |
 
-| Variable | Default |
-|----------|---------|
-| `PRIVATE_KEY` | `0xYOUR_PRIVATE_KEY_HERE` |
-| `BASE_SEPOLIA_RPC_URL` | `https://sepolia.base.org` |
-| `SPENDING_LIMIT` | `0.1` |
-
-**Note:** `PRIVATE_KEY` must be set for any write operations (creating agents, tasks, etc.).
-
----
-
-## Changing Configuration
-
-Configuration varies by AI agent platform:
-
-| Platform | Config File | Path |
-|----------|-------------|------|
-| Claude Code | `~/.claude.json` | `mcpServers.covenant.env` |
-| OpenClaude | `~/.openclaude.json` | `mcpServers.covenant.env` |
-| MiMo Code | `./mimocode.json` | `mcp.covenant.env` |
-| Cross-platform | `.mcp.json` | `mcpServers.covenant.env` |
+The server works in **read-only mode** without `PRIVATE_KEY`. Restart your AI agent after editing.
 
 ---
 
 ## MiMo Code Support
 
-Add the following to your `./mimocode.json`:
+MiMo Code uses `mimocode.json` (not `.mcp.json`). The `add` command creates this automatically:
 
 ```json
 {
+  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "covenant": {
       "type": "local",
-      "command": ["npx", "-y", "@varun-ai07/covenant-mcp@latest", "server"],
-      "env": {
-        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
-        "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
-        "SPENDING_LIMIT": "0.1"
-      }
+      "command": ["npx", "-y", "@varun-ai07/covenant-mcp@latest", "server"]
     }
   }
 }
