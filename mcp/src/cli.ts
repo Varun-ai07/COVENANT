@@ -47,6 +47,14 @@ const SERVER_COMMAND = IS_WINDOWS ? "cmd" : "npx";
 const SERVER_ARGS = IS_WINDOWS
   ? ["/c", "npx", "-y", NPM_PACKAGE, "server"]
   : ["-y", NPM_PACKAGE, "server"];
+function getServerEnv(): Record<string, string> {
+  const env: Record<string, string> = {};
+  const pk = process.env.PRIVATE_KEY;
+  if (pk) env.PRIVATE_KEY = pk;
+  const rpc = process.env.BASE_SEPOLIA_RPC_URL;
+  if (rpc) env.BASE_SEPOLIA_RPC_URL = rpc;
+  return env;
+}
 
 // ============================================================
 // Platform Detection & Config
@@ -237,6 +245,7 @@ function addToClaudeCode(): boolean {
     config.mcpServers.covenant = {
       command: SERVER_COMMAND,
       args: SERVER_ARGS,
+      env: getServerEnv(),
     };
     writeJsonConfig(configPath, config);
     return true;
@@ -266,6 +275,7 @@ function addToJsonPlatform(configPath: string): boolean {
   config.mcpServers.covenant = {
     command: SERVER_COMMAND,
     args: SERVER_ARGS,
+    env: getServerEnv(),
   };
   writeJsonConfig(configPath, config);
   return true;
@@ -289,6 +299,7 @@ function addToProject(): boolean {
   config.mcpServers.covenant = {
     command: SERVER_COMMAND,
     args: SERVER_ARGS,
+    env: getServerEnv(),
   };
   writeJsonConfig(projectPath, config);
   return true;
@@ -296,12 +307,14 @@ function addToProject(): boolean {
 
 function addToMiMoCode(): boolean {
   const configPath = join(process.cwd(), "mimocode.json");
+  const serverEnv = getServerEnv();
   const config: any = {
     "$schema": "https://opencode.ai/config.json",
     "mcp": {
       "covenant": {
         type: "local",
         command: [SERVER_COMMAND, ...SERVER_ARGS],
+        ...(Object.keys(serverEnv).length > 0 ? { env: serverEnv } : {}),
       },
     },
   };
@@ -381,12 +394,24 @@ function addCommand(targetPlatform?: string): void {
       case "openclaude":
         try {
             execSync(`openclaude mcp add --scope user covenant -- ${SERVER_ARGS.join(" ")}`, { stdio: "ignore" });
+            const serverEnv = getServerEnv();
+            if (Object.keys(serverEnv).length > 0) {
+              try {
+                const ocPath = join(homedir(), ".openclaude.json");
+                if (existsSync(ocPath)) {
+                  const ocConfig = JSON.parse(readFileSync(ocPath, "utf-8"));
+                  if (ocConfig.mcpServers?.covenant) {
+                    ocConfig.mcpServers.covenant.env = serverEnv;
+                    writeFileSync(ocPath, JSON.stringify(ocConfig, null, 2) + "\n");
+                  }
+                }
+              } catch {}
+            }
             success = true;
           } catch {
             if (p.configPath) success = addToJsonPlatform(p.configPath);
           }
           break;
-        break;
       case "cursor":
         if (p.configPath) success = addToJsonPlatform(p.configPath);
         break;
