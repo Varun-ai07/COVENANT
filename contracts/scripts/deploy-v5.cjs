@@ -1,119 +1,160 @@
-// Deploy V5 contracts
+// Deploy V5 contracts via UUPS Proxies
 // Run: npx hardhat run scripts/deploy-v5.cjs --network baseSepolia
+//
+// PROXY DEPLOYMENT: Addresses are PERMANENT. Upgrades happen in-place.
+// Never redeploy — use upgrades.upgradeProxy() instead.
 
 const hre = require("hardhat");
-const { ethers } = hre;
+const { ethers, upgrades } = hre;
 const fs = require("fs");
 const path = require("path");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  console.log("Deploying V5 contracts with:", deployer.address);
+  console.log("Deploying V5 UUPS Proxies with:", deployer.address);
   console.log("Balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)), "ETH");
 
   const deployed = {};
 
-  // 1. CovenantIdentity (upgradeable proxy)
-  console.log("\n1. Deploying CovenantIdentity...");
-  const Identity = await ethers.getContractFactory("contracts/v5/core/CovenantIdentity.sol:CovenantIdentity");
-  const identity = await Identity.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 1. CovenantIdentity — root of trust, no dependencies
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n1. Deploying CovenantIdentity proxy...");
+  const Identity = await ethers.getContractFactory("CovenantIdentity");
+  const identity = await upgrades.deployProxy(
+    Identity,
+    [ethers.parseEther("0.001"), deployer.address],
+    { kind: "uups" }
+  );
   await identity.waitForDeployment();
   deployed.CovenantIdentity = await identity.getAddress();
-  console.log("   CovenantIdentity:", deployed.CovenantIdentity);
+  console.log("   Proxy:", deployed.CovenantIdentity);
 
-  // Initialize
-  await identity.initialize(ethers.parseEther("0.001"), deployer.address);
-  console.log("   Initialized with minimumStake=0.001, oracle=deployer");
-
-  // 2. CovenantEscrow (upgradeable proxy)
-  console.log("\n2. Deploying CovenantEscrow...");
-  const Escrow = await ethers.getContractFactory("contracts/v5/core/CovenantEscrow.sol:CovenantEscrow");
-  const escrow = await Escrow.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 2. CovenantEscrow — depends on Identity
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n2. Deploying CovenantEscrow proxy...");
+  const Escrow = await ethers.getContractFactory("CovenantEscrow");
+  const escrow = await upgrades.deployProxy(
+    Escrow,
+    [deployed.CovenantIdentity],
+    { kind: "uups" }
+  );
   await escrow.waitForDeployment();
   deployed.CovenantEscrow = await escrow.getAddress();
-  console.log("   CovenantEscrow:", deployed.CovenantEscrow);
+  console.log("   Proxy:", deployed.CovenantEscrow);
 
-  await escrow.initialize(deployed.CovenantIdentity);
-
-  // 3. CovenantSettlement (upgradeable proxy)
-  console.log("\n3. Deploying CovenantSettlement...");
-  const Settlement = await ethers.getContractFactory("contracts/v5/core/CovenantSettlement.sol:CovenantSettlement");
-  const settlement = await Settlement.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 3. CovenantSettlement — depends on Identity
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n3. Deploying CovenantSettlement proxy...");
+  const Settlement = await ethers.getContractFactory("CovenantSettlement");
+  const settlement = await upgrades.deployProxy(
+    Settlement,
+    [deployed.CovenantIdentity],
+    { kind: "uups" }
+  );
   await settlement.waitForDeployment();
   deployed.CovenantSettlement = await settlement.getAddress();
-  console.log("   CovenantSettlement:", deployed.CovenantSettlement);
+  console.log("   Proxy:", deployed.CovenantSettlement);
 
-  await settlement.initialize(deployed.CovenantIdentity);
-
-  // 4. CovenantArbitration (upgradeable proxy)
-  console.log("\n4. Deploying CovenantArbitration...");
-  const Arbitration = await ethers.getContractFactory("contracts/v5/core/CovenantArbitration.sol:CovenantArbitration");
-  const arbitration = await Arbitration.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 4. CovenantArbitration — depends on Escrow
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n4. Deploying CovenantArbitration proxy...");
+  const Arbitration = await ethers.getContractFactory("CovenantArbitration");
+  const arbitration = await upgrades.deployProxy(
+    Arbitration,
+    [deployed.CovenantEscrow, deployer.address],
+    { kind: "uups" }
+  );
   await arbitration.waitForDeployment();
   deployed.CovenantArbitration = await arbitration.getAddress();
-  console.log("   CovenantArbitration:", deployed.CovenantArbitration);
+  console.log("   Proxy:", deployed.CovenantArbitration);
 
-  await arbitration.initialize(deployed.CovenantEscrow, deployer.address);
-
-  // 5. CovenantAttestation (upgradeable proxy)
-  console.log("\n5. Deploying CovenantAttestation...");
-  const Attestation = await ethers.getContractFactory("contracts/v5/core/CovenantAttestation.sol:CovenantAttestation");
-  const attestation = await Attestation.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 5. CovenantAttestation — no dependencies
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n5. Deploying CovenantAttestation proxy...");
+  const Attestation = await ethers.getContractFactory("CovenantAttestation");
+  const attestation = await upgrades.deployProxy(
+    Attestation,
+    [],
+    { kind: "uups" }
+  );
   await attestation.waitForDeployment();
   deployed.CovenantAttestation = await attestation.getAddress();
-  console.log("   CovenantAttestation:", deployed.CovenantAttestation);
+  console.log("   Proxy:", deployed.CovenantAttestation);
 
-  await attestation.initialize();
-
-  // 6. CovenantGovernance (upgradeable proxy)
-  console.log("\n6. Deploying CovenantGovernance...");
-  const Governance = await ethers.getContractFactory("contracts/v5/core/CovenantGovernance.sol:CovenantGovernance");
-  const governance = await Governance.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 6. CovenantGovernance — no dependencies
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n6. Deploying CovenantGovernance proxy...");
+  const Governance = await ethers.getContractFactory("CovenantGovernance");
+  const governance = await upgrades.deployProxy(
+    Governance,
+    [deployer.address, deployer.address, 1000],
+    { kind: "uups" }
+  );
   await governance.waitForDeployment();
   deployed.CovenantGovernance = await governance.getAddress();
-  console.log("   CovenantGovernance:", deployed.CovenantGovernance);
+  console.log("   Proxy:", deployed.CovenantGovernance);
 
-  await governance.initialize(deployer.address, deployer.address, 1000);
-
-  // 7. TrainingMarketplace (upgradeable proxy)
-  console.log("\n7. Deploying TrainingMarketplace...");
-  const Training = await ethers.getContractFactory("contracts/v5/extensions/TrainingMarketplace.sol:TrainingMarketplace");
-  const training = await Training.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 7. TrainingMarketplace — no dependencies
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n7. Deploying TrainingMarketplace proxy...");
+  const Training = await ethers.getContractFactory("TrainingMarketplace");
+  const training = await upgrades.deployProxy(
+    Training,
+    [deployer.address],
+    { kind: "uups" }
+  );
   await training.waitForDeployment();
   deployed.TrainingMarketplace = await training.getAddress();
-  console.log("   TrainingMarketplace:", deployed.TrainingMarketplace);
+  console.log("   Proxy:", deployed.TrainingMarketplace);
 
-  await training.initialize(deployer.address);
-
-  // 8. GrantProgram (upgradeable proxy)
-  console.log("\n8. Deploying GrantProgram...");
-  const Grant = await ethers.getContractFactory("contracts/v5/extensions/GrantProgram.sol:GrantProgram");
-  const grant = await Grant.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 8. GrantProgram — no dependencies
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n8. Deploying GrantProgram proxy...");
+  const Grant = await ethers.getContractFactory("GrantProgram");
+  const grant = await upgrades.deployProxy(
+    Grant,
+    [],
+    { kind: "uups" }
+  );
   await grant.waitForDeployment();
   deployed.GrantProgram = await grant.getAddress();
-  console.log("   GrantProgram:", deployed.GrantProgram);
+  console.log("   Proxy:", deployed.GrantProgram);
 
-  await grant.initialize();
-
-  // 9. InsurancePool (upgradeable proxy)
-  console.log("\n9. Deploying InsurancePool...");
-  const Insurance = await ethers.getContractFactory("contracts/v5/extensions/InsurancePool.sol:InsurancePool");
-  const insurance = await Insurance.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 9. InsurancePool — no dependencies
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n9. Deploying InsurancePool proxy...");
+  const Insurance = await ethers.getContractFactory("InsurancePool");
+  const insurance = await upgrades.deployProxy(
+    Insurance,
+    [],
+    { kind: "uups" }
+  );
   await insurance.waitForDeployment();
   deployed.InsurancePool = await insurance.getAddress();
-  console.log("   InsurancePool:", deployed.InsurancePool);
+  console.log("   Proxy:", deployed.InsurancePool);
 
-  await insurance.initialize();
-
-  // 10. RevisionManager (upgradeable proxy)
-  console.log("\n10. Deploying RevisionManager...");
-  const Revision = await ethers.getContractFactory("contracts/v5/extensions/RevisionManager.sol:RevisionManager");
-  const revision = await Revision.deploy();
+  // ═══════════════════════════════════════════════════════════════
+  // 10. RevisionManager — no dependencies
+  // ═══════════════════════════════════════════════════════════════
+  console.log("\n10. Deploying RevisionManager proxy...");
+  const Revision = await ethers.getContractFactory("RevisionManager");
+  const revision = await upgrades.deployProxy(
+    Revision,
+    [],
+    { kind: "uups" }
+  );
   await revision.waitForDeployment();
   deployed.RevisionManager = await revision.getAddress();
-  console.log("   RevisionManager:", deployed.RevisionManager);
-
-  await revision.initialize();
+  console.log("   Proxy:", deployed.RevisionManager);
 
   // ═══════════════════════════════════════════════════════════════
   // AUTHORIZATIONS
@@ -128,7 +169,7 @@ async function main() {
   await escrow.setAuthorizedArbitration(deployed.CovenantArbitration);
 
   // ═══════════════════════════════════════════════════════════════
-  // SAVE
+  // SAVE ADDRESSES
   // ═══════════════════════════════════════════════════════════════
 
   const v5Path = path.join(__dirname, "../v5/deployed-addresses.json");
@@ -140,15 +181,16 @@ async function main() {
     chainId: 84532,
     deployer: deployer.address,
     deployedAt: new Date().toISOString(),
+    deploymentType: "UUPS Proxy",
     contracts: deployed,
-    note: "V5 contracts - upgradeable, CEI-compliant, with emergency controls",
+    note: "V5 UUPS proxies — addresses are PERMANENT. Use upgrades.upgradeProxy() for logic upgrades.",
   };
   fs.writeFileSync(v5Path, JSON.stringify(v5Data, null, 2));
 
-  console.log("\n✅ All V5 contracts deployed!");
+  console.log("\n✅ All V5 UUPS Proxies deployed!");
   console.log("Saved to v5/deployed-addresses.json");
 
-  console.log("\n=== DEPLOYED ADDRESSES ===");
+  console.log("\n=== DEPLOYED PROXY ADDRESSES (PERMANENT) ===");
   for (const [name, addr] of Object.entries(deployed)) {
     console.log(`  ${name}: ${addr}`);
   }

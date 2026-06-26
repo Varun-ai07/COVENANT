@@ -23,7 +23,7 @@ contract RevisionManager is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPS
     mapping(uint256 => bool) public revisionAllowed;
     mapping(uint256 => address) public taskClient;
 
-    uint256 public defaultMaxRevisions = 3;
+    uint256 public defaultMaxRevisions;
 
     event RevisionRequested(uint256 indexed taskId, uint256 revisionNumber, address indexed requestedBy);
     event RevisionCompleted(uint256 indexed taskId, uint256 revisionNumber, bytes32 newHash);
@@ -39,7 +39,7 @@ contract RevisionManager is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPS
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); __UUPSUpgradeable_init(); }
+    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __UUPSUpgradeable_init(); defaultMaxRevisions = 3; }
 
     function setTaskClient(uint256 taskId, address client) external onlyOwner { taskClient[taskId] = client; }
     function setRevisionAllowed(uint256 taskId, bool allowed) external onlyOwner { revisionAllowed[taskId] = allowed; }

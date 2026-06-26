@@ -1,15 +1,14 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 
 describe("V5 CovenantIdentity", function () {
   let identity, owner, agent1, agent2, oracle;
 
   beforeEach(async function () {
     [owner, agent1, agent2, oracle] = await ethers.getSigners();
-    const Factory = await ethers.getContractFactory("contracts/v5/core/CovenantIdentity.sol:CovenantIdentity");
-    identity = await Factory.deploy();
+    const Factory = await ethers.getContractFactory("CovenantIdentity");
+    identity = await upgrades.deployProxy(Factory, [ethers.parseEther("0.001"), oracle.address], { kind: "uups" });
     await identity.waitForDeployment();
-    await identity.initialize(ethers.parseEther("0.001"), oracle.address);
   });
 
   it("should register agent with minimum stake", async function () {
@@ -111,15 +110,13 @@ describe("V5 CovenantEscrow", function () {
 
   beforeEach(async function () {
     [owner, client, worker] = await ethers.getSigners();
-    const IdentityFactory = await ethers.getContractFactory("contracts/v5/core/CovenantIdentity.sol:CovenantIdentity");
-    identity = await IdentityFactory.deploy();
+    const IdentityFactory = await ethers.getContractFactory("CovenantIdentity");
+    identity = await upgrades.deployProxy(IdentityFactory, [ethers.parseEther("0.001"), owner.address], { kind: "uups" });
     await identity.waitForDeployment();
-    await identity.initialize(ethers.parseEther("0.001"), owner.address);
 
-    const EscrowFactory = await ethers.getContractFactory("contracts/v5/core/CovenantEscrow.sol:CovenantEscrow");
-    escrow = await EscrowFactory.deploy();
+    const EscrowFactory = await ethers.getContractFactory("CovenantEscrow");
+    escrow = await upgrades.deployProxy(EscrowFactory, [identity.target], { kind: "uups" });
     await escrow.waitForDeployment();
-    await escrow.initialize(identity.target);
   });
 
   it("should create task with ETH", async function () {
@@ -201,7 +198,6 @@ describe("V5 CovenantEscrow", function () {
     const gasCost = receipt.gasUsed * receipt.gasPrice;
     const balanceAfter = await ethers.provider.getBalance(client.address);
 
-    // Client should get back 1000 wei minus gas cost
     expect(balanceAfter + gasCost - balanceBefore).to.equal(1000);
   });
 
@@ -211,7 +207,7 @@ describe("V5 CovenantEscrow", function () {
     await escrow.connect(worker).submitWork(1, ethers.ZeroHash);
     await escrow.connect(client).disputeTask(1);
     const task = await escrow.getTask(1);
-    expect(task.status).to.equal(4); // Disputed
+    expect(task.status).to.equal(4);
   });
 });
 
@@ -220,15 +216,13 @@ describe("V5 CovenantSettlement", function () {
 
   beforeEach(async function () {
     [owner, payer, payee] = await ethers.getSigners();
-    const IdentityFactory = await ethers.getContractFactory("contracts/v5/core/CovenantIdentity.sol:CovenantIdentity");
-    const identity = await IdentityFactory.deploy();
+    const IdentityFactory = await ethers.getContractFactory("CovenantIdentity");
+    const identity = await upgrades.deployProxy(IdentityFactory, [ethers.parseEther("0.001"), owner.address], { kind: "uups" });
     await identity.waitForDeployment();
-    await identity.initialize(ethers.parseEther("0.001"), owner.address);
 
-    const SettlementFactory = await ethers.getContractFactory("contracts/v5/core/CovenantSettlement.sol:CovenantSettlement");
-    settlement = await SettlementFactory.deploy();
+    const SettlementFactory = await ethers.getContractFactory("CovenantSettlement");
+    settlement = await upgrades.deployProxy(SettlementFactory, [identity.target], { kind: "uups" });
     await settlement.waitForDeployment();
-    await settlement.initialize(identity.target);
   });
 
   it("should create streaming payment", async function () {
@@ -263,20 +257,17 @@ describe("V5 CovenantArbitration", function () {
 
   beforeEach(async function () {
     [owner, client, worker, arbiter] = await ethers.getSigners();
-    const IdentityFactory = await ethers.getContractFactory("contracts/v5/core/CovenantIdentity.sol:CovenantIdentity");
-    identity = await IdentityFactory.deploy();
+    const IdentityFactory = await ethers.getContractFactory("CovenantIdentity");
+    identity = await upgrades.deployProxy(IdentityFactory, [ethers.parseEther("0.001"), owner.address], { kind: "uups" });
     await identity.waitForDeployment();
-    await identity.initialize(ethers.parseEther("0.001"), owner.address);
 
-    const EscrowFactory = await ethers.getContractFactory("contracts/v5/core/CovenantEscrow.sol:CovenantEscrow");
-    escrow = await EscrowFactory.deploy();
+    const EscrowFactory = await ethers.getContractFactory("CovenantEscrow");
+    escrow = await upgrades.deployProxy(EscrowFactory, [identity.target], { kind: "uups" });
     await escrow.waitForDeployment();
-    await escrow.initialize(identity.target);
 
-    const ArbitrationFactory = await ethers.getContractFactory("contracts/v5/core/CovenantArbitration.sol:CovenantArbitration");
-    arbitration = await ArbitrationFactory.deploy();
+    const ArbitrationFactory = await ethers.getContractFactory("CovenantArbitration");
+    arbitration = await upgrades.deployProxy(ArbitrationFactory, [escrow.target, arbiter.address], { kind: "uups" });
     await arbitration.waitForDeployment();
-    await arbitration.initialize(escrow.target, arbiter.address);
     await escrow.setAuthorizedArbitration(arbitration.target);
   });
 
@@ -319,10 +310,9 @@ describe("V5 CovenantAttestation", function () {
 
   beforeEach(async function () {
     [owner, issuer, subject] = await ethers.getSigners();
-    const Factory = await ethers.getContractFactory("contracts/v5/core/CovenantAttestation.sol:CovenantAttestation");
-    attestation = await Factory.deploy();
+    const Factory = await ethers.getContractFactory("CovenantAttestation");
+    attestation = await upgrades.deployProxy(Factory, [], { kind: "uups" });
     await attestation.waitForDeployment();
-    await attestation.initialize();
     await attestation.registerIssuer(issuer.address, "Test");
     const schemaHash = ethers.keccak256(ethers.toUtf8Bytes("task-completion"));
     await attestation.registerSchema(schemaHash, "Task");
@@ -361,10 +351,9 @@ describe("V5 CovenantGovernance", function () {
 
   beforeEach(async function () {
     [owner, guardian, vetoer] = await ethers.getSigners();
-    const Factory = await ethers.getContractFactory("contracts/v5/core/CovenantGovernance.sol:CovenantGovernance");
-    governance = await Factory.deploy();
+    const Factory = await ethers.getContractFactory("CovenantGovernance");
+    governance = await upgrades.deployProxy(Factory, [guardian.address, vetoer.address, 100], { kind: "uups" });
     await governance.waitForDeployment();
-    await governance.initialize(guardian.address, vetoer.address, 100);
   });
 
   it("should create proposal", async function () {
@@ -387,6 +376,6 @@ describe("V5 CovenantGovernance", function () {
     await governance.connect(owner).propose(owner.address, "0x", ethers.ZeroHash, 86400);
     await governance.connect(vetoer).vetoProposal(1);
     const proposal = await governance.getProposal(1);
-    expect(proposal.status).to.equal(4); // Vetoed
+    expect(proposal.status).to.equal(4);
   });
 });

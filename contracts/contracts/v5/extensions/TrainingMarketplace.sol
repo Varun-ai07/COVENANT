@@ -17,7 +17,7 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
 
     mapping(uint256 => Training) public trainings;
     uint256 public trainingCount;
-    uint256 public platformFeeBps = 250; // 2.5%
+    uint256 public platformFeeBps;
     address public feeRecipient;
 
     event TrainingCreated(uint256 indexed trainingId, address indexed instructor, string title, uint256 price);
@@ -36,10 +36,11 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
 
     function initialize(address _feeRecipient) public initializer {
         if (_feeRecipient == address(0)) revert InvalidAddress();
-        feeRecipient = _feeRecipient;
         __Ownable_init();
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init();
+        feeRecipient = _feeRecipient;
+        platformFeeBps = 250;
     }
 
     function createTraining(string calldata title, uint256 price) external returns (uint256) {

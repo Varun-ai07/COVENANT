@@ -20,7 +20,7 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpg
     mapping(uint256 => mapping(address => bool)) public grantVoters;
     uint256 public grantCount;
     uint256 public treasury;
-    uint256 public votingPeriod = 7 days;
+    uint256 public votingPeriod;
     uint256 public constant MIN_APPROVAL_VOTES = 3;
 
     event GrantApplied(uint256 indexed grantId, address indexed applicant, uint256 amount);
@@ -41,7 +41,7 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpg
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __UUPSUpgradeable_init(); }
+    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __UUPSUpgradeable_init(); votingPeriod = 7 days; }
 
     function deposit() external payable { treasury += msg.value; }
 
