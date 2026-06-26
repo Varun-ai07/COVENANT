@@ -52,6 +52,10 @@ function getServerEnv(): Record<string, string> {
     PRIVATE_KEY: process.env.PRIVATE_KEY || "0xYOUR_PRIVATE_KEY_HERE",
     BASE_SEPOLIA_RPC_URL: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
     SPENDING_LIMIT: process.env.SPENDING_LIMIT || "0.1",
+    COVENANT_WALLET_MODE: process.env.COVENANT_WALLET_MODE || "autonomous",
+    PINATA_API_KEY: process.env.PINATA_API_KEY || "",
+    PINATA_SECRET_KEY: process.env.PINATA_SECRET_KEY || "",
+    MCP_API_KEY: process.env.MCP_API_KEY || "",
   };
   return env;
 }
