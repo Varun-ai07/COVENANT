@@ -4,7 +4,7 @@
 
 There isn't one. Until now.
 
-[![MCP Server](https://img.shields.io/badge/MCP-v2.2.0-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
+[![MCP Server](https://img.shields.io/badge/MCP-v2.4.3-6366f1?style=for-the-badge&logoColor=white&logo=anthropic)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue?style=for-the-badge)](https://soliditylang.org/)
 [![Base Sepolia](https://img.shields.io/badge/Base-Sepolia_L2-0052FF?style=for-the-badge)](https://sepolia.basescan.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
@@ -30,6 +30,8 @@ npx @varun-ai07/covenant-mcp@latest add
 ## Deployment Status
 
 **All 10 V5 contracts are deployed, verified on Basescan, and fully operational on Base Sepolia.**
+
+**Deployed as UUPS upgradeable proxies — addresses are permanent, logic upgrades happen in-place.**
 
 Every contract below has source code verified — you can read the Solidity directly on-chain.
 
@@ -141,7 +143,18 @@ npx @varun-ai07/covenant-mcp@latest add cline
 npx @varun-ai07/covenant-mcp@latest add opencode
 ```
 
-#### OpenClaude / Hermes / MiMo Code / Codex / Other
+#### OpenClaude
+```bash
+npx @varun-ai07/covenant-mcp@latest add openclaude
+```
+
+#### MiMo Code
+```bash
+npx @varun-ai07/covenant-mcp@latest add
+```
+(creates `mimocode.json` in project root)
+
+#### Other Platforms
 
 Add to your platform's MCP config:
 
@@ -150,20 +163,45 @@ Add to your platform's MCP config:
   "mcpServers": {
     "covenant": {
       "command": "npx",
-      "args": ["-y", "@varun-ai07/covenant-mcp@latest", "server"]
+      "args": ["-y", "@varun-ai07/covenant-mcp@latest", "server"],
+      "env": {
+        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
+        "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
+        "SPENDING_LIMIT": "0.1"
+      }
     }
   }
 }
 ```
 
-| Platform | Config File |
-|----------|------------|
-| Claude Code | `~/.claude.json` |
-| Claude Desktop (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| Cursor | `~/.cursor/mcp.json` |
-| Cline | `~/.cline/mcp.json` |
-| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
-| Project-level | `./.mcp.json` in project root |
+MiMo Code uses a different format (`mimocode.json`):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "covenant": {
+      "type": "local",
+      "command": ["npx", "-y", "@varun-ai07/covenant-mcp@latest", "server"],
+      "env": {
+        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
+        "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
+        "SPENDING_LIMIT": "0.1"
+      }
+    }
+  }
+}
+```
+
+| Platform | Config File | Format |
+|----------|------------|--------|
+| Claude Code | `~/.claude.json` | `mcpServers` |
+| OpenClaude | `~/.openclaude.json` | `mcpServers` |
+| MiMo Code | `./mimocode.json` | `mcp` (type: local, command array) |
+| Cursor | `~/.cursor/mcp.json` | `mcpServers` |
+| Cline | `~/.cline/mcp.json` | `mcpServers` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` | `mcpServers` |
+| Project-level | `./.mcp.json` | `mcpServers` |
 
 Verify connection: `npx @varun-ai07/covenant-mcp@latest status`
 
@@ -189,9 +227,11 @@ The MCP works in **read-only mode** with zero configuration. To register agents,
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `PRIVATE_KEY` | Only for writes | — | Wallet private key (starts with `0x`) |
+| `PRIVATE_KEY` | Only for writes | `0xYOUR_PRIVATE_KEY_HERE` | Wallet private key (starts with `0x`) |
 | `BASE_SEPOLIA_RPC_URL` | No | `https://sepolia.base.org` | RPC endpoint |
 | `SPENDING_LIMIT` | No | `0.1` | Max ETH per session |
+
+All env values are auto-populated when you run `add`. Edit the config file to update.
 
 **Never commit `.env` files to git. Never share your private key — with anyone, including an AI.**
 
@@ -210,6 +250,8 @@ AI:   [calls corven_task create] → shows confirmation → you approve → task
 You: "Show me protocol stats"
 AI:   [calls corven_stats] → shows agent count, tasks, volume
 ```
+
+Private key is pre-configured — edit the env section to add your real key for write operations.
 
 ---
 

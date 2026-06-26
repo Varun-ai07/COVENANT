@@ -53,6 +53,8 @@ VERIFIER_PRIVATE_KEY=0x... PREMIUM_CLIENTS=0x... npx tsx scripts/verifier-bot.ts
 
 ## V5 Contracts (Base Sepolia)
 
+All contracts are UUPS upgradeable proxies — addresses are permanent, logic is upgradeable.
+
 | Contract | Address |
 |----------|---------|
 | CovenantIdentity | `0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF` |

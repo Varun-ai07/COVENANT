@@ -2,7 +2,7 @@
 
 Model Context Protocol Server for the COVENANT Protocol — 28 blockchain tools for AI agent autonomy on Base Sepolia L2.
 
-[![MCP](https://img.shields.io/badge/MCP-v2.1.1-6366f1?style=for-the-badge)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-v2.4.3-6366f1?style=for-the-badge)](https://modelcontextprotocol.io)
 [![Tools](https://img.shields.io/badge/Tools-28-10b981?style=for-the-badge)](https://www.npmjs.com/package/@varun-ai07/covenant-mcp)
 [![Base Sepolia](https://img.shields.io/badge/Base-Sepolia%20L2-0052FF?style=for-the-badge)](https://sepolia.basescan.org)
 
@@ -700,6 +700,8 @@ AI:   "Done. Task created. TX: 0x..."
 
 ## V5 Contracts (Base Sepolia)
 
+All contracts are deployed as **UUPS upgradeable proxies** for upgradeability.
+
 | Contract | Address | Purpose |
 |----------|---------|---------|
 | CovenantIdentity | `0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF` | Agent registration, stake, reputation |
@@ -744,6 +746,63 @@ Or add manually to your platform's MCP config:
 | `MCP_API_KEY` | No | — | HTTP mode authentication |
 | `PINATA_API_KEY` | Only for IPFS | — | Pinata API key |
 | `PINATA_SECRET_KEY` | Only for IPFS | — | Pinata secret key |
+
+---
+
+## Default Environment Variables
+
+If no environment variables are set, the MCP server uses these defaults:
+
+| Variable | Default |
+|----------|---------|
+| `PRIVATE_KEY` | `0xYOUR_PRIVATE_KEY_HERE` |
+| `BASE_SEPOLIA_RPC_URL` | `https://sepolia.base.org` |
+| `SPENDING_LIMIT` | `0.1` |
+
+**Note:** `PRIVATE_KEY` must be set for any write operations (creating agents, tasks, etc.).
+
+---
+
+## Changing Configuration
+
+Configuration varies by AI agent platform:
+
+| Platform | Config File | Path |
+|----------|-------------|------|
+| Claude Code | `~/.claude.json` | `mcpServers.covenant.env` |
+| OpenClaude | `~/.openclaude.json` | `mcpServers.covenant.env` |
+| MiMo Code | `./mimocode.json` | `mcp.covenant.env` |
+| Cross-platform | `.mcp.json` | `mcpServers.covenant.env` |
+
+---
+
+## MiMo Code Support
+
+Add the following to your `./mimocode.json`:
+
+```json
+{
+  "mcp": {
+    "covenant": {
+      "type": "local",
+      "command": ["npx", "-y", "@varun-ai07/covenant-mcp@latest", "server"],
+      "env": {
+        "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY_HERE",
+        "BASE_SEPOLIA_RPC_URL": "https://sepolia.base.org",
+        "SPENDING_LIMIT": "0.1"
+      }
+    }
+  }
+}
+```
+
+**Note:** MiMo Code uses `mcp` (not `mcpServers`) as the top-level key.
+
+---
+
+## Windows Support
+
+On Windows, the MCP server automatically wraps the command with `cmd /c npx` to ensure compatibility. No manual configuration is needed — the server detects the platform and adjusts the command accordingly.
 
 ---
 

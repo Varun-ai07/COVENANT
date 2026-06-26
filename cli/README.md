@@ -423,6 +423,8 @@ Write operations go through the same safety checks (balance, spending cap, confi
 
 ## Network
 
+All CLI commands interact with UUPS proxy addresses — contract logic can be upgraded without changing addresses.
+
 | Network | Chain ID | Default RPC |
 |---------|----------|-------------|
 | Base Sepolia | 84532 | https://sepolia.base.org |
