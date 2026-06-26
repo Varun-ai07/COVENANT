@@ -101,6 +101,10 @@ function getWindsurfConfigPath(): string | null {
   return null;
 }
 
+function getMiMoCodeConfigPath(): string {
+  return join(process.cwd(), "mimocode.json");
+}
+
 function detectPlatforms(): Platform[] {
   const platforms: Platform[] = [];
 
@@ -169,8 +173,19 @@ function detectPlatforms(): Platform[] {
     name: "Project .mcp.json",
     id: "project",
     configPath: projectMcpPath,
-    detected: true, // Can always create this
+    detected: true,
     installed: existsSync(projectMcpPath),
+    method: "project",
+  });
+
+  // MiMo Code — project-level mimocode.json
+  const mimocodePath = getMiMoCodeConfigPath();
+  platforms.push({
+    name: "MiMo Code",
+    id: "mimocode",
+    configPath: mimocodePath,
+    detected: true,
+    installed: existsSync(mimocodePath) && isInstalled(readJsonConfig(mimocodePath)),
     method: "project",
   });
 
@@ -353,6 +368,9 @@ function addCommand(targetPlatform?: string): void {
         break;
       case "project":
         success = addToProject();
+        break;
+      case "mimocode":
+        success = addToJsonPlatform(join(process.cwd(), "mimocode.json"));
         break;
     }
 
