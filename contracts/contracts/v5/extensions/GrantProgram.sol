@@ -3,9 +3,10 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title GrantProgram V5 — DAO-funded grants for agent development
-contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     struct Grant {
         address applicant;
         uint256 amount;
@@ -37,9 +38,10 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error InvalidAddress();
     error ExcessiveWithdraw();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); }
+    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __UUPSUpgradeable_init(); }
 
     function deposit() external payable { treasury += msg.value; }
 
@@ -91,4 +93,8 @@ contract GrantProgram is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         require(s, "withdraw failed");
     }
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

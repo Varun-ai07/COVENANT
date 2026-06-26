@@ -5,11 +5,12 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title CovenantEscrow V5 — Core trust primitive with CEI fixes and batch support
 /// @notice ~40K gas for create+fund, 96 bytes per task, batch settlement with limits
 /// @dev Fixes V4: CEI pattern, batch size limits, emergency withdrawal, proper access control
-contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     using ECDSAUpgradeable for bytes32;
 
     // ═══════════════════════════════════════════════════════════════
@@ -87,7 +88,7 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
         __Ownable_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        identity = _identity;
+        __UUPSUpgradeable_init();        identity = _identity;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -318,4 +319,8 @@ contract CovenantEscrow is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pausa
     error WorkerAssigned();
     error ExcessiveWithdraw();
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

@@ -5,11 +5,12 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title CovenantSettlement V5 — Streaming + receipt settlement with batch limits
 /// @notice Sub-second agent interactions via signed receipts, batch settlement with limits
 /// @dev Fixes V4: Batch size limits, CEI pattern, emergency withdrawal
-contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     using ECDSAUpgradeable for bytes32;
     using SafeCastUpgradeable for uint256;
 
@@ -91,6 +92,7 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         if (_identity == address(0)) revert InvalidAddress();
         __Ownable_init();
         __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
         identity = _identity;
     }
 
@@ -307,4 +309,8 @@ contract CovenantSettlement is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         return totalStreamed - stream.streamed;
     }
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

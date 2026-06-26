@@ -5,11 +5,12 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title CovenantGovernance V5 — Protocol governance with timelock and guardian
 /// @notice Proposals, off-chain voting with guardian signatures, timelock execution
 /// @dev Fixes V4: Emergency pause actually pauses, quorum enforced, execution threshold
-contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
+contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     using ECDSAUpgradeable for bytes32;
 
     enum ProposalStatus { None, Active, Defeated, Executed, Vetoed }
@@ -68,6 +69,7 @@ contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, Reentran
     error SignatureAlreadyUsed();
     error ExecutionFailed();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
     function initialize(address _guardian, address _vetoer, uint256 initialQuorum) public initializer {
@@ -75,6 +77,7 @@ contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, Reentran
         __Ownable_init();
         __Pausable_init();
         __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
         guardian = _guardian;
         vetoer = _vetoer;
         _quorum = initialQuorum;
@@ -180,4 +183,8 @@ contract CovenantGovernance is OwnableUpgradeable, PausableUpgradeable, Reentran
     function setQuorum(uint256 newQuorum) external onlyOwner { uint256 old = _quorum; _quorum = newQuorum; emit QuorumUpdated(old, newQuorum); }
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

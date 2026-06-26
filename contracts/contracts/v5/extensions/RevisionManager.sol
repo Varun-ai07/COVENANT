@@ -3,9 +3,10 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title RevisionManager V5 — Revision tracking with access control
-contract RevisionManager is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract RevisionManager is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     struct Revision {
         uint256 taskId;
         uint256 revisionNumber;
@@ -35,9 +36,10 @@ contract RevisionManager is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error ClientCannotSubmit();
     error NotTaskClient();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); }
+    function initialize() public initializer { __Ownable_init(); __UUPSUpgradeable_init(); }
 
     function setTaskClient(uint256 taskId, address client) external onlyOwner { taskClient[taskId] = client; }
     function setRevisionAllowed(uint256 taskId, bool allowed) external onlyOwner { revisionAllowed[taskId] = allowed; }
@@ -80,4 +82,8 @@ contract RevisionManager is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         return revisions[taskId][revisions[taskId].length - 1];
     }
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

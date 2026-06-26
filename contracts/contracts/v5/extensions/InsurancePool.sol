@@ -3,9 +3,10 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title InsurancePool V5 — Insurance pool with premiums, claims, and governance
-contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     struct MemberInfo {
         bool isMember;
         uint256 totalPremiumsPaid;
@@ -54,9 +55,10 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); }
+    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __UUPSUpgradeable_init(); }
 
     function joinPool() external payable nonReentrant {
         if (msg.value < MIN_JOIN_AMOUNT) revert InvalidAmount();
@@ -134,4 +136,8 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         require(s, "withdraw failed");
     }
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

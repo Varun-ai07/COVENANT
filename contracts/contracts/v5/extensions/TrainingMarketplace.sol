@@ -3,9 +3,10 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title TrainingMarketplace V5 — Agent training programs with 2.5% platform fee
-contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUpgradeable {
     struct Training {
         address instructor;
         string title;
@@ -30,6 +31,7 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     error InvalidAddress();
     error ExcessiveWithdraw();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
     function initialize(address _feeRecipient) public initializer {
@@ -37,6 +39,7 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         feeRecipient = _feeRecipient;
         __Ownable_init();
         __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
     }
 
     function createTraining(string calldata title, uint256 price) external returns (uint256) {
@@ -92,4 +95,8 @@ contract TrainingMarketplace is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         require(s, "withdraw failed");
     }
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

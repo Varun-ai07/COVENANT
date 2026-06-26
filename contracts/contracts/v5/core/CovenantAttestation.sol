@@ -5,10 +5,11 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title CovenantAttestation V5 — Verifiable credentials with batch support
 /// @notice Schema-based attestations with issuer authorization
-contract CovenantAttestation is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract CovenantAttestation is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     using ECDSAUpgradeable for bytes32;
 
     struct AttestationStorage {
@@ -44,9 +45,10 @@ contract CovenantAttestation is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
     error BatchTooLarge();
     error BatchLengthMismatch();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
-    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __Pausable_init(); }
+    function initialize() public initializer { __Ownable_init(); __ReentrancyGuard_init(); __Pausable_init(); __UUPSUpgradeable_init(); }
 
     function attest(
         address subject,
@@ -134,4 +136,8 @@ contract CovenantAttestation is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
 
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

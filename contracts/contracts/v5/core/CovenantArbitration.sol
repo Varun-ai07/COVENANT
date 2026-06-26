@@ -5,11 +5,12 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title CovenantArbitration V5 — Dispute resolution with CEI fixes
 /// @notice Client/worker stake + arbiter ruling + split basis points
 /// @dev Fixes V4: CEI in settleDispute, batch size limits, emergency withdrawal
-contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     using ECDSAUpgradeable for bytes32;
 
     // ═══════════════════════════════════════════════════════════════
@@ -76,6 +77,8 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
         if (_escrow == address(0) || _arbiter == address(0)) revert InvalidAddress();
         __Ownable_init();
         __ReentrancyGuard_init();
+        __Pausable_init();
+        __UUPSUpgradeable_init();
         escrow = _escrow;
         arbiter = _arbiter;
     }
@@ -262,4 +265,8 @@ contract CovenantArbitration is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }

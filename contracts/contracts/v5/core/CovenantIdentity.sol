@@ -5,11 +5,12 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title CovenantIdentity V5 — Trust root with Merkle reputation, capabilities, and emergency controls
 /// @notice ~25K gas registration, 64 bytes per agent, 32 bytes per capability
 /// @dev Fixes V4: Added emergency withdraw, fixed grantCapability access control, indexed events
-contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable, UUPSUpgradeable {
     using ECDSAUpgradeable for bytes32;
 
     struct AgentRecordStorage {
@@ -65,13 +66,15 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
     error CapabilityNotFound();
     error ExcessiveWithdraw();
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
 
     function initialize(uint96 _minimumStake, address _reputationOracle) public initializer {
-        if (_reputationOracle == address(0)) revert InvalidAddress();
         __Ownable_init();
+        transferOwnership(_reputationOracle);
         __ReentrancyGuard_init();
         __Pausable_init();
+        __UUPSUpgradeable_init();
         minimumStake = _minimumStake;
         reputationOracle = _reputationOracle;
     }
@@ -170,4 +173,8 @@ contract CovenantIdentity is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pau
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
     receive() external payable {}
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+
+    uint256[50] private __gap;
 }
