@@ -33,6 +33,8 @@ import { registerFiatTools } from "./tools/corven-fiat.js";
 import { registerMultiTools } from "./tools/corven-multi.js";
 import { registerIPFSUploadTool } from "./tools/corven-ipfs.js";
 import { registerStatusTool } from "./tools/corven-status.js";
+import { registerVersionTools } from "./tools/corven-version.js";
+import { registerEncryptTools } from "./tools/corven-encrypt.js";
 
 // Legacy tools (kept during migration)
 import { registerCovenantHelpTools } from "./tools/covenant-help.js";
@@ -40,7 +42,7 @@ import { registerCovenantHelpTools } from "./tools/covenant-help.js";
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "covenant-mcp",
-    version: "2.5.2",
+    version: "3.0.0",
   });
 
   // ── Core Identity ─────────────────────────────────────────────
@@ -86,9 +88,13 @@ export function createServer(): McpServer {
   // ── Status ────────────────────────────────────────────────────
   registerStatusTool(server);        // corven_status: system status dashboard
 
+  // ── Versioning & Encryption ───────────────────────────────────
+  registerVersionTools(server);      // corven_version: track, history, diff deliverable versions
+  registerEncryptTools(server);      // corven_encrypt: encrypt, decrypt task content
+
   // ── Help ──────────────────────────────────────────────────────
   registerCovenantHelpTools(server); // corven_help: protocol guide
 
-  info("[SERVER] 26 corven_ domain tools registered");
+  info("[SERVER] 28 corven_ domain tools registered");
   return server;
 }

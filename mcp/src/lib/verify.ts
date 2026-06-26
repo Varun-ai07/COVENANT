@@ -2,6 +2,7 @@ import { execSync } from "child_process";
 import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import { join, extname } from "path";
 import { createHash } from "crypto";
+import { loadStore, saveStore } from "./store.js";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -59,17 +60,19 @@ export async function verifyProject(
   checks.push(await checkDocumentation(repoDir));
   checks.push(await checkDependencies(repoDir));
   checks.push(await checkBestPractices(repoDir));
+  checks.push(await checkIntegrationTests(repoDir));
 
   // Weighted score
   const weights: Record<string, number> = {
-    code_quality: 0.20,
-    architecture: 0.15,
-    security: 0.20,
-    performance: 0.15,
-    testing: 0.15,
+    code_quality: 0.18,
+    architecture: 0.13,
+    security: 0.18,
+    performance: 0.13,
+    testing: 0.13,
+    integration_tests: 0.08,
     documentation: 0.05,
     dependencies: 0.05,
-    best_practices: 0.05,
+    best_practices: 0.07,
   };
 
   let totalScore = 0;
@@ -78,8 +81,19 @@ export async function verifyProject(
   }
   const score = Math.round(totalScore);
 
+  // Determine test quality from integration + testing checks
+  const testCheck = checks.find((c) => c.dimension === "testing");
+  const integrationCheck = checks.find((c) => c.dimension === "integration_tests");
+  const testQuality = (testCheck?.score || 0) + (integrationCheck?.score || 0);
+
   const verdict: "pass" | "fail" | "partial" =
-    score >= 70 ? "pass" : score >= 40 ? "partial" : "fail";
+    score >= 75 && testQuality >= 100
+      ? "pass"
+      : score >= 60
+        ? "pass"
+        : score >= 35
+          ? "partial"
+          : "fail";
 
   const summary = generateSummary(checks, score, requirements);
   const recommendations = generateRecommendations(checks);
@@ -96,12 +110,7 @@ export async function verifyProject(
     .update(JSON.stringify(report))
     .digest("hex");
 
-  // Cleanup
-  try {
-    execSync(`rm -rf ${repoDir}`);
-  } catch { /* best-effort cleanup */ }
-
-  return {
+  const verificationResult: VerificationResult = {
     score,
     verdict,
     checks,
@@ -111,6 +120,18 @@ export async function verifyProject(
     repoUrl,
     timestamp: Date.now(),
   };
+
+  // Borderline scores (40-69) go to review queue
+  if (verdict === "partial") {
+    addToReviewQueue(verificationResult, `verify-${Date.now()}`, "auto-verify");
+  }
+
+  // Cleanup
+  try {
+    execSync(`rm -rf ${repoDir}`);
+  } catch { /* best-effort cleanup */ }
+
+  return verificationResult;
 }
 
 // ─── Checkers ────────────────────────────────────────────────
@@ -503,6 +524,70 @@ async function checkBestPractices(dir: string): Promise<CheckResult> {
   };
 }
 
+async function checkIntegrationTests(dir: string): Promise<CheckResult> {
+  const issues: string[] = [];
+  let score = 0;
+
+  const integrationPatterns = [
+    "*.integration.test.*",
+    "*.e2e.test.*",
+    "*.integration.spec.*",
+    "*.e2e.spec.*",
+  ];
+
+  const integrationFiles: string[] = [];
+  for (const pattern of integrationPatterns) {
+    integrationFiles.push(...getFiles(dir, [pattern]));
+  }
+
+  // Also check for files in integration/e2e directories
+  const integrationDirs = ["integration", "e2e", "__integration__", "__e2e__"];
+  for (const d of integrationDirs) {
+    const dPath = join(dir, d);
+    if (existsSync(dPath)) {
+      integrationFiles.push(...getFiles(dPath, [".test.ts", ".test.js", ".spec.ts", ".spec.js", ".test.tsx", ".test.jsx"]));
+    }
+  }
+
+  if (integrationFiles.length > 0) {
+    // Check for assertions in integration tests
+    let assertionCount = 0;
+    for (const file of integrationFiles.slice(0, 50)) {
+      const content = readFileSync(file, "utf-8");
+      assertionCount += (content.match(/expect\(|assert\.|assertEqual|\.toBe\(|\.toEqual\(/g) || []).length;
+    }
+
+    if (assertionCount > 0) {
+      score = 100;
+    } else {
+      issues.push("Integration test files found but no assertions detected");
+      score = 50;
+    }
+  } else {
+    // Check if unit tests exist at all (fallback score)
+    const hasUnitTests =
+      existsSync(join(dir, "test")) ||
+      existsSync(join(dir, "tests")) ||
+      existsSync(join(dir, "__tests__"));
+
+    if (hasUnitTests) {
+      issues.push("No integration tests found (only unit tests)");
+      score = 50;
+    } else {
+      issues.push("No tests of any kind found");
+      score = 0;
+    }
+  }
+
+  return {
+    dimension: "integration_tests",
+    score: Math.max(0, score),
+    details: `Integration files: ${integrationFiles.length}`,
+    issues,
+    passed: score >= 70,
+  };
+}
+
 // ─── Helpers ─────────────────────────────────────────────────
 
 const SKIP_DIRS = new Set([
@@ -668,4 +753,45 @@ function generateRecommendations(checks: CheckResult[]): string[] {
     }
   }
   return recs.slice(0, 5);
+}
+
+// ─── Review Queue ──────────────────────────────────────────────
+
+interface ReviewEntry {
+  taskId: string;
+  worker: string;
+  repoUrl: string;
+  score: number;
+  verdict: string;
+  checks: CheckResult[];
+  timestamp: number;
+  reviewStatus: "pending" | "approved" | "rejected";
+}
+
+function addToReviewQueue(result: VerificationResult, taskId: string, worker: string): void {
+  const queue = loadStore<ReviewEntry[]>("review_queue", []);
+  queue.push({
+    taskId,
+    worker,
+    repoUrl: result.repoUrl,
+    score: result.score,
+    verdict: result.verdict,
+    checks: result.checks,
+    timestamp: result.timestamp,
+    reviewStatus: "pending",
+  });
+  saveStore("review_queue", queue);
+}
+
+export function getReviewQueue(): ReviewEntry[] {
+  return loadStore<ReviewEntry[]>("review_queue", []).filter(r => r.reviewStatus === "pending");
+}
+
+export function resolveReview(taskId: string, approved: boolean): boolean {
+  const queue = loadStore<ReviewEntry[]>("review_queue", []);
+  const entry = queue.find(r => r.taskId === taskId && r.reviewStatus === "pending");
+  if (!entry) return false;
+  entry.reviewStatus = approved ? "approved" : "rejected";
+  saveStore("review_queue", queue);
+  return true;
 }

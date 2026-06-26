@@ -5,12 +5,53 @@ import { readContract } from "../handlers/wallet.js";
 import { formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
 import { addressToDid, didToAddress } from "../lib/did.js";
+import { loadStore, saveStore } from "../lib/store.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const REGISTRY_ABI = loadAbi("AgentRegistry");
 const VERIFIER_ABI = loadAbi("ReceiptVerifier");
 
-const actionSchema = z.enum(["export", "import", "did"]);
+interface ReputationHistoryEntry {
+  score: number;
+  change: number;
+  reason: string;
+  timestamp: number;
+}
+
+interface ReputationHistoryStore {
+  [address: string]: ReputationHistoryEntry[];
+}
+
+function addHistory(address: string, score: number, change: number, reason: string): void {
+  const store = loadStore<ReputationHistoryStore>("reputation_history", {});
+  if (!store[address]) store[address] = [];
+  store[address].push({ score, change, reason, timestamp: Date.now() });
+  saveStore("reputation_history", store);
+}
+
+function getHistory(address: string): ReputationHistoryEntry[] {
+  const store = loadStore<ReputationHistoryStore>("reputation_history", {});
+  return store[address] || [];
+}
+
+function getStats(address: string) {
+  const history = getHistory(address);
+  if (history.length === 0) {
+    return { totalChanges: 0, avgChange: 0, bestPeriod: null, worstPeriod: null };
+  }
+  const changes = history.map(h => h.change);
+  const avgChange = Math.round((changes.reduce((a, b) => a + b, 0) / changes.length) * 100) / 100;
+  const bestIdx = changes.indexOf(Math.max(...changes));
+  const worstIdx = changes.indexOf(Math.min(...changes));
+  return {
+    totalChanges: history.length,
+    avgChange,
+    bestPeriod: history[bestIdx],
+    worstPeriod: history[worstIdx],
+  };
+}
+
+const actionSchema = z.enum(["export", "import", "did", "history", "stats"]);
 
 const schema = z.object({
   action: actionSchema,
@@ -28,7 +69,9 @@ export function registerReputationTools(server: McpServer): void {
         "ACTIONS:\n" +
         "  export — Export reputation as W3C VC JWT (requires address)\n" +
         "  import — Verify and parse a reputation VC (requires jwt)\n" +
-        "  did — Get DID document for an agent (requires address)\n\n" +
+        "  did — Get DID document for an agent (requires address)\n" +
+        "  history — Get reputation change history for an agent (requires address)\n" +
+        "  stats — Get aggregate reputation stats (requires address)\n\n" +
         "WORKFLOW: export → share JWT → import (cross-platform trust)\n" +
         "DID FORMAT: did:covenant:<address>\n" +
         "VC TYPE: CovenantReputation signed with ES256K\n\n" +
@@ -64,6 +107,9 @@ export function registerReputationTools(server: McpServer): void {
             attestationCount = Array.isArray(receipts) ? receipts.length : 0;
           } catch { /* not fatal */ }
 
+          const history = getHistory(addr.toLowerCase());
+          addHistory(addr.toLowerCase(), Number(agent.reputation), 0, "export");
+
           return formatReadResult({
             did: addressToDid(addr),
             address: addr,
@@ -81,6 +127,8 @@ export function registerReputationTools(server: McpServer): void {
               : Number(agent.tasksCompleted) >= 50 ? "Top 10%"
               : Number(agent.tasksCompleted) >= 10 ? "Established"
               : "Newcomer",
+            historyCount: history.length,
+            recentChanges: history.slice(-5),
             note: "Full JWT export requires wallet signing. Use corven_export_reputation_vc for signed JWT.",
           }, "Reputation Export");
         }
@@ -95,8 +143,23 @@ export function registerReputationTools(server: McpServer): void {
             return formatStructuredError("Invalid JWT format.", "Expected 3 parts.", "Use a valid VC JWT from corven_export_reputation_vc.", false);
           }
 
-          const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
-          const issuerAddress = didToAddress(payload.iss);
+          let payload: any;
+          try {
+            payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+          } catch {
+            return formatStructuredError("Invalid JWT payload.", "Cannot decode JWT body.", "Ensure the JWT is properly formatted.", false);
+          }
+
+          if (!payload.iss) {
+            return formatStructuredError("Invalid VC structure.", "Missing 'iss' field.", "Use a valid W3C Verifiable Credential.", false);
+          }
+
+          let issuerAddress: string;
+          try {
+            issuerAddress = didToAddress(payload.iss);
+          } catch {
+            return formatStructuredError("Invalid issuer DID.", "Cannot extract address from DID.", "Ensure iss is a valid did:covenant: address.", false);
+          }
 
           let issuerRegistered = false;
           try {
@@ -104,11 +167,17 @@ export function registerReputationTools(server: McpServer): void {
             issuerRegistered = true;
           } catch { /* not registered */ }
 
+          const credential = payload.vc?.credentialSubject || payload;
+          const requiredFields = ["reputation", "tasksCompleted"];
+          const missingFields = requiredFields.filter(f => !(f in credential));
+
           return formatReadResult({
             verified: true,
+            validStructure: missingFields.length === 0,
+            missingFields,
             issuerRegistered,
             issuer: { did: payload.iss, address: issuerAddress },
-            credential: payload.vc?.credentialSubject || payload,
+            credential,
           }, "VC Verified and Imported");
         }
 
@@ -142,6 +211,31 @@ export function registerReputationTools(server: McpServer): void {
             registered: !!agentData,
             agentData,
           }, "Agent DID Document");
+        }
+
+        if (action === "history") {
+          const addr = args.address || getAccount()?.address;
+          if (!addr) {
+            return formatStructuredError("No address provided.", "Address is required.", "Provide an Ethereum address.", false);
+          }
+          const history = getHistory(addr.toLowerCase());
+          return formatReadResult({
+            address: addr,
+            totalEntries: history.length,
+            history,
+          }, "Reputation History");
+        }
+
+        if (action === "stats") {
+          const addr = args.address || getAccount()?.address;
+          if (!addr) {
+            return formatStructuredError("No address provided.", "Address is required.", "Provide an Ethereum address.", false);
+          }
+          const stats = getStats(addr.toLowerCase());
+          return formatReadResult({
+            address: addr,
+            ...stats,
+          }, "Reputation Stats");
         }
 
         return formatReadResult({ error: "Unknown action" }, "Error");

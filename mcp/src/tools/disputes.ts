@@ -14,9 +14,18 @@ import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
 import { parseContractError, formatStructuredError } from "../lib/formatResponse.js";
 import { taskId as taskIdSchema, ethAmount } from "../lib/schemaHelpers.js";
+import { loadStore, saveStore } from "../lib/store.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const ABI = loadAbi("CovenantArbitration");
+
+interface EvidenceItem {
+  evidenceHash: string;
+  description: string;
+  submittedBy: string;
+  timestamp: number;
+  type: "support" | "rebuttal" | "expert";
+}
 
 // Check if DisputeArbitration is deployed (not zero address)
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -218,6 +227,8 @@ export function registerDisputeTools(server: McpServer): void {
           return formatReadResult({ disputeCount: Number(count) }, "Total Disputes");
         }
         const data = await readContract(CONTRACTS.DisputeArbitration, ABI, "getDispute", [BigInt(disputeId)]);
+        const evidenceStore = loadStore<Record<string, EvidenceItem[]>>("dispute_evidence", {});
+        const disputeEvidence = evidenceStore[String(disputeId)] || [];
         const enriched = {
           taskId: (data as any).taskId,
           client: (data as any).client,
@@ -228,6 +239,8 @@ export function registerDisputeTools(server: McpServer): void {
           workerWins: (data as any).workerWins,
           createdAt: (data as any).createdAt,
           votingEndsAt: (data as any).votingEndsAt,
+          evidenceCount: disputeEvidence.length,
+          evidence: disputeEvidence,
         };
         return formatReadResult(enriched, `Dispute #${disputeId}`);
       } catch (e) {
@@ -272,6 +285,90 @@ export function registerDisputeTools(server: McpServer): void {
           info: "Juror reward claiming is not available in V5 CovenantArbitration.",
           reason: "V5 uses a different reward distribution model. Rewards are handled through settleDispute.",
         }, "Claim Reward — Not Available");
+      } catch (e) {
+        const parsed = parseContractError(e);
+        return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);
+      }
+    }
+  );
+
+  // ──────────────────────────────────────────────────────────────
+  // evidence — attach evidence to a dispute
+  // ──────────────────────────────────────────────────────────────
+  server.registerTool(
+    "corven_dispute_evidence",
+    {
+      title: "Dispute Evidence",
+      description:
+        "Attach evidence to a dispute or list evidence for a dispute on COVENANT.\n\n" +
+        "ACTIONS:\n" +
+        "  evidence — Attach evidence (requires disputeId, evidenceHash, description, type)\n" +
+        "  evidence_list — List all evidence for a dispute (requires disputeId)\n\n" +
+        "USE WHEN: Submitting supporting documents, expert opinions, or rebuttals for a dispute.\n" +
+        "REQUIRES: disputeId, evidenceHash (IPFS CID), description, type (support|rebuttal|expert).\n" +
+        "RETURNS: Confirmation of evidence submission or list of evidence items.\n\n" +
+        "NEXT STEP: File dispute with corven_file_dispute or vote with corven_cast_vote\n\n" +
+        "OUTPUT RULES:\n" +
+        "- Present results as clean, readable text. Never show raw JSON.\n" +
+        "- On error: Explain in plain language what went wrong and suggest next step.\n" +
+        "- Always recommend a logical follow-up action.\n" +
+        "- Never show stack traces, technical errors, or raw data.",
+      inputSchema: {
+        action: z.enum(["evidence", "evidence_list"]).describe("Evidence action"),
+        disputeId: z.number().int().positive().describe("Dispute ID"),
+        evidenceHash: z.string().optional().describe("IPFS CID of the evidence"),
+        description: z.string().optional().describe("Description of the evidence"),
+        type: z.enum(["support", "rebuttal", "expert"]).optional().describe("Evidence type"),
+      },
+    },
+    async (params) => {
+      try {
+        const { action, disputeId, evidenceHash, description, type } = params as any;
+
+        if (action === "evidence") {
+          if (!evidenceHash || !description || !type) {
+            return formatStructuredError("Missing required fields.", "evidence requires evidenceHash, description, and type.", "Provide all three parameters.", false);
+          }
+          const account = getAccount();
+          const evidenceStore = loadStore<Record<string, EvidenceItem[]>>("dispute_evidence", {});
+          const key = String(disputeId);
+          if (!evidenceStore[key]) evidenceStore[key] = [];
+          const item: EvidenceItem = {
+            evidenceHash,
+            description,
+            submittedBy: account?.address || "unknown",
+            timestamp: Date.now(),
+            type,
+          };
+          evidenceStore[key].push(item);
+          saveStore("dispute_evidence", evidenceStore);
+          return formatReadResult({
+            disputeId,
+            evidenceHash,
+            type,
+            description,
+            submittedBy: item.submittedBy,
+            timestamp: new Date(item.timestamp).toISOString(),
+          }, `Evidence Attached to Dispute #${disputeId}`);
+        }
+
+        if (action === "evidence_list") {
+          const evidenceStore = loadStore<Record<string, EvidenceItem[]>>("dispute_evidence", {});
+          const items = evidenceStore[String(disputeId)] || [];
+          return formatReadResult({
+            disputeId,
+            totalEvidence: items.length,
+            evidence: items.map(e => ({
+              evidenceHash: e.evidenceHash,
+              description: e.description,
+              submittedBy: e.submittedBy,
+              timestamp: new Date(e.timestamp).toISOString(),
+              type: e.type,
+            })),
+          }, `Evidence for Dispute #${disputeId}`);
+        }
+
+        return formatStructuredError("Unknown action.", "Valid actions: evidence, evidence_list.", "Pass a valid action.", false);
       } catch (e) {
         const parsed = parseContractError(e);
         return formatStructuredError(parsed.error, parsed.cause, parsed.fix, parsed.retryable);

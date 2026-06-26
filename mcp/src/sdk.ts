@@ -191,6 +191,16 @@ export class CovenantSDK {
     });
   }
 
+  async fundTask(taskId: bigint, amount: bigint): Promise<Hash> {
+    this.requireWallet();
+    return this.walletClient!.writeContract({
+      address: this.addresses.CovenantEscrow,
+      abi: CovenantEscrowABI.abi,
+      functionName: "fundTask", args: [taskId],
+      value: amount, chain: this.chain, account: this.account!,
+    });
+  }
+
   async waitForTransaction(hash: Hash) {
     return this.publicClient.waitForTransactionReceipt({ hash });
   }

@@ -12,7 +12,21 @@ import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
 import { stringToBytes32, stringsToBytes32 } from "../utils.js";
+import { loadStore, saveStore } from "../lib/store.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+interface BatchTaskStatus {
+  taskId: number;
+  status: string;
+  score: number;
+}
+
+interface BatchStatusRecord {
+  tasks: BatchTaskStatus[];
+  createdAt: number;
+  completedAt: number | null;
+  cancelled: boolean;
+}
 
 const ABI = loadAbi("ParallelTaskBatch");
 
@@ -25,7 +39,7 @@ const BATCH_STATUS: Record<number, string> = {
 };
 
 const actionSchema = z.enum([
-  "create", "submit", "verify", "get", "check",
+  "create", "submit", "verify", "get", "check", "progress", "cancel",
 ]);
 
 const schema = z.object({
@@ -51,7 +65,9 @@ export function registerBatchTools(server: McpServer): void {
         "  submit — Worker submits deliverable for a batch subtask\n" +
         "  verify — Finalize batch by aggregating all results (requires batchId)\n" +
         "  get — Get batch details or total count (pass batchId for details, omit for count)\n" +
-        "  check — Check if all subtasks are submitted (requires batchId)\n\n" +
+        "  check — Check if all subtasks are submitted (requires batchId)\n" +
+        "  progress — Get real-time batch progress with per-task status (requires batchId)\n" +
+        "  cancel — Mark a batch as cancelled (requires batchId)\n\n" +
         "WORKFLOW: create → workers execute → check (all submitted?) → verify (aggregate)\n" +
         "FEE: 1% protocol fee per subtask. Max 50 workers per batch.\n\n" +
         "WHEN TO USE: When you need to execute multiple related tasks in parallel and aggregate results.\n\n" +
@@ -100,6 +116,20 @@ export function registerBatchTools(server: McpServer): void {
             ],
             totalPayment
           );
+          const batchStatusStore = loadStore<Record<string, BatchStatusRecord>>("batch_status", {});
+          const txResult = result as any;
+          const newBatchId = txResult?.batchId ?? txResult?.receipt?.blockNumber?.toString() ?? String(Object.keys(batchStatusStore).length);
+          batchStatusStore[newBatchId] = {
+            tasks: args.workers.map((_: string, i: number) => ({
+              taskId: i,
+              status: "pending",
+              score: 0,
+            })),
+            createdAt: Date.now(),
+            completedAt: null,
+            cancelled: false,
+          };
+          saveStore("batch_status", batchStatusStore);
           return formatTxResult(result);
         }
 
@@ -107,16 +137,36 @@ export function registerBatchTools(server: McpServer): void {
           if (args.batchId === undefined) {
             return formatStructuredError("Missing required field.", "submit requires batchId.", "Provide the batchId.", false);
           }
+          const batchStatusStore = loadStore<Record<string, BatchStatusRecord>>("batch_status", {});
+          const rec = batchStatusStore[String(args.batchId)];
+          if (rec && !rec.cancelled) {
+            const pendingTask = rec.tasks.find(t => t.status === "pending");
+            if (pendingTask) {
+              pendingTask.status = "submitted";
+            }
+            saveStore("batch_status", batchStatusStore);
+          }
           return formatReadResult({
             info: "Batch subtask submission is not available in V5 ParallelTaskBatch.",
             reason: "V5 batches use createBatch + aggregateResults. Individual subtask submission is handled differently.",
             batchId: args.batchId,
+            trackedStatus: rec ? rec.tasks.map(t => ({ taskId: t.taskId, status: t.status })) : null,
           }, "Batch Submit — Not Available");
         }
 
         if (action === "verify") {
           if (args.batchId === undefined) {
             return formatStructuredError("Missing required field.", "verify requires batchId.", "Provide the batchId.", false);
+          }
+          const batchStatusStore = loadStore<Record<string, BatchStatusRecord>>("batch_status", {});
+          const rec = batchStatusStore[String(args.batchId)];
+          if (rec && !rec.cancelled) {
+            rec.tasks.forEach(t => {
+              t.status = "completed";
+              t.score = 100;
+            });
+            rec.completedAt = Date.now();
+            saveStore("batch_status", batchStatusStore);
           }
           const result = await executeOrPrepare(
             CONTRACTS.ParallelTaskBatch, ABI, "aggregateResults",
@@ -150,6 +200,51 @@ export function registerBatchTools(server: McpServer): void {
           const batch = await readContract(CONTRACTS.ParallelTaskBatch, ABI, "getBatch", [BigInt(args.batchId)]);
           const status = BATCH_STATUS[(batch as any).status] ?? "Unknown";
           return formatReadResult({ batchId: args.batchId, status, allSubmitted: status === "Completed" || status === "Aggregated" }, `Batch #${args.batchId} Status`);
+        }
+
+        if (action === "progress") {
+          if (args.batchId === undefined) {
+            return formatStructuredError("Missing required field.", "progress requires batchId.", "Provide the batchId.", false);
+          }
+          const batchStatusStore = loadStore<Record<string, BatchStatusRecord>>("batch_status", {});
+          const rec = batchStatusStore[String(args.batchId)];
+          if (!rec) {
+            return formatStructuredError("Batch not found.", "No tracked status for batch " + args.batchId, "Ensure the batch was created via corven_batch create.", false);
+          }
+          const completed = rec.tasks.filter(t => t.status === "completed").length;
+          const total = rec.tasks.length;
+          return formatReadResult({
+            batchId: args.batchId,
+            cancelled: rec.cancelled,
+            completed,
+            total,
+            percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+            createdAt: new Date(rec.createdAt).toISOString(),
+            completedAt: rec.completedAt ? new Date(rec.completedAt).toISOString() : null,
+            tasks: rec.tasks.map(t => ({ taskId: t.taskId, status: t.status, score: t.score })),
+          }, `Batch #${args.batchId} Progress`);
+        }
+
+        if (action === "cancel") {
+          if (args.batchId === undefined) {
+            return formatStructuredError("Missing required field.", "cancel requires batchId.", "Provide the batchId.", false);
+          }
+          const batchStatusStore = loadStore<Record<string, BatchStatusRecord>>("batch_status", {});
+          const rec = batchStatusStore[String(args.batchId)];
+          if (!rec) {
+            return formatStructuredError("Batch not found.", "No tracked status for batch " + args.batchId, "Ensure the batch was created via corven_batch create.", false);
+          }
+          if (rec.cancelled) {
+            return formatReadResult({ batchId: args.batchId, alreadyCancelled: true }, `Batch #${args.batchId} Already Cancelled`);
+          }
+          rec.cancelled = true;
+          rec.tasks.forEach(t => { t.status = "cancelled"; });
+          saveStore("batch_status", batchStatusStore);
+          return formatReadResult({
+            batchId: args.batchId,
+            cancelled: true,
+            tasks: rec.tasks.map(t => ({ taskId: t.taskId, status: t.status })),
+          }, `Batch #${args.batchId} Cancelled`);
         }
 
         return formatReadResult({ error: "Unknown action" }, "Error");
