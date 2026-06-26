@@ -48,11 +48,11 @@ const SERVER_ARGS = IS_WINDOWS
   ? ["/c", "npx", "-y", NPM_PACKAGE, "server"]
   : ["-y", NPM_PACKAGE, "server"];
 function getServerEnv(): Record<string, string> {
-  const env: Record<string, string> = {};
-  const pk = process.env.PRIVATE_KEY;
-  if (pk) env.PRIVATE_KEY = pk;
-  const rpc = process.env.BASE_SEPOLIA_RPC_URL;
-  if (rpc) env.BASE_SEPOLIA_RPC_URL = rpc;
+  const env: Record<string, string> = {
+    PRIVATE_KEY: process.env.PRIVATE_KEY || "0xYOUR_PRIVATE_KEY_HERE",
+    BASE_SEPOLIA_RPC_URL: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+    SPENDING_LIMIT: process.env.SPENDING_LIMIT || "0.1",
+  };
   return env;
 }
 
@@ -442,9 +442,19 @@ function addCommand(targetPlatform?: string): void {
     log(`    npx @varun-ai07/covenant-mcp add project\n`);
   } else {
     log(`\n  ${colors.green}Installed on ${installedCount} platform(s)${colors.reset}`);
-    log(`\n  ${colors.bold}Next steps:${colors.reset}`);
-    log(`    1. (Optional) Set PRIVATE_KEY env var for transactions`, colors.yellow);
-    log(`    2. Restart your AI agent / IDE`, colors.yellow);
+    log(`\n  ${colors.bold}Default config:${colors.reset}`);
+    log(`    PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE  (edit for transactions)`, colors.dim);
+    log(`    BASE_SEPOLIA_RPC_URL=https://sepolia.base.org`, colors.dim);
+    log(`    SPENDING_LIMIT=0.1 ETH per tx`, colors.dim);
+    log(`\n  ${colors.bold}To update config:${colors.reset}`);
+    log(`    Edit the env section in your platform's MCP config:`, colors.yellow);
+    log(`    • Claude Code    ~/.claude.json`, colors.dim);
+    log(`    • OpenClaude     ~/.openclaude.json`, colors.dim);
+    log(`    • MiMo Code      ./mimocode.json`, colors.dim);
+    log(`    • Cross-platform .mcp.json`, colors.dim);
+    log(`\n  ${colors.bold}Or set env vars before running add:${colors.reset}`);
+    log(`    PRIVATE_KEY=0x... SPENDING_LIMIT=0.5 npx @varun-ai07/covenant-mcp add`, colors.yellow);
+    log(`\n  ${colors.bold}Restart your AI agent / IDE${colors.reset} after changes.`, colors.yellow);
     log("");
   }
 }
