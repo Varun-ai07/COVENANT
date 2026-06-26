@@ -82,30 +82,30 @@ export const SPENDING_LIMIT: bigint = process.env.SPENDING_LIMIT
 export const CONTRACTS: Record<string, Address> = {
   // V5 Core
   CovenantIdentity: (process.env.COVENANT_IDENTITY_ADDRESS ||
-    "0x694a9bD525288A8Faa5b795f861626ae6A10b68c") as Address,
+    "0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF") as Address,
   CovenantEscrow: (process.env.COVENANT_ESCROW_ADDRESS ||
-    "0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa") as Address,
+    "0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77") as Address,
   CovenantSettlement: (process.env.COVENANT_SETTLEMENT_ADDRESS ||
-    "0x1FbD8465cF79435Ea1C12AAcA25f83468e268816") as Address,
+    "0x61124E9aDAd3167ED1DB644a901a5838c8725251") as Address,
   CovenantArbitration: (process.env.COVENANT_ARBITRATION_ADDRESS ||
-    "0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D") as Address,
+    "0x4e7abC16c7f8bB65501bb451073a969345611D1d") as Address,
   CovenantAttestation: (process.env.COVENANT_ATTESTATION_ADDRESS ||
-    "0x0F5B060D7Eab7a2c65628CC81174958c19db91bF") as Address,
+    "0x945d1576B71fA332e16B5a5fBD6Ca661B4DD1b8D") as Address,
   CovenantGovernance: (process.env.COVENANT_GOVERNANCE_ADDRESS ||
-    "0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f") as Address,
+    "0x128A14cf46D3a34c963AcF85a6EdEf6aF7A25342") as Address,
   // V5 Extensions
   ParallelTaskBatch: (process.env.BATCH_ADDRESS ||
     "0xaE8C7897ED19A38B416b7B32E58F820d8D5Cd5D8") as Address,
   AgentCollective: (process.env.COLLECTIVE_ADDRESS ||
     "0xfc5E4f36e7477F744D1d99dEf13caC02e1C0f9cE") as Address,
   TrainingMarketplace: (process.env.TRAINING_ADDRESS ||
-    "0xEC62BF280c9A5D0e492952258c38C186F3467C2a") as Address,
+    "0x9A34ea8a30eD68c18b4Eb51B80916B90a7118f3D") as Address,
   GrantProgram: (process.env.GRANT_ADDRESS ||
-    "0xe625F5e90901197c560b7d213D5EA81dC96E3CEE") as Address,
+    "0xE6ce269829E6c33A9038e055De026A804C5c464A") as Address,
   InsurancePool: (process.env.INSURANCE_ADDRESS ||
-    "0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A") as Address,
+    "0x7855E3BDf7d5FdCa33fF911E8B4B034263214371") as Address,
   RevisionManager: (process.env.REVISION_ADDRESS ||
-    "0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76") as Address,
+    "0xAEB709652712307092FE10Ffa0a58a0850b82Ad8") as Address,
   // Legacy (still deployed, needed for some commands)
   OpenTaskMarket: (process.env.MARKET_ADDRESS ||
     "0xF163007a42f00dB4D1296186A9BD07B28fe2a4a7") as Address,

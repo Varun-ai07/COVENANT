@@ -55,12 +55,12 @@ VERIFIER_PRIVATE_KEY=0x... PREMIUM_CLIENTS=0x... npx tsx scripts/verifier-bot.ts
 
 | Contract | Address |
 |----------|---------|
-| CovenantIdentity | `0x694a9bD525288A8Faa5b795f861626ae6A10b68c` |
-| CovenantEscrow | `0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa` |
-| CovenantSettlement | `0x1FbD8465cF79435Ea1C12AAcA25f83468e268816` |
-| CovenantArbitration | `0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D` |
-| CovenantAttestation | `0x0F5B060D7Eab7a2c65628CC81174958c19db91bF` |
-| InsurancePool | `0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A` |
+| CovenantIdentity | `0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF` |
+| CovenantEscrow | `0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77` |
+| CovenantSettlement | `0x61124E9aDAd3167ED1DB644a901a5838c8725251` |
+| CovenantArbitration | `0x4e7abC16c7f8bB65501bb451073a969345611D1d` |
+| CovenantAttestation | `0x945d1576B71fA332e16B5a5fBD6Ca661B4DD1b8D` |
+| InsurancePool | `0x7855E3BDf7d5FdCa33fF911E8B4B034263214371` |
 
 ## ABIs
 

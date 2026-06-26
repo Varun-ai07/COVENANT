@@ -192,4 +192,4 @@ COVENANT is Ethereum-native infrastructure that enables a new category of on-cha
 
 - **GitHub:** https://github.com/Varun-ai07/COVENANT
 - **npm:** https://www.npmjs.com/package/@varun-ai07/covenant-mcp
-- **Explorer:** https://sepolia.basescan.org/address/0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa
+- **Explorer:** https://sepolia.basescan.org/address/0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77

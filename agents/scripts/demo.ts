@@ -9,8 +9,8 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const IDENTITY_ADDRESS = "0x694a9bD525288A8Faa5b795f861626ae6A10b68c";
-const ESCROW_ADDRESS = "0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa";
+const IDENTITY_ADDRESS = "0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF";
+const ESCROW_ADDRESS = "0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77";
 
 const IDENTITY_ABI = [
   "function register(uint96 stake, bytes32 metadataRoot) payable",

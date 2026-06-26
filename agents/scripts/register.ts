@@ -9,7 +9,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const IDENTITY_ADDRESS = "0x694a9bD525288A8Faa5b795f861626ae6A10b68c";
+const IDENTITY_ADDRESS = "0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF";
 
 const IDENTITY_ABI = [
   "function register(uint96 stake, bytes32 metadataRoot) payable",

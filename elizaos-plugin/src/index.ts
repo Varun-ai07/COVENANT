@@ -2,8 +2,8 @@ import { Plugin } from "@elizaos/core";
 import { JsonRpcProvider, Contract, parseEther, Wallet, keccak256, toUtf8Bytes } from "ethers";
 
 const V5_ADDRESSES = {
-  CovenantIdentity: "0x694a9bD525288A8Faa5b795f861626ae6A10b68c",
-  CovenantEscrow: "0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa",
+  CovenantIdentity: "0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF",
+  CovenantEscrow: "0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77",
 };
 
 const RPC_URL = "https://sepolia.base.org";

@@ -35,16 +35,16 @@ Every contract below has source code verified — you can read the Solidity dire
 
 | Contract | Address | Verified | Purpose |
 |----------|---------|----------|---------|
-| **CovenantIdentity** | [`0x694a9bD525288A8Faa5b795f861626ae6A10b68c`](https://sepolia.basescan.org/address/0x694a9bD525288A8Faa5b795f861626ae6A10b68c#code) | ✅ | Agent registration, stake, reputation, capabilities |
-| **CovenantEscrow** | [`0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa`](https://sepolia.basescan.org/address/0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa#code) | ✅ | Task payments, escrow, batch settlement |
-| **CovenantSettlement** | [`0x1FbD8465cF79435Ea1C12AAcA25f83468e268816`](https://sepolia.basescan.org/address/0x1FbD8465cF79435Ea1C12AAcA25f83468e268816#code) | ✅ | Streaming payments, receipt settlement |
-| **CovenantArbitration** | [`0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D`](https://sepolia.basescan.org/address/0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D#code) | ✅ | Dispute resolution with arbiter ruling |
-| **CovenantAttestation** | [`0x0F5B060D7Eab7a2c65628CC81174958c19db91bF`](https://sepolia.basescan.org/address/0x0F5B060D7Eab7a2c65628CC81174958c19db91bF#code) | ✅ | Verifiable credentials, schema-based attestations |
-| **CovenantGovernance** | [`0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f`](https://sepolia.basescan.org/address/0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f#code) | ✅ | DAO proposals, guardian voting, timelock execution |
-| **TrainingMarketplace** | [`0xEC62BF280c9A5D0e492952258c38C186F3467C2a`](https://sepolia.basescan.org/address/0xEC62BF280c9A5D0e492952258c38C186F3467C2a#code) | ✅ | Agent training programs (2.5% fee) |
-| **GrantProgram** | [`0xe625F5e90901197c560b7d213D5EA81dC96E3CEE`](https://sepolia.basescan.org/address/0xe625F5e90901197c560b7d213D5EA81dC96E3CEE#code) | ✅ | DAO-funded grants with auto-approval |
-| **InsurancePool** | [`0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A`](https://sepolia.basescan.org/address/0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A#code) | ✅ | Insurance pool with proportional withdrawal |
-| **RevisionManager** | [`0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76`](https://sepolia.basescan.org/address/0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76#code) | ✅ | Work revision tracking (max 3 rounds) |
+| **CovenantIdentity** | [`0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF`](https://sepolia.basescan.org/address/0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF#code) | ✅ | Agent registration, stake, reputation, capabilities |
+| **CovenantEscrow** | [`0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77`](https://sepolia.basescan.org/address/0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77#code) | ✅ | Task payments, escrow, batch settlement |
+| **CovenantSettlement** | [`0x61124E9aDAd3167ED1DB644a901a5838c8725251`](https://sepolia.basescan.org/address/0x61124E9aDAd3167ED1DB644a901a5838c8725251#code) | ✅ | Streaming payments, receipt settlement |
+| **CovenantArbitration** | [`0x4e7abC16c7f8bB65501bb451073a969345611D1d`](https://sepolia.basescan.org/address/0x4e7abC16c7f8bB65501bb451073a969345611D1d#code) | ✅ | Dispute resolution with arbiter ruling |
+| **CovenantAttestation** | [`0x945d1576B71fA332e16B5a5fBD6Ca661B4DD1b8D`](https://sepolia.basescan.org/address/0x945d1576B71fA332e16B5a5fBD6Ca661B4DD1b8D#code) | ✅ | Verifiable credentials, schema-based attestations |
+| **CovenantGovernance** | [`0x128A14cf46D3a34c963AcF85a6EdEf6aF7A25342`](https://sepolia.basescan.org/address/0x128A14cf46D3a34c963AcF85a6EdEf6aF7A25342#code) | ✅ | DAO proposals, guardian voting, timelock execution |
+| **TrainingMarketplace** | [`0x9A34ea8a30eD68c18b4Eb51B80916B90a7118f3D`](https://sepolia.basescan.org/address/0x9A34ea8a30eD68c18b4Eb51B80916B90a7118f3D#code) | ✅ | Agent training programs (2.5% fee) |
+| **GrantProgram** | [`0xE6ce269829E6c33A9038e055De026A804C5c464A`](https://sepolia.basescan.org/address/0xE6ce269829E6c33A9038e055De026A804C5c464A#code) | ✅ | DAO-funded grants with auto-approval |
+| **InsurancePool** | [`0x7855E3BDf7d5FdCa33fF911E8B4B034263214371`](https://sepolia.basescan.org/address/0x7855E3BDf7d5FdCa33fF911E8B4B034263214371#code) | ✅ | Insurance pool with proportional withdrawal |
+| **RevisionManager** | [`0xAEB709652712307092FE10Ffa0a58a0850b82Ad8`](https://sepolia.basescan.org/address/0xAEB709652712307092FE10Ffa0a58a0850b82Ad8#code) | ✅ | Work revision tracking (max 3 rounds) |
 
 ---
 

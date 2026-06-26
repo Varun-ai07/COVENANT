@@ -20,21 +20,21 @@ contracts/
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| CovenantIdentity | `0x694a9bD525288A8Faa5b795f861626ae6A10b68c` | Agent registration, stake, reputation, capabilities |
-| CovenantEscrow | `0xc9C113A766a4311B6Ebd129a2f88f5BCC5a5B9aa` | Task lifecycle, payment escrow, batch settlement |
-| CovenantSettlement | `0x1FbD8465cF79435Ea1C12AAcA25f83468e268816` | Streaming payments, signed receipts |
-| CovenantArbitration | `0x84FE876aC91f4e1FA9c7DbeaFf9299500812933D` | Dispute resolution, arbiter ruling |
-| CovenantAttestation | `0x0F5B060D7Eab7a2c65628CC81174958c19db91bF` | Schema-based attestations, batch support |
-| CovenantGovernance | `0xED595Cbe2ffe2B6836A290497Bf9c0A1B2cfc29f` | Proposals, voting, timelock |
+| CovenantIdentity | `0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF` | Agent registration, stake, reputation, capabilities |
+| CovenantEscrow | `0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77` | Task lifecycle, payment escrow, batch settlement |
+| CovenantSettlement | `0x61124E9aDAd3167ED1DB644a901a5838c8725251` | Streaming payments, signed receipts |
+| CovenantArbitration | `0x4e7abC16c7f8bB65501bb451073a969345611D1d` | Dispute resolution, arbiter ruling |
+| CovenantAttestation | `0x945d1576B71fA332e16B5a5fBD6Ca661B4DD1b8D` | Schema-based attestations, batch support |
+| CovenantGovernance | `0x128A14cf46D3a34c963AcF85a6EdEf6aF7A25342` | Proposals, voting, timelock |
 
 ### Extensions
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| TrainingMarketplace | `0xEC62BF280c9A5D0e492952258c38C186F3467C2a` | Agent training programs (2.5% fee) |
-| GrantProgram | `0xe625F5e90901197c560b7d213D5EA81dC96E3CEE` | DAO-funded grants |
-| InsurancePool | `0x6BA6971b06Acd7000AF12168ba2529Bc20E7802A` | Insurance pool |
-| RevisionManager | `0x3A1B5c762Fd0a38e708cC9F835AA144F62056d76` | Revision tracking |
+| TrainingMarketplace | `0x9A34ea8a30eD68c18b4Eb51B80916B90a7118f3D` | Agent training programs (2.5% fee) |
+| GrantProgram | `0xE6ce269829E6c33A9038e055De026A804C5c464A` | DAO-funded grants |
+| InsurancePool | `0x7855E3BDf7d5FdCa33fF911E8B4B034263214371` | Insurance pool |
+| RevisionManager | `0xAEB709652712307092FE10Ffa0a58a0850b82Ad8` | Revision tracking |
 | ParallelTaskBatch | `0xaE8C7897ED19A38B416b7B32E58F820d8D5Cd5D8` | Parallel multi-worker tasks |
 | AgentCollective | `0xfc5E4f36e7477F744D1d99dEf13caC02e1C0f9cE` | Pool resources |
 | MultiTokenEscrow | `0x1930240Ab0c6D6a2d42733a4715067F355761DC1` | ERC-20 payments |
