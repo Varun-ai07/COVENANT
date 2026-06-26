@@ -50,12 +50,9 @@ const SERVER_ARGS = IS_WINDOWS
 function getServerEnv(): Record<string, string> {
   const env: Record<string, string> = {
     PRIVATE_KEY: process.env.PRIVATE_KEY || "0xYOUR_PRIVATE_KEY_HERE",
-    BASE_SEPOLIA_RPC_URL: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
     SPENDING_LIMIT: process.env.SPENDING_LIMIT || "0.1",
-    COVENANT_WALLET_MODE: process.env.COVENANT_WALLET_MODE || "autonomous",
     PINATA_API_KEY: process.env.PINATA_API_KEY || "",
     PINATA_SECRET_KEY: process.env.PINATA_SECRET_KEY || "",
-    MCP_API_KEY: process.env.MCP_API_KEY || "",
   };
   return env;
 }
@@ -440,18 +437,16 @@ function addCommand(targetPlatform?: string): void {
     writeHomeConfig();
 
     log(`\n  ${colors.green}Installed on ${installedCount} platform(s)${colors.reset}`);
-    log(`\n  ${colors.bold}Config saved to:${colors.reset} ~/.covenant/config.json`, colors.cyan);
-    log(`  ${colors.dim}(All platforms read this file automatically — no env field needed)${colors.dim}`);
-    log(`\n  ${colors.bold}Default values:${colors.reset}`);
-    log(`    PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE`, colors.dim);
-    log(`    BASE_SEPOLIA_RPC_URL=https://sepolia.base.org`, colors.dim);
-    log(`    SPENDING_LIMIT=0.1`, colors.dim);
-    log(`\n  ${colors.bold}To update:${colors.reset}`);
-    log(`    Edit ~/.covenant/config.json directly:`, colors.yellow);
-    log(`    nano ~/.covenant/config.json`, colors.dim);
-    log(`\n  ${colors.bold}Or set env vars before running add:${colors.reset}`);
-    log(`    PRIVATE_KEY=0x... SPENDING_LIMIT=0.5 npx @varun-ai07/covenant-mcp add`, colors.yellow);
-    log(`\n  ${colors.bold}Restart your AI agent / IDE${colors.reset} after changes.`, colors.yellow);
+    log(`\n  ${colors.bold}Config:${colors.reset} ~/.covenant/config.json`, colors.cyan);
+    log(`  ${colors.dim}(Server reads this file automatically — no platform env needed)${colors.dim}`);
+    log(`\n  ${colors.bold}Keys:${colors.reset}`);
+    log(`    PRIVATE_KEY       Wallet key for transactions (set to spend ETH)`, colors.dim);
+    log(`    SPENDING_LIMIT    Max ETH per tx (default: 0.1)`, colors.dim);
+    log(`    PINATA_API_KEY    For IPFS uploads (optional)`, colors.dim);
+    log(`    PINATA_SECRET_KEY For IPFS uploads (optional)`, colors.dim);
+    log(`\n  ${colors.bold}Edit:${colors.reset}`);
+    log(`    nano ~/.covenant/config.json`, colors.yellow);
+    log(`    Then restart your AI agent.`, colors.yellow);
     log("");
   }
 }

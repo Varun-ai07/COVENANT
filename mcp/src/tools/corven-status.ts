@@ -22,19 +22,18 @@ export function registerStatusTool(server: McpServer): void {
         "WHEN TO USE: When you need to verify your setup is correct before performing on-chain operations.\n\n" +
         "NEXT STEP: If not registered, register with corven_agent({ action: 'register' })\n\n" +
         "CONFIGURATION:\n" +
-        "The server reads these environment variables (set in your platform's MCP config):\n" +
-        "  • PRIVATE_KEY — Wallet private key for signing transactions (0x... format)\n" +
-        "  • BASE_SEPOLIA_RPC_URL — RPC endpoint (default: https://sepolia.base.org)\n" +
-        "  • SPENDING_LIMIT — Max ETH per transaction (default: 0.1)\n\n" +
-        "How to update config:\n" +
-        "  Edit the env section in your platform's MCP config file:\n" +
-        "    • Claude Code:    ~/.claude.json → mcpServers.covenant.env\n" +
-        "    • OpenClaude:     ~/.openclaude.json → mcpServers.covenant.env\n" +
-        "    • MiMo Code:      ./mimocode.json → mcp.covenant.env\n" +
-        "    • Cross-platform: .mcp.json → mcpServers.covenant.env\n\n" +
-        "  Or set env vars before running 'add':\n" +
-        "    PRIVATE_KEY=0x... SPENDING_LIMIT=0.5 npx @varun-ai07/covenant-mcp@latest add\n\n" +
-        "  After editing, restart your AI agent / IDE.\n\n" +
+        "All settings are stored in ~/.covenant/config.json (the server reads this automatically).\n\n" +
+        "  • PRIVATE_KEY — Wallet private key for signing transactions (required for writes)\n" +
+        "    Get from MetaMask: ⋮ → Account Details → Show Private Key\n" +
+        "    Set to 0xYOUR_PRIVATE_KEY_HERE for read-only mode (no spending)\n\n" +
+        "  • SPENDING_LIMIT — Max ETH per transaction (default: 0.1)\n" +
+        "    Lower for safety, raise for large tasks\n\n" +
+        "  • PINATA_API_KEY — For IPFS uploads via corven_upload_ipfs (optional)\n" +
+        "    Get free key at https://app.pinata.cloud/developers/api-keys\n\n" +
+        "  • PINATA_SECRET_KEY — Paired with PINATA_API_KEY (optional)\n\n" +
+        "How to update:\n" +
+        "  nano ~/.covenant/config.json\n" +
+        "  Then restart your AI agent / IDE.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +
