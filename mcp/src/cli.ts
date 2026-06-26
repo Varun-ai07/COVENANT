@@ -294,6 +294,36 @@ function addToProject(): boolean {
   return true;
 }
 
+function addToMiMoCode(): boolean {
+  const configPath = join(process.cwd(), "mimocode.json");
+  const config: any = {
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+      "covenant": {
+        type: "local",
+        command: [SERVER_COMMAND, ...SERVER_ARGS],
+      },
+    },
+  };
+  const dir = join(configPath, "..");
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+  return true;
+}
+
+function removeFromMiMoCode(): boolean {
+  const configPath = join(process.cwd(), "mimocode.json");
+  if (!existsSync(configPath)) return false;
+  let config: any = {};
+  try { config = JSON.parse(readFileSync(configPath, "utf-8")); } catch { return false; }
+  if (config.mcp?.covenant) {
+    delete config.mcp.covenant;
+    writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+    return true;
+  }
+  return false;
+}
+
 function removeFromProject(): boolean {
   const projectPath = join(process.cwd(), ".mcp.json");
   if (!existsSync(projectPath)) return false;
@@ -370,7 +400,7 @@ function addCommand(targetPlatform?: string): void {
         success = addToProject();
         break;
       case "mimocode":
-        success = addToJsonPlatform(join(process.cwd(), "mimocode.json"));
+        success = addToMiMoCode();
         break;
     }
 
@@ -410,6 +440,9 @@ function removeCommand(): void {
         break;
       case "project":
         success = removeFromProject();
+        break;
+      case "mimocode":
+        success = removeFromMiMoCode();
         break;
       default:
         if (p.configPath) success = removeFromJsonPlatform(p.configPath);
