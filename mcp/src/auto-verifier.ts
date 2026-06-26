@@ -20,15 +20,16 @@ import { privateKeyToAccount } from "viem/accounts";
 import { execSync } from "child_process";
 import { existsSync, rmSync } from "fs";
 import { createHash } from "crypto";
+import { CONTRACTS } from "./config.js";
 
 // ─── Configuration ───────────────────────────────────────────
 
-const COVENANT_ESCROW = "0x130e2027eB57C427Bf63E2B06d35B10CB20C4b77" as Address;
-const COVENANT_IDENTITY = "0xFa1bFd34290bf12A2F09Ea24Cda05E71cc79c1fF" as Address;
+const COVENANT_ESCROW = CONTRACTS.TaskEscrow as Address;
+const COVENANT_IDENTITY = CONTRACTS.AgentRegistry as Address;
 
 const ESCROW_ABI = [
-  { "type": "event", "name": "TaskSubmitted", "inputs": [{ "name": "taskId", "type": "uint256", "indexed": false }, { "name": "worker", "type": "address", "indexed": false }, { "name": "deliverableHash", "type": "bytes32", "indexed": false }] },
-  { "type": "event", "name": "TaskCreated", "inputs": [{ "name": "taskId", "type": "uint256", "indexed": false }, { "name": "client", "type": "address", "indexed": false }, { "name": "metaHash", "type": "bytes32", "indexed": false }] },
+  { "type": "event", "name": "TaskSubmitted", "inputs": [{ "name": "taskId", "type": "uint256", "indexed": true }, { "name": "worker", "type": "address", "indexed": true }, { "name": "deliverableHash", "type": "bytes32", "indexed": false }] },
+  { "type": "event", "name": "TaskCreated", "inputs": [{ "name": "taskId", "type": "uint256", "indexed": true }, { "name": "client", "type": "address", "indexed": true }, { "name": "metaHash", "type": "bytes32", "indexed": false }] },
   { "name": "getTask", "type": "function", "stateMutability": "view", "inputs": [{ "name": "taskId", "type": "uint256" }], "outputs": [{ "name": "client", "type": "address" }, { "name": "worker", "type": "address" }, { "name": "amount", "type": "uint128" }, { "name": "deadline", "type": "uint32" }, { "name": "status", "type": "uint8" }, { "name": "disputeCount", "type": "uint8" }, { "name": "metaHash", "type": "bytes32" }] },
   { "name": "completeTask", "type": "function", "stateMutability": "nonpayable", "inputs": [{ "name": "taskId", "type": "uint256" }, { "name": "clientSignature", "type": "bytes" }], "outputs": [] },
   { "name": "failTask", "type": "function", "stateMutability": "nonpayable", "inputs": [{ "name": "taskId", "type": "uint256" }, { "name": "reason", "type": "bytes32" }], "outputs": [] },

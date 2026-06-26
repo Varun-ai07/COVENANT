@@ -58,6 +58,15 @@ async function main(): Promise<void> {
       console.error("[AutoVerifier] Failed to start:", e);
     });
   }
+
+  // Graceful shutdown — stop auto-verifier, clean temp dirs
+  const shutdown = () => {
+    console.error("[BOOT] Shutting down...");
+    if (autoVerifier) autoVerifier.stop();
+    process.exit(0);
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 main().catch((err) => {
