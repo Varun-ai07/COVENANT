@@ -56,6 +56,15 @@ function getServerEnv(): Record<string, string> {
   return env;
 }
 
+function writeHomeConfig(): boolean {
+  const dir = join(homedir(), ".covenant");
+  const configPath = join(dir, "config.json");
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  const env = getServerEnv();
+  writeFileSync(configPath, JSON.stringify(env, null, 2) + "\n");
+  return true;
+}
+
 // ============================================================
 // Platform Detection & Config
 // ============================================================
@@ -245,7 +254,6 @@ function addToClaudeCode(): boolean {
     config.mcpServers.covenant = {
       command: SERVER_COMMAND,
       args: SERVER_ARGS,
-      env: getServerEnv(),
     };
     writeJsonConfig(configPath, config);
     return true;
@@ -275,7 +283,6 @@ function addToJsonPlatform(configPath: string): boolean {
   config.mcpServers.covenant = {
     command: SERVER_COMMAND,
     args: SERVER_ARGS,
-    env: getServerEnv(),
   };
   writeJsonConfig(configPath, config);
   return true;
@@ -299,7 +306,6 @@ function addToProject(): boolean {
   config.mcpServers.covenant = {
     command: SERVER_COMMAND,
     args: SERVER_ARGS,
-    env: getServerEnv(),
   };
   writeJsonConfig(projectPath, config);
   return true;
@@ -307,14 +313,12 @@ function addToProject(): boolean {
 
 function addToMiMoCode(): boolean {
   const configPath = join(process.cwd(), "mimocode.json");
-  const serverEnv = getServerEnv();
   const config: any = {
     "$schema": "https://opencode.ai/config.json",
     "mcp": {
       "covenant": {
         type: "local",
         command: [SERVER_COMMAND, ...SERVER_ARGS],
-        ...(Object.keys(serverEnv).length > 0 ? { env: serverEnv } : {}),
       },
     },
   };
@@ -394,19 +398,6 @@ function addCommand(targetPlatform?: string): void {
       case "openclaude":
         try {
             execSync(`openclaude mcp add --scope user covenant -- ${SERVER_ARGS.join(" ")}`, { stdio: "ignore" });
-            const serverEnv = getServerEnv();
-            if (Object.keys(serverEnv).length > 0) {
-              try {
-                const ocPath = join(homedir(), ".openclaude.json");
-                if (existsSync(ocPath)) {
-                  const ocConfig = JSON.parse(readFileSync(ocPath, "utf-8"));
-                  if (ocConfig.mcpServers?.covenant) {
-                    ocConfig.mcpServers.covenant.env = serverEnv;
-                    writeFileSync(ocPath, JSON.stringify(ocConfig, null, 2) + "\n");
-                  }
-                }
-              } catch {}
-            }
             success = true;
           } catch {
             if (p.configPath) success = addToJsonPlatform(p.configPath);
@@ -441,17 +432,19 @@ function addCommand(targetPlatform?: string): void {
     log(`\n  No platforms detected. Create a ${colors.cyan}.mcp.json${colors.reset} in your project root:`, colors.yellow);
     log(`    npx @varun-ai07/covenant-mcp add project\n`);
   } else {
+    // Write platform-agnostic config to ~/.covenant/config.json
+    writeHomeConfig();
+
     log(`\n  ${colors.green}Installed on ${installedCount} platform(s)${colors.reset}`);
-    log(`\n  ${colors.bold}Default config:${colors.reset}`);
-    log(`    PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE  (edit for transactions)`, colors.dim);
+    log(`\n  ${colors.bold}Config saved to:${colors.reset} ~/.covenant/config.json`, colors.cyan);
+    log(`  ${colors.dim}(All platforms read this file automatically — no env field needed)${colors.dim}`);
+    log(`\n  ${colors.bold}Default values:${colors.reset}`);
+    log(`    PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE`, colors.dim);
     log(`    BASE_SEPOLIA_RPC_URL=https://sepolia.base.org`, colors.dim);
-    log(`    SPENDING_LIMIT=0.1 ETH per tx`, colors.dim);
-    log(`\n  ${colors.bold}To update config:${colors.reset}`);
-    log(`    Edit the env section in your platform's MCP config:`, colors.yellow);
-    log(`    • Claude Code    ~/.claude.json`, colors.dim);
-    log(`    • OpenClaude     ~/.openclaude.json`, colors.dim);
-    log(`    • MiMo Code      ./mimocode.json`, colors.dim);
-    log(`    • Cross-platform .mcp.json`, colors.dim);
+    log(`    SPENDING_LIMIT=0.1`, colors.dim);
+    log(`\n  ${colors.bold}To update:${colors.reset}`);
+    log(`    Edit ~/.covenant/config.json directly:`, colors.yellow);
+    log(`    nano ~/.covenant/config.json`, colors.dim);
     log(`\n  ${colors.bold}Or set env vars before running add:${colors.reset}`);
     log(`    PRIVATE_KEY=0x... SPENDING_LIMIT=0.5 npx @varun-ai07/covenant-mcp add`, colors.yellow);
     log(`\n  ${colors.bold}Restart your AI agent / IDE${colors.reset} after changes.`, colors.yellow);

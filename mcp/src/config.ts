@@ -12,11 +12,28 @@ import {
 } from "viem";
 import { baseSepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
+import { homedir } from "os";
 import { CovenantSDK } from "./sdk.js";
 import { BASE_SEPOLIA_ADDRESSES } from "./shared-types.js";
 import type { WalletMode, ContractConfig, ContractConfigV2, ContractVersion, ContractConfigMerged } from "./types.js";
 
+// Load from CWD first (for local dev)
 dotenv.config({ quiet: true });
+
+// Then load from ~/.covenant/config.json (platform-agnostic fallback)
+const homeConfig = join(homedir(), ".covenant", "config.json");
+if (existsSync(homeConfig)) {
+  try {
+    const cfg = JSON.parse(readFileSync(homeConfig, "utf-8"));
+    for (const [key, value] of Object.entries(cfg)) {
+      if (typeof value === "string" && !process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  } catch {}
+}
 
 // ============================================================
 // Network
