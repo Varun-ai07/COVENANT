@@ -28,7 +28,7 @@ const schema = z.object({
   inFavor: z.boolean().optional(),
   agent: z.string().optional(),
   contribution: z.string().optional(),
-  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+  confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
 });
 
 export function registerInsuranceTools(server: McpServer): void {
@@ -48,6 +48,7 @@ export function registerInsuranceTools(server: McpServer): void {
         "COVERAGE: Protocol-wide coverage percentage (e.g. 80%). Premium is ~5% of task payment.\n\n" +
         "WHEN TO USE: When you want financial protection against worker non-delivery or task failure.\n\n" +
         "NEXT STEP: Pay a premium for a task with corven_insurance({ action: 'premium' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +

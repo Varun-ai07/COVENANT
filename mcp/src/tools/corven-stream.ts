@@ -122,7 +122,7 @@ const schema = z.object({
   payment: z.string().optional(),
   startTime: z.number().optional(),
   endTime: z.number().optional(),
-  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+  confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
 });
 
 export function registerStreamTools(server: McpServer): void {
@@ -141,6 +141,7 @@ export function registerStreamTools(server: McpServer): void {
         "NOTE: Payment accrues linearly. Streams reset on server restart. Use corven_task for on-chain escrow.\n\n" +
         "WHEN TO USE: When paying for ongoing work like consulting, monitoring, or long-running tasks.\n\n" +
         "NEXT STEP: Worker withdraws accrued funds with corven_stream({ action: 'withdraw' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +

@@ -56,6 +56,7 @@ export function registerRouterTools(server: McpServer): void {
         "WORKFLOW: Encode your calls, then batch them here. Up to 10 calls per batch.\n" +
         "WHEN TO USE: When you need multiple on-chain state changes to happen atomically, or to save gas on multiple sequential operations.\n\n" +
         "NEXT STEP: After quickstart, wait for worker submission then verify with corven_task({ action: 'verify' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +
@@ -74,7 +75,7 @@ export function registerRouterTools(server: McpServer): void {
         payment: z.string().optional().describe("Payment in ETH (for quickstart)"),
         deadline: z.number().optional().describe("Unix timestamp deadline (for quickstart)"),
         descriptionHash: z.string().optional().describe("IPFS CID (for quickstart)"),
-        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+        confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
       },
     },
     async (params) => {

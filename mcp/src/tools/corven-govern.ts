@@ -16,7 +16,7 @@ const schema = z.object({
   proposalType: z.string().optional(),
   proposalId: z.number().optional(),
   support: z.boolean().optional(),
-  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+  confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
 });
 
 export function registerGovernTools(server: McpServer): void {
@@ -36,6 +36,7 @@ export function registerGovernTools(server: McpServer): void {
         "NOTE: Governance is offchain MVP. Voting weight = agent reputation (0-1000).\n\n" +
         "WHEN TO USE: When you want to propose or vote on protocol changes.\n\n" +
         "NEXT STEP: Vote on proposals with corven_govern({ action: 'vote' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +

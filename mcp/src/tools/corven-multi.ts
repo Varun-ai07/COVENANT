@@ -79,6 +79,7 @@ export function registerMultiTools(server: McpServer): void {
         "WORKFLOW: ERC-20 approve() → corven_multi create → [worker does work] → corven_multi submit → corven_multi verify.\n" +
         "WHEN TO USE: When you want to pay for tasks with stablecoins (USDC/DAI/USDT) instead of ETH.\n\n" +
         "NEXT STEP: After creation, wait for worker submission then verify with corven_multi({ action: 'verify' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +
@@ -95,7 +96,7 @@ export function registerMultiTools(server: McpServer): void {
         taskId: z.number().optional().describe("Task ID (for submit/verify/get)"),
         deliverableHash: z.string().optional().describe("IPFS CID (for submit)"),
         success: z.boolean().optional().describe("Approve or reject (for verify)"),
-        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+        confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
       },
     },
     async (params) => {

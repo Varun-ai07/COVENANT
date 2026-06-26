@@ -56,6 +56,7 @@ export function registerDisputeTools(server: McpServer): void {
         "NOTE: Bond is refunded if you win the dispute. Minimum bond is 0.001 ETH.\n\n" +
         "WHEN TO USE: When there is a disagreement about task quality or verification fairness.\n\n" +
         "NEXT STEP: Jurors vote with corven_cast_vote({ action: 'vote' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +
@@ -64,7 +65,7 @@ export function registerDisputeTools(server: McpServer): void {
       inputSchema: {
         taskId: taskIdSchema,
         bond: ethAmount,
-        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+        confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
       },
     },
     async ({ taskId, bond, confirm }) => {
@@ -126,6 +127,7 @@ export function registerDisputeTools(server: McpServer): void {
         "NOTE: Voting is commit-reveal — your vote choice is hidden until the voting period closes.\n\n" +
         "WHEN TO USE: When you are a juror called to resolve a dispute.\n\n" +
         "NEXT STEP: Check dispute outcome with corven_get_dispute({ action: 'get' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +
@@ -134,7 +136,7 @@ export function registerDisputeTools(server: McpServer): void {
       inputSchema: {
         disputeId: z.number().describe("Numeric dispute ID returned by corven_file_dispute"),
         inFavorOfWorker: z.boolean().describe("True to vote for worker, false for client"),
-        confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+        confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
       },
     },
     async ({ disputeId, inFavorOfWorker, confirm }) => {
@@ -196,6 +198,7 @@ export function registerDisputeTools(server: McpServer): void {
         "NOTE: Omit disputeId to get the total number of disputes.\n\n" +
         "WHEN TO USE: When you need to check on the status of an existing dispute.\n\n" +
         "NEXT STEP: If unresolved, vote with corven_cast_vote({ action: 'vote' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +
@@ -252,6 +255,7 @@ export function registerDisputeTools(server: McpServer): void {
         "RETURNS: Amount of ETH claimed.\n\n" +
         "WHEN TO USE: After voting on a dispute that has been resolved.\n\n" +
         "NEXT STEP: Check your balance with corven_agent({ action: 'get' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +

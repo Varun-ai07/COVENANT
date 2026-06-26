@@ -27,6 +27,7 @@ export function registerBountyTools(server: McpServer): void {
         "NOTE: Bounty system is not yet deployed on V5 contracts.\n\n" +
         "WHEN TO USE: When you want to reward the best submission for a specific challenge.\n\n" +
         "NEXT STEP: Use corven_task({ action: 'create' }) as an alternative for task payments.\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +

@@ -36,7 +36,7 @@ const schema = z.object({
   deadlines: z.array(z.number()).optional(),
   descriptionHashes: z.array(z.string()).optional(),
   aggregationSpec: z.string().optional(),
-  confirm: z.boolean().optional().default(false).describe('Set to true to execute. Without this, shows what will happen.'),
+  confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
 });
 
 export function registerBatchTools(server: McpServer): void {
@@ -56,6 +56,7 @@ export function registerBatchTools(server: McpServer): void {
         "FEE: 1% protocol fee per subtask. Max 50 workers per batch.\n\n" +
         "WHEN TO USE: When you need to execute multiple related tasks in parallel and aggregate results.\n\n" +
         "NEXT STEP: After workers complete, verify the batch with corven_batch({ action: 'verify' })\n\n" +
+        "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
         "OUTPUT RULES:\n" +
         "- Present results as clean, readable text. Never show raw JSON.\n" +
         "- On error: Explain in plain language what went wrong and suggest next step.\n" +
