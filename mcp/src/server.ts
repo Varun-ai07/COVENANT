@@ -42,7 +42,7 @@ import { registerCovenantHelpTools } from "./tools/covenant-help.js";
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "covenant-mcp",
-    version: "3.1.1",
+    version: "3.1.2",
   });
 
   // ── Core Identity ─────────────────────────────────────────────

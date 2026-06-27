@@ -489,21 +489,47 @@ export class AutoVerifier {
     }
 
     try {
+      // Read task to get client address
+      const task = await this.publicClient.readContract({
+        address: COVENANT_ESCROW,
+        abi: ESCROW_ABI,
+        functionName: "getTask",
+        args: [job.taskId],
+      }) as readonly [Address, Address, bigint, number, number, number, `0x${string}`];
+      const taskClient = task[0] as Address;
+      const walletAddr = this.walletClient.account.address as Address;
+
       if (result.verdict === "pass") {
-        // Approve the task — sign empty signature for completeTask
-        const zeroSig = "0x" + "0".repeat(130) as `0x${string}`;
+        // Only auto-approve if our wallet IS the task client
+        if (walletAddr.toLowerCase() !== taskClient.toLowerCase()) {
+          console.error(`[AutoVerifier] Task ${job.taskId}: Score ${result.score}/100 PASS, but wallet ${walletAddr} is not task client ${taskClient}. Cannot auto-approve. Client must approve manually.`);
+          return;
+        }
+
+        // Generate proper ECDSA signature matching contract's expected format:
+        // keccak256(abi.encodePacked(taskId, chainid, address(this)))
+        const pad32 = (val: bigint | number) => BigInt(val).toString(16).padStart(64, "0");
+        const chainId = await this.publicClient.getChainId();
+        const rawMessage = `0x${pad32(job.taskId)}${pad32(chainId)}${COVENANT_ESCROW.toLowerCase().slice(2)}`;
+        const messageHash = keccak256(rawMessage as `0x${string}`);
+        const signature = await this.walletClient.signMessage({
+          account: walletAddr,
+          message: { raw: messageHash },
+        });
+
         const hash = await this.walletClient.writeContract({
           address: COVENANT_ESCROW,
           abi: ESCROW_ABI,
           functionName: "completeTask",
-          args: [job.taskId, zeroSig],
+          args: [job.taskId, signature],
           chain: baseSepolia,
           account: this.walletClient.account,
         });
 
-        console.error(`[AutoVerifier] Task ${job.taskId} APPROVED. TX: ${hash}`);
+        console.error(`[AutoVerifier] Task ${job.taskId} APPROVED (${result.score}/100). TX: ${hash}`);
       } else if (result.verdict === "fail") {
-        // Reject the task
+        // failTask requires: authorizedArbitration OR authorizedSettlement OR owner
+        // Check if our wallet is authorized
         const reason = keccak256(toBytes(`Verification failed: score ${result.score}/100`));
         const hash = await this.walletClient.writeContract({
           address: COVENANT_ESCROW,
@@ -514,13 +540,13 @@ export class AutoVerifier {
           account: this.walletClient.account,
         });
 
-        console.error(`[AutoVerifier] Task ${job.taskId} REJECTED. TX: ${hash}`);
+        console.error(`[AutoVerifier] Task ${job.taskId} REJECTED (${result.score}/100). TX: ${hash}`);
       } else {
-        // Partial — needs manual review
-        console.error(`[AutoVerifier] Task ${job.taskId} PARTIAL (${result.score}/100) — needs manual review`);
+        // Partial (40-69) — needs manual review
+        console.error(`[AutoVerifier] Task ${job.taskId} PARTIAL (${result.score}/100) — flagged for manual review. Client must approve or reject.`);
       }
     } catch (e) {
-      console.error(`[AutoVerifier] Auto-decision failed for task ${job.taskId}:`, e);
+      console.error(`[AutoVerifier] Auto-decision failed for task ${job.taskId}:`, e instanceof Error ? e.message : e);
     }
   }
 
