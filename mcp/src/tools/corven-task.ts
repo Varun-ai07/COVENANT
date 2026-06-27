@@ -80,6 +80,7 @@ const schema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"]).optional().default("medium"),
   offset: z.number().optional().default(0).describe("Offset for list pagination (default 0)"),
   limit: z.number().optional().default(10).describe("Max tasks to return for list (default 10)"),
+  status: z.enum(["created", "funded", "submitted", "completed", "failed", "disputed", "cancelled"]).optional().describe("Filter tasks by status (for list action)"),
   confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
 });
 
@@ -190,24 +191,54 @@ export function registerTaskTools(server: McpServer): void {
 
         if (action === "verify") {
           if (!args.confirm) {
+            const taskInfo = await sdk.getTask(BigInt(args.taskId || 0));
             return formatReadResult({
               confirmationRequired: true,
               action: "Approve and release payment for task #" + args.taskId,
-              cost: "ETH released from escrow to worker",
-              reason: "Approving releases escrowed funds to worker",
+              worker: taskInfo.worker,
+              payment: formatEther(taskInfo.payment) + " ETH",
+              reason: "Releases escrowed ETH to worker. A client signature is generated automatically.",
               toProceed: "Call corven_task again with confirm: true",
             }, "CONFIRMATION REQUIRED");
           }
-          const hash = await sdk.completeTask(
-            BigInt(args.taskId || 0),
-            "0x0000000000000000000000000000000000000000000000000000000000000000"
-          );
+
+          const walletClient = (await import("../config.js")).getWalletClient();
+          const account = (await import("../config.js")).getAccount();
+          if (!walletClient || !account) return formatError(new Error("Wallet required. Set PRIVATE_KEY in ~/.covenant/config.json"));
+
+          const publicClient = getPublicClient();
+          const chainId = Number(await publicClient.getChainId());
+          const escrowAddr = CONTRACTS.TaskEscrow as Address;
+          const taskIdBig = BigInt(args.taskId || 0);
+
+          // Contract expects: keccak256(abi.encodePacked(taskId, chainid, address(this)))
+          const taskData = await sdk.getTask(taskIdBig);
+          if (taskData.client.toLowerCase() !== account.address.toLowerCase()) {
+            return formatError(new Error(`Only the task client (${taskData.client}) can verify. You are ${account.address}.`));
+          }
+
+          const pad32 = (val: bigint | number | string) => {
+            const hex = BigInt(val).toString(16).padStart(64, "0");
+            return hex;
+          };
+          const rawMessage = `0x${pad32(taskIdBig)}${pad32(chainId)}${escrowAddr.toLowerCase().slice(2)}`;
+          const messageHash = keccak256(rawMessage as `0x${string}`);
+          const signature = await walletClient.signMessage({
+            account: account.address as `0x${string}`,
+            message: { raw: messageHash },
+          });
+
+          const hash = await walletClient.writeContract({
+            address: escrowAddr,
+            abi: loadAbi("TaskEscrow"),
+            functionName: "completeTask",
+            args: [taskIdBig, signature],
+            chain: (await import("../config.js")).CHAIN,
+            account,
+          });
           const result = await waitAndFormat(hash);
           if (result.status === "success") {
-            try {
-              const task = await sdk.getTask(BigInt(args.taskId || 0));
-              notifyAgent(task.worker, "task_completed", `Task #${args.taskId} verified and payment released`, Number(args.taskId));
-            } catch { /* best-effort notification */ }
+            notifyAgent(taskData.worker, "task_completed", `Task #${args.taskId} verified and payment released`, Number(args.taskId));
           }
           return formatTxResult(result);
         }
@@ -316,25 +347,29 @@ export function registerTaskTools(server: McpServer): void {
           }
           const offset = args.offset || 0;
           const limit = Math.min(args.limit || 10, 50);
+          const filterWorker = args.worker ? args.worker.toLowerCase() : null;
+          const filterStatus = args.status ? args.status.toLowerCase() : null;
           const tasks: any[] = [];
           const start = Math.max(0, count - 1 - offset);
-          const end = Math.max(0, start - limit);
-          for (let i = start; i >= end; i--) {
+          const end = Math.max(0, start - limit - 200);
+          for (let i = start; i >= end && tasks.length < limit; i--) {
             try {
               const task = await sdk.getTask(BigInt(i));
+              const statusName = TASK_STATUS[Number(task.status)] || "Unknown";
+              if (filterWorker && task.worker.toLowerCase() !== filterWorker) continue;
+              if (filterStatus && statusName.toLowerCase() !== filterStatus) continue;
               tasks.push({
                 taskId: i,
                 client: task.client,
                 worker: task.worker,
                 paymentEth: formatEther(task.payment),
-                status: TASK_STATUS[Number(task.status)] || "Unknown",
+                status: statusName,
               });
             } catch { continue; }
           }
           return formatReadResult({
             totalTasks: count,
-            offset,
-            limit,
+            filtered: filterWorker || filterStatus ? true : false,
             returned: tasks.length,
             tasks,
           }, "Task List");
