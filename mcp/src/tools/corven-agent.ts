@@ -130,42 +130,17 @@ export function registerAgentTools(server: McpServer): void {
           const offset = args.offset || 0;
           const limit = args.limit || 20;
 
-          // On-chain agents
-          const onChainAgents: Array<{ address: string; name: string; capabilities: string[]; stakedEth: string; reputation: number; isActive: boolean; source: string }> = [];
-          try {
-            const abi = loadAbi("AgentRegistry");
-            const totalAgents = Number(await readContract(CONTRACTS.AgentRegistry, abi, "getAgentCount", []));
-            const maxIter = Math.min(totalAgents, 100);
-            for (let i = 0; i < maxIter; i++) {
-              try {
-                const addr = await readContract(CONTRACTS.AgentRegistry, abi, "getAllAgents", [BigInt(i)]) as Address;
-                if (!addr || addr === "0x0000000000000000000000000000000000000000") continue;
-                const agent = await readContract(CONTRACTS.AgentRegistry, abi, "getAgent", [addr]);
-                onChainAgents.push({
-                  address: addr,
-                  name: agent.name || "",
-                  capabilities: agent.capabilities || [],
-                  stakedEth: formatEther(agent.stakedAmount),
-                  reputation: Number(agent.reputation || 0),
-                  isActive: agent.active,
-                  source: "on-chain",
-                });
-              } catch { continue; }
-            }
-          } catch { /* on-chain query failed, fall back to local only */ }
+          // On-chain agents — V5 CovenantIdentity lacks getAllAgents, so on-chain
+          // iteration is not possible. Local store is the primary source.
+          // On-chain data is fetched per-agent in the get action.
 
-          // Merge and deduplicate by address
+          // Local store is the primary source
           const seen = new Set<string>();
           const merged: Array<{ address: string; name: string; capabilities: string[]; registeredAt?: number; lastSeen?: number; stakedEth?: string; reputation?: number; isActive?: boolean; source: string }> = [];
           for (const p of allProfiles) {
             if (seen.has(p.address.toLowerCase())) continue;
             seen.add(p.address.toLowerCase());
             merged.push({ address: p.address, name: p.name, capabilities: p.capabilities, registeredAt: p.registeredAt, lastSeen: p.lastSeen, source: "local" });
-          }
-          for (const a of onChainAgents) {
-            if (seen.has(a.address.toLowerCase())) continue;
-            seen.add(a.address.toLowerCase());
-            merged.push(a);
           }
 
           const paginated = merged.slice(offset, offset + limit);
@@ -200,46 +175,15 @@ export function registerAgentTools(server: McpServer): void {
             p.capabilities.some(c => c.toLowerCase().includes(cap))
           );
 
-          // On-chain matches
-          const onChainMatches: Array<{ address: string; name: string; capabilities: string[]; stakedEth: string; reputation: number; isActive: boolean; source: string }> = [];
-          try {
-            const abi = loadAbi("AgentRegistry");
-            const totalAgents = Number(await readContract(CONTRACTS.AgentRegistry, abi, "getAgentCount", []));
-            const limit = Math.min(totalAgents, 100);
-            for (let i = 0; i < limit; i++) {
-              try {
-                const addr = await readContract(CONTRACTS.AgentRegistry, abi, "getAllAgents", [BigInt(i)]) as Address;
-                if (!addr || addr === "0x0000000000000000000000000000000000000000") continue;
-                const agent = await readContract(CONTRACTS.AgentRegistry, abi, "getAgent", [addr]);
-                const agentName = agent.name || "";
-                const agentCaps: string[] = agent.capabilities || [];
-                if (agentCaps.some(c => c.toLowerCase().includes(cap))) {
-                  onChainMatches.push({
-                    address: addr,
-                    name: agentName,
-                    capabilities: agentCaps,
-                    stakedEth: formatEther(agent.stakedAmount),
-                    reputation: Number(agent.reputation || 0),
-                    isActive: agent.active,
-                    source: "on-chain",
-                  });
-                }
-              } catch { continue; }
-            }
-          } catch { /* on-chain query failed, fall back to local only */ }
+          // Local store is the primary source for agent discovery
 
-          // Merge and deduplicate by address
+          // Deduplicate by address
           const seen = new Set<string>();
           const merged: Array<{ address: string; name: string; capabilities: string[]; lastSeen?: number; stakedEth?: string; reputation?: number; isActive?: boolean; source: string }> = [];
           for (const p of localMatches) {
             if (seen.has(p.address.toLowerCase())) continue;
             seen.add(p.address.toLowerCase());
             merged.push({ address: p.address, name: p.name, capabilities: p.capabilities, lastSeen: p.lastSeen, source: "local" });
-          }
-          for (const a of onChainMatches) {
-            if (seen.has(a.address.toLowerCase())) continue;
-            seen.add(a.address.toLowerCase());
-            merged.push(a);
           }
 
           return formatReadResult({
