@@ -2,7 +2,7 @@
  * corven_task — Task lifecycle via CovenantSDK
  */
 import { z } from "zod";
-import { parseEther, formatEther, type Address, keccak256, toBytes } from "viem";
+import { parseEther, formatEther, isAddress, type Address, keccak256, toBytes } from "viem";
 import { getSDK, getPublicClient, loadAbi, CONTRACTS } from "../config.js";
 import { formatTxResult, formatReadResult, formatError } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
@@ -118,6 +118,13 @@ export function registerTaskTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "create") {
+          if (args.worker && !isAddress(args.worker)) {
+            return formatError(new Error("Invalid worker address: must be a valid Ethereum address"));
+          }
+          const paymentNum = Number(args.payment || "0.01");
+          if (paymentNum <= 0 || paymentNum > 100) {
+            return formatError(new Error("Invalid payment amount: must be > 0 and <= 100 ETH"));
+          }
           const deadline = args.deadline
             ? Number(args.deadline)
             : Math.floor(Date.now() / 1000) + 86400;

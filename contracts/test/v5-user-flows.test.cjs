@@ -120,7 +120,7 @@ describe("V5 REAL USER FLOWS", function () {
     await ins.connect(owner).approveClaim(1);
     await ins.connect(owner).payClaim(1);
     const m = await ins.members(member.address);
-    expect(m.totalClaimsReceived).to.equal(ethers.parseEther("0.005"));
+    expect(m.totalClaimsReceived).to.equal(ethers.parseEther("0.0025"));
   });
 
   it("Flow 7: Training marketplace", async function () {

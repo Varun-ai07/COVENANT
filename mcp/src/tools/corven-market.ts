@@ -2,7 +2,7 @@
  * corven_market — Market operations via CovenantSDK
  */
 import { z } from "zod";
-import { parseEther, formatEther, type Address, keccak256, toBytes } from "viem";
+import { parseEther, formatEther, isAddress, type Address, keccak256, toBytes } from "viem";
 import { getSDK, getPublicClient } from "../config.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
@@ -58,6 +58,13 @@ export function registerMarketTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "post") {
+          if (args.worker && !isAddress(args.worker)) {
+            return formatReadResult({ error: "Invalid worker address: must be a valid Ethereum address" }, "Error");
+          }
+          const maxPayNum = Number(args.maxPayment || "0.05");
+          if (maxPayNum <= 0 || maxPayNum > 100) {
+            return formatReadResult({ error: "Invalid maxPayment: must be > 0 and <= 100 ETH" }, "Error");
+          }
           const payment = parseEther(args.maxPayment || "0.05");
           if (!args.confirm) {
             return formatReadResult({

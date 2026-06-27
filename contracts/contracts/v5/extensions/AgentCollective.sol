@@ -39,6 +39,7 @@ contract AgentCollective is OwnableUpgradeable, ReentrancyGuardUpgradeable, Paus
     error AgentNotActive(address agent);
     error WorkerHasNoReputation();
     error InvalidTaskId(uint256 taskId);
+    error MaxMembersReached();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {}
@@ -66,6 +67,7 @@ contract AgentCollective is OwnableUpgradeable, ReentrancyGuardUpgradeable, Paus
     function joinCollective(uint256 collectiveId) external payable nonReentrant {
         Collective storage c = _collectives[collectiveId];
         if (msg.value < c.minContribution) revert InvalidContribution();
+        if (c.members.length >= c.maxMembers) revert MaxMembersReached();
 
         // Add member
         c.members.push(msg.sender);
@@ -116,7 +118,9 @@ contract AgentCollective is OwnableUpgradeable, ReentrancyGuardUpgradeable, Paus
         emit TaskLaunched(collectiveId, worker, 0, payment);
     }
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
+        if (to == address(0)) revert InvalidContribution();
+        if (amount > address(this).balance / 10) revert NotEnoughFunds();
         (bool success, ) = to.call{value: amount}("");
         require(success, "withdraw failed");
         emit EmergencyWithdraw(to, amount);
@@ -129,4 +133,6 @@ contract AgentCollective is OwnableUpgradeable, ReentrancyGuardUpgradeable, Paus
 
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
+
+    uint256[50] private __gap;
 }

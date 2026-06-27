@@ -96,16 +96,17 @@ contract InsurancePool is OwnableUpgradeable, ReentrancyGuardUpgradeable, UUPSUp
     function payClaim(uint256 claimId) external onlyOwner nonReentrant {
         Claim storage c = claims[claimId];
         if (!c.approved || c.paid) revert ClaimAlreadyPaid();
-        if (poolBalance < c.amountRequested) revert InsufficientPool();
+        uint256 payout = (c.amountRequested * CLAIM_COVERAGE_PERCENT) / 100;
+        if (poolBalance < payout) revert InsufficientPool();
 
         c.paid = true;
-        poolBalance -= c.amountRequested;
-        members[c.claimant].totalClaimsReceived += c.amountRequested;
+        poolBalance -= payout;
+        members[c.claimant].totalClaimsReceived += payout;
 
-        (bool s, ) = c.claimant.call{value: c.amountRequested}("");
+        (bool s, ) = c.claimant.call{value: payout}("");
         require(s, "transfer failed");
 
-        emit ClaimPaid(claimId, c.claimant, c.amountRequested);
+        emit ClaimPaid(claimId, c.claimant, payout);
     }
 
     function withdraw() external onlyMember nonReentrant {

@@ -108,7 +108,7 @@ contract CovenantAttestation is OwnableUpgradeable, ReentrancyGuardUpgradeable, 
         }
     }
 
-    function revoke(bytes32 attestationId) external {
+    function revoke(bytes32 attestationId) external nonReentrant {
         AttestationStorage storage att = _attestations[attestationId];
         if (att.issuer == address(0)) revert AttestationNotFound();
         if (msg.sender != att.issuer && msg.sender != owner()) revert Unauthorized();

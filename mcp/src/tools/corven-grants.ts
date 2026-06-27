@@ -50,6 +50,16 @@ export function registerGrantTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "apply") {
+          if (!args.title || args.title.trim() === "") {
+            return formatReadResult({ error: "Title is required and must be non-empty" }, "Error");
+          }
+          if (!args.description || args.description.trim() === "") {
+            return formatReadResult({ error: "Description is required and must be non-empty" }, "Error");
+          }
+          const grantAmount = Number(args.amount || "1");
+          if (grantAmount <= 0) {
+            return formatReadResult({ error: "Amount must be > 0 ETH" }, "Error");
+          }
           const amountWei = parseEther(args.amount || "1");
           if (!args.confirm) {
             return formatReadResult({

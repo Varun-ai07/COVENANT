@@ -123,7 +123,9 @@ contract ParallelTaskBatch is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pa
         emit ResultsAggregated(batchId, batch.aggregatedResultHash);
     }
 
-    function emergencyWithdraw(address to, uint256 amount) external onlyOwner {
+    function emergencyWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
+        if (to == address(0)) revert ZeroPayment();
+        if (amount > address(this).balance / 10) revert InsufficientFunding(amount, address(this).balance / 10);
         (bool success, ) = to.call{value: amount}("");
         require(success, "withdraw failed");
         emit EmergencyWithdraw(to, amount);
@@ -135,4 +137,6 @@ contract ParallelTaskBatch is OwnableUpgradeable, ReentrancyGuardUpgradeable, Pa
 
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
+
+    uint256[50] private __gap;
 }

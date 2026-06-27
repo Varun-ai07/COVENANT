@@ -49,6 +49,16 @@ export function registerGovernTools(server: McpServer): void {
         const { action } = args;
 
         if (action === "create") {
+          if (!args.title || args.title.trim() === "") {
+            return formatReadResult({ error: "Title is required and must be non-empty" }, "Error");
+          }
+          if (!args.description || args.description.trim() === "") {
+            return formatReadResult({ error: "Description is required and must be non-empty" }, "Error");
+          }
+          const validTypes = ["parameter_change", "feature_addition", "treasury_spend", "emergency_action"];
+          if (!args.proposalType || !validTypes.includes(args.proposalType)) {
+            return formatReadResult({ error: "proposalType must be one of: " + validTypes.join(", ") }, "Error");
+          }
           if (!args.confirm) {
             return formatReadResult({
               confirmationRequired: true,
