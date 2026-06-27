@@ -135,6 +135,8 @@ export interface ContractConfig {
   InsurancePool?: Address;
   RevisionManager?: Address;
   MultiTokenEscrow?: Address;
+  // V5 Core
+  CovenantAttestation?: Address;
 }
 
 export interface ContractConfigV2 {

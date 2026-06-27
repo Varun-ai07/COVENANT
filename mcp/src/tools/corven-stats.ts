@@ -99,23 +99,31 @@ export function registerStatsTools(server: McpServer): void {
             }
             const { limit: topN } = parsed.data;
 
-            const totalAgents = Number(
-              await readContract(CONTRACTS.AgentRegistry, identityAbi, "totalAgents", [])
-            );
-
-            if (totalAgents === 0) {
-              return formatReadResult(
-                { agents: [], totalAgents: 0 },
-                "No registered agents yet"
-              );
+            interface LeaderboardProfile {
+              address: string;
+              name: string;
+              reputation?: number;
+              capabilities?: string[];
+              lastSeen?: number;
             }
+            const agentStore = loadStore<Record<string, LeaderboardProfile>>("agent_profiles", {});
+            const allAgents = Object.values(agentStore);
+            const sorted = allAgents
+              .sort((a, b) => (b.reputation ?? 0) - (a.reputation ?? 0))
+              .slice(0, topN);
 
             return formatReadResult(
               {
-                totalAgents,
-                showing: 0,
-                agents: [],
-                note: "Agent iteration not available in V5. Use corven_agent get with a specific address.",
+                showing: sorted.length,
+                total: allAgents.length,
+                agents: sorted.map((a, i) => ({
+                  rank: i + 1,
+                  address: a.address,
+                  name: a.name,
+                  reputation: a.reputation ?? 0,
+                  capabilities: a.capabilities ?? [],
+                  lastSeen: a.lastSeen,
+                })),
               },
               "COVENANT Agent Leaderboard"
             );

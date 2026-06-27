@@ -29,7 +29,6 @@ const schema = z.object({
   payment: z.string().optional(),
   deadline: z.number().optional(),
   descriptionHash: z.string().optional(),
-  taskId: z.number().optional(),
   confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
 });
 

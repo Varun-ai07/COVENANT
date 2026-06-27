@@ -21,9 +21,6 @@ const schema = z.object({
   worker: z.string().optional(),
   maxPayment: z.string().optional(),
   descriptionHash: z.string().optional(),
-  price: z.string().optional(),
-  timeEstimate: z.string().optional(),
-  proposalHash: z.string().optional(),
   confirm: z.boolean().optional().default(false).describe('NEVER set this yourself. ALWAYS ask the user first. Show the exact ETH cost and what will happen. Only set to true AFTER the user explicitly says yes.'),
 });
 

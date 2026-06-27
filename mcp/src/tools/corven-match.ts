@@ -9,9 +9,22 @@ import { loadAbi, CONTRACTS, getAccount } from "../config.js";
 import { executeOrPrepare, readContract } from "../handlers/wallet.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { parseContractError, formatStructuredError } from "../lib/formatResponse.js";
+import { loadStore } from "../lib/store.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const ABI = loadAbi("AgentRegistry");
+
+interface AgentProfile {
+  address: string;
+  name: string;
+  capabilities: string[];
+  registeredAt: number;
+  lastSeen: number;
+  reputation?: number;
+  bio?: string;
+}
+
+const agentProfiles = loadStore<Record<string, AgentProfile>>('agent_profiles', {});
 
 // Scoring weights
 const W_CAPABILITY = 0.30;
@@ -47,7 +60,6 @@ function reputationScore(reputation: number): number {
 // ─── Input Schemas ───────────────────────────────────────────
 
 const findSchema = z.object({
-  capabilities: z.array(z.string().min(1).max(50)).min(1).max(10).describe("Required capability tags"),
   minReputation: z.number().int().min(0).max(1000).optional().describe("Minimum reputation filter"),
   limit: z.number().int().min(1).max(50).optional().default(5).describe("Max results (1-50)"),
 });
@@ -114,7 +126,6 @@ export function registerMatchTools(server: McpServer): void {
         switch (action) {
           case "find": {
             const parsed = findSchema.safeParse({
-              capabilities: params.capabilities,
               minReputation: params.minReputation,
               limit: params.limit,
             });
@@ -122,21 +133,43 @@ export function registerMatchTools(server: McpServer): void {
               return formatStructuredError(
                 "Invalid input for find.",
                 parsed.error.issues.map((e) => e.message).join("; "),
-                "Provide capabilities as non-empty array, minReputation as 0-1000, limit as 1-50.",
+                "Provide minReputation as 0-1000, limit as 1-50.",
                 true
               );
             }
-            const { capabilities: reqCaps, minReputation: minRep, limit: maxResults } = parsed.data;
+            const { minReputation: minRep, limit: maxResults } = parsed.data;
+            const reqCaps = params.capabilities || [];
 
-            return formatReadResult(
-              {
-                count: 0,
-                matches: [],
-                query: { capabilities: reqCaps, minReputation: minRep, limit: maxResults },
-                info: "Agent iteration is not available in V5 CovenantIdentity. Use corven_match match with a specific worker address.",
-              },
-              "Agent Discovery — Not Available in V5"
-            );
+            // Search agent_profiles store
+            const { loadStore } = await import("../lib/store.js");
+            const profiles = loadStore<Record<string, any>>("agent_profiles", {});
+
+            const matches = Object.entries(profiles)
+              .map(([addr, p]: [string, any]) => {
+                const agentCaps = p.capabilities || [];
+                const capMatch = reqCaps.length === 0
+                  ? 1
+                  : reqCaps.filter((c: string) => agentCaps.some((ac: string) => ac.toLowerCase() === c.toLowerCase())).length / reqCaps.length;
+                const reputation = p.reputation || 0;
+                const score = capMatch * 0.3 + Math.min(reputation / 1000, 1) * 0.7;
+                return { address: addr, name: p.name || "", capabilities: agentCaps, reputation, score, source: "local" };
+              })
+              .filter((m) => m.score > 0 && (minRep ? m.reputation >= minRep : true))
+              .sort((a, b) => b.score - a.score)
+              .slice(0, maxResults);
+
+            return formatReadResult({
+              count: matches.length,
+              matches: matches.map((m) => ({
+                address: m.address,
+                name: m.name,
+                capabilities: m.capabilities,
+                reputation: m.reputation,
+                score: Math.round(m.score * 100) / 100,
+                source: m.source,
+              })),
+              query: { capabilities: reqCaps, minReputation: minRep },
+            }, `Worker Match — ${matches.length} candidates`);
           }
 
           case "match": {

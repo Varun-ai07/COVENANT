@@ -47,6 +47,14 @@ async function main(): Promise<void> {
     console.error("[BOOT] Server is ready. Waiting for MCP messages on stdin...");
   }
 
+  // Start event watcher for real-time event subscriptions
+  try {
+    await eventWatcher.start();
+    console.error("[BOOT] Event watcher started.");
+  } catch (e) {
+    console.error("[BOOT] Event watcher failed to start (falling back to polling):", e);
+  }
+
   // Start auto-verifier in background (unless disabled)
   if (!noAutoVerify) {
     autoVerifier = new AutoVerifier({
@@ -64,6 +72,7 @@ async function main(): Promise<void> {
   const shutdown = () => {
     console.error("[BOOT] Shutting down...");
     if (autoVerifier) autoVerifier.stop();
+    eventWatcher.stop();
     process.exit(0);
   };
   process.on("SIGTERM", shutdown);

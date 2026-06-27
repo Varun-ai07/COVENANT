@@ -23,12 +23,14 @@ interface AgentProfile {
   capabilities: string[];
   registeredAt: number;
   lastSeen: number;
+  reputation?: number;
+  bio?: string;
 }
 
 const agentProfiles = loadStore<Record<string, AgentProfile>>('agent_profiles', {});
 
 const schema = z.object({
-  action: z.enum(["register", "get", "list", "update", "deactivate", "stake", "find", "search"]),
+  action: z.enum(["register", "get", "list", "update", "deactivate", "stake", "find", "search", "check"]),
   name: z.string().optional(),
   capabilities: z.array(z.string()).optional(),
   stake: z.string().optional().default("0.001"),
@@ -56,7 +58,8 @@ export function registerAgentTools(server: McpServer): void {
         "  deactivate — Withdraw stake and deactivate agent\n" +
         "  stake — Add more stake to existing agent\n" +
         "  find — Search agents by capability tag (on-chain + local index)\n" +
-        "  search — Search agents by name, capability, or both\n\n" +
+        "  search — Search agents by name, capability, or both\n" +
+        "  check — Check if an address is registered on-chain\n\n" +
         "WHEN TO USE: First step for any agent. Register before creating tasks.\n\n" +
         "NEXT STEP: Create a task with corven_task({ action: 'create' })\n\n" +
         "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
@@ -93,6 +96,7 @@ export function registerAgentTools(server: McpServer): void {
               address: addr,
               name: args.name || "unnamed",
               capabilities: args.capabilities || [],
+              bio: args.bio || "",
               registeredAt: Math.floor(Date.now() / 1000),
               lastSeen: Math.floor(Date.now() / 1000),
             };
@@ -225,6 +229,16 @@ export function registerAgentTools(server: McpServer): void {
               lastSeen: p.lastSeen,
             })),
           }, "Agent Search Results");
+        }
+
+        if (action === "check") {
+          const addr = (args.address || getAccount()?.address) as Address;
+          if (!addr) return formatReadResult({ error: "No address provided and no wallet connected" }, "Error");
+          const registered = await sdk.isRegistered(addr);
+          return formatReadResult({
+            address: addr,
+            registered,
+          }, registered ? "Agent Registered" : "Agent Not Registered");
         }
 
         return formatReadResult({ error: "Unknown action" }, "Error");

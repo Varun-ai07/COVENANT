@@ -68,7 +68,7 @@ async function waitAndFormat(hash: `0x${string}`): Promise<TxResult> {
 const TASK_STATUS = ["None", "Created", "Funded", "Submitted", "Completed", "Failed", "Disputed", "Cancelled"];
 
 const schema = z.object({
-  action: z.enum(["create", "fund", "submit", "verify", "dispute", "get", "list", "submit_milestone", "verify_milestone"]),
+  action: z.enum(["create", "fund", "submit", "verify", "dispute", "get", "list", "submit_milestone", "verify_milestone", "cancel"]),
   taskId: z.number().optional(),
   worker: z.string().optional(),
   payment: z.string().optional(),
@@ -97,6 +97,7 @@ export function registerTaskTools(server: McpServer): void {
         "  submit — Worker submits deliverable IPFS CID or GitHub URL\n" +
         "  verify — Client approves or rejects completed work\n" +
         "  dispute — File a dispute on a task\n" +
+        "  cancel — Cancel a task and refund escrowed funds\n" +
         "  get — Get task details by ID\n" +
         "  list — List all tasks\n" +
         "  submit_milestone — Worker submits a milestone\n" +
@@ -309,6 +310,20 @@ export function registerTaskTools(server: McpServer): void {
             chain: (await import("../config.js")).CHAIN,
             account: (await import("../config.js")).getAccount(),
           });
+          return formatTxResult(await waitAndFormat(hash));
+        }
+
+        if (action === "cancel") {
+          if (!args.confirm) {
+            return formatReadResult({
+              confirmationRequired: true,
+              action: "Cancel task #" + args.taskId,
+              cost: "0 ETH (gas only)",
+              reason: "Cancels the task and refunds escrowed funds to the client",
+              toProceed: "Call corven_task again with confirm: true",
+            }, "CONFIRMATION REQUIRED");
+          }
+          const hash = await sdk.cancelTask(BigInt(args.taskId || 0));
           return formatTxResult(await waitAndFormat(hash));
         }
 

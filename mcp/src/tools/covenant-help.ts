@@ -1,6 +1,6 @@
 /**
- * Covenant Help Meta-Tool (v2.1)
- * corven_help — Protocol guide for the 25 consolidated tools
+ * Covenant Help Meta-Tool (v3.1)
+ * corven_help — Protocol guide for the 32 tools
  */
 import { z } from "zod";
 import { formatReadResult } from "../handlers/transactions.js";
@@ -10,7 +10,7 @@ export function registerCovenantHelpTools(server: McpServer): void {
   server.registerTool(
     "corven_help",
     {
-      title: "COVENANT Protocol Guide v2.1",
+      title: "COVENANT Protocol Guide v3.1",
       description:
         "Complete guide to the 25 COVENANT tools — workflows, tool reference, and format rules. Call FIRST if unsure.\n\n" +
         "ACTIONS:\n" +
