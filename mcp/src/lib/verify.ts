@@ -4,6 +4,170 @@ import { join, extname } from "path";
 import { createHash } from "crypto";
 import { loadStore, saveStore } from "./store.js";
 
+const IPFS_GATEWAYS = [
+  "https://gateway.pinata.cloud/ipfs",
+  "https://ipfs.io/ipfs",
+  "https://cloudflare-ipfs.com/ipfs",
+];
+
+function isIpfsCid(s: string): boolean {
+  return /^Qm[1-9A-HJ-NP-Za-km-z]{44,}/.test(s) ||
+    /^(bafy[a-zA-Z2-7]{52,})/.test(s) ||
+    /^(b[ae][a-zA-Z2-7]{50,})/.test(s);
+}
+
+function isGithubUrl(s: string): boolean {
+  return /^https:\/\/(github\.com|gitlab\.com|bitbucket\.org)\//.test(s);
+}
+
+async function fetchIpfsContent(cid: string, timeoutMs = 15000): Promise<string | null> {
+  for (const gateway of IPFS_GATEWAYS) {
+    try {
+      const url = `${gateway}/${cid}`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!resp.ok) continue;
+      const contentType = resp.headers.get("content-type") || "";
+      if (contentType.includes("json") || contentType.includes("text")) {
+        return await resp.text();
+      }
+      const buf = Buffer.from(await resp.arrayBuffer());
+      return buf.toString("base64");
+    } catch { continue; }
+  }
+  return null;
+}
+
+async function verifyIpfsDeliverable(cid: string, requirements: string): Promise<VerificationResult> {
+  const checks: CheckResult[] = [];
+
+  const content = await fetchIpfsContent(cid);
+
+  // Format compliance
+  let formatScore = 0;
+  const formatIssues: string[] = [];
+  if (content === null) {
+    formatIssues.push("Could not fetch content from IPFS gateways");
+    formatScore = 0;
+  } else {
+    let parsed = false;
+    try { JSON.parse(content); parsed = true; } catch { /* not JSON */ }
+    if (parsed) {
+      formatScore = 85;
+    } else if (content.length > 100) {
+      formatScore = 70;
+    } else {
+      formatIssues.push("Content too short or empty");
+      formatScore = 30;
+    }
+  }
+  checks.push({
+    dimension: "format_compliance",
+    score: formatScore,
+    details: content ? `Fetched ${content.length} chars from IPFS` : "Fetch failed",
+    issues: formatIssues,
+    passed: formatScore >= 70,
+  });
+
+  // Size check
+  let sizeScore = 100;
+  const sizeIssues: string[] = [];
+  if (content) {
+    const sizeKB = Buffer.byteLength(content) / 1024;
+    if (sizeKB < 1) {
+      sizeIssues.push("Content is very small (<1KB)");
+      sizeScore = 30;
+    } else if (sizeKB > 5000) {
+      sizeIssues.push(`Content is very large (${(sizeKB / 1024).toFixed(1)}MB)`);
+      sizeScore = 50;
+    }
+  } else {
+    sizeScore = 0;
+  }
+  checks.push({
+    dimension: "content_size",
+    score: sizeScore,
+    details: content ? `${(Buffer.byteLength(content) / 1024).toFixed(1)}KB` : "N/A",
+    issues: sizeIssues,
+    passed: sizeScore >= 70,
+  });
+
+  // Metadata/structure check
+  let metaScore = 0;
+  const metaIssues: string[] = [];
+  if (content) {
+    try {
+      const obj = JSON.parse(content);
+      const keys = Object.keys(obj);
+      if (keys.length === 0) {
+        metaIssues.push("JSON object has no keys");
+        metaScore = 20;
+      } else {
+        metaScore = 95;
+        if (!obj.title && !obj.name && !obj.description) {
+          metaIssues.push("No title/name/description fields");
+          metaScore -= 15;
+        }
+      }
+    } catch {
+      metaScore = 50;
+      metaIssues.push("Not JSON — cannot validate structure");
+    }
+  }
+  checks.push({
+    dimension: "metadata_structure",
+    score: metaScore,
+    details: content ? "Structure analysis" : "N/A",
+    issues: metaIssues,
+    passed: metaScore >= 70,
+  });
+
+  // Weighted score
+  const weights: Record<string, number> = {
+    format_compliance: 0.5,
+    content_size: 0.2,
+    metadata_structure: 0.3,
+  };
+  let totalScore = 0;
+  for (const check of checks) {
+    totalScore += check.score * (weights[check.dimension] || 0.3);
+  }
+  const score = Math.round(totalScore);
+
+  const verdict: "pass" | "fail" | "partial" =
+    score >= 75 ? "pass" : score >= 40 ? "partial" : "fail";
+
+  const summary = `IPFS CID: ${cid}. Score: ${score}/100 (${checks.filter(c => c.passed).length}/${checks.length} checks passed). ${requirements}`;
+  const recommendations: string[] = [];
+  for (const check of checks) {
+    if (!check.passed) {
+      recommendations.push(`Improve ${check.dimension}: ${check.issues[0] || "needs work"}`);
+    }
+  }
+
+  const report = { checks, score, verdict, summary, recommendations, timestamp: Date.now() };
+  const evidenceHash = createHash("sha256").update(JSON.stringify(report)).digest("hex");
+
+  const result: VerificationResult = {
+    score,
+    verdict,
+    checks,
+    summary,
+    recommendations,
+    evidenceHash,
+    repoUrl: cid,
+    timestamp: Date.now(),
+  };
+
+  if (verdict === "partial") {
+    addToReviewQueue(result, `ipfs-${Date.now()}`, "ipfs-auto-verify");
+  }
+
+  return result;
+}
+
 // ─── Types ───────────────────────────────────────────────────
 
 interface VerificationResult {
@@ -49,6 +213,11 @@ export async function verifyProject(
   requirements: string,
   depth: "quick" | "standard" | "deep" = "standard"
 ): Promise<VerificationResult> {
+  // IPFS CID short-circuit: verify content directly without git clone
+  if (isIpfsCid(repoUrl) && !isGithubUrl(repoUrl)) {
+    return verifyIpfsDeliverable(repoUrl, requirements);
+  }
+
   const repoDir = await cloneRepo(repoUrl);
   const checks: CheckResult[] = [];
 

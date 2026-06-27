@@ -18,6 +18,7 @@ import { createStdioTransport } from "./transports/stdio.js";
 import { startHttpServer } from "./transports/http.js";
 import { HTTP_PORT, validateConfig } from "./config.js";
 import { AutoVerifier } from "./auto-verifier.js";
+import { eventWatcher } from "./lib/event-watcher.js";
 
 let autoVerifier: AutoVerifier | null = null;
 

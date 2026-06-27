@@ -3,10 +3,11 @@
  */
 import { z } from "zod";
 import { parseEther, formatEther, type Address, keccak256, toBytes } from "viem";
-import { getSDK, getAccount, getPublicClient } from "../config.js";
+import { getSDK, getAccount, getPublicClient, loadAbi, CONTRACTS } from "../config.js";
 import { formatTxResult, formatReadResult } from "../handlers/transactions.js";
 import { formatStructuredError, parseContractError } from "../lib/formatResponse.js";
 import { loadStore, saveStore } from "../lib/store.js";
+import { readContract } from "../handlers/wallet.js";
 import type { TxResult } from "../types.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -54,7 +55,7 @@ export function registerAgentTools(server: McpServer): void {
         "  update — Update agent profile (name, capabilities, bio)\n" +
         "  deactivate — Withdraw stake and deactivate agent\n" +
         "  stake — Add more stake to existing agent\n" +
-        "  find — Search agents by capability tag (local index)\n" +
+        "  find — Search agents by capability tag (on-chain + local index)\n" +
         "  search — Search agents by name, capability, or both\n\n" +
         "WHEN TO USE: First step for any agent. Register before creating tasks.\n\n" +
         "NEXT STEP: Create a task with corven_task({ action: 'create' })\n\n" +
@@ -128,9 +129,48 @@ export function registerAgentTools(server: McpServer): void {
           const allProfiles = Object.values(agentProfiles);
           const offset = args.offset || 0;
           const limit = args.limit || 20;
-          const paginated = allProfiles.slice(offset, offset + limit);
+
+          // On-chain agents
+          const onChainAgents: Array<{ address: string; name: string; capabilities: string[]; stakedEth: string; reputation: number; isActive: boolean; source: string }> = [];
+          try {
+            const abi = loadAbi("AgentRegistry");
+            const totalAgents = Number(await readContract(CONTRACTS.AgentRegistry, abi, "getAgentCount", []));
+            const maxIter = Math.min(totalAgents, 100);
+            for (let i = 0; i < maxIter; i++) {
+              try {
+                const addr = await readContract(CONTRACTS.AgentRegistry, abi, "getAllAgents", [BigInt(i)]) as Address;
+                if (!addr || addr === "0x0000000000000000000000000000000000000000") continue;
+                const agent = await readContract(CONTRACTS.AgentRegistry, abi, "getAgent", [addr]);
+                onChainAgents.push({
+                  address: addr,
+                  name: agent.name || "",
+                  capabilities: agent.capabilities || [],
+                  stakedEth: formatEther(agent.stakedAmount),
+                  reputation: Number(agent.reputation || 0),
+                  isActive: agent.active,
+                  source: "on-chain",
+                });
+              } catch { continue; }
+            }
+          } catch { /* on-chain query failed, fall back to local only */ }
+
+          // Merge and deduplicate by address
+          const seen = new Set<string>();
+          const merged: Array<{ address: string; name: string; capabilities: string[]; registeredAt?: number; lastSeen?: number; stakedEth?: string; reputation?: number; isActive?: boolean; source: string }> = [];
+          for (const p of allProfiles) {
+            if (seen.has(p.address.toLowerCase())) continue;
+            seen.add(p.address.toLowerCase());
+            merged.push({ address: p.address, name: p.name, capabilities: p.capabilities, registeredAt: p.registeredAt, lastSeen: p.lastSeen, source: "local" });
+          }
+          for (const a of onChainAgents) {
+            if (seen.has(a.address.toLowerCase())) continue;
+            seen.add(a.address.toLowerCase());
+            merged.push(a);
+          }
+
+          const paginated = merged.slice(offset, offset + limit);
           return formatReadResult({
-            total: allProfiles.length,
+            total: merged.length,
             offset,
             limit,
             count: paginated.length,
@@ -140,6 +180,10 @@ export function registerAgentTools(server: McpServer): void {
               capabilities: p.capabilities,
               registeredAt: p.registeredAt,
               lastSeen: p.lastSeen,
+              stakedEth: p.stakedEth,
+              reputation: p.reputation,
+              isActive: p.isActive,
+              source: p.source,
             })),
           }, "Agent Profiles");
         }
@@ -150,17 +194,66 @@ export function registerAgentTools(server: McpServer): void {
 
         if (action === "find") {
           const cap = (args.capability || "").toLowerCase();
-          const matches = Object.values(agentProfiles).filter(p =>
+
+          // Local store matches
+          const localMatches = Object.values(agentProfiles).filter(p =>
             p.capabilities.some(c => c.toLowerCase().includes(cap))
           );
+
+          // On-chain matches
+          const onChainMatches: Array<{ address: string; name: string; capabilities: string[]; stakedEth: string; reputation: number; isActive: boolean; source: string }> = [];
+          try {
+            const abi = loadAbi("AgentRegistry");
+            const totalAgents = Number(await readContract(CONTRACTS.AgentRegistry, abi, "getAgentCount", []));
+            const limit = Math.min(totalAgents, 100);
+            for (let i = 0; i < limit; i++) {
+              try {
+                const addr = await readContract(CONTRACTS.AgentRegistry, abi, "getAllAgents", [BigInt(i)]) as Address;
+                if (!addr || addr === "0x0000000000000000000000000000000000000000") continue;
+                const agent = await readContract(CONTRACTS.AgentRegistry, abi, "getAgent", [addr]);
+                const agentName = agent.name || "";
+                const agentCaps: string[] = agent.capabilities || [];
+                if (agentCaps.some(c => c.toLowerCase().includes(cap))) {
+                  onChainMatches.push({
+                    address: addr,
+                    name: agentName,
+                    capabilities: agentCaps,
+                    stakedEth: formatEther(agent.stakedAmount),
+                    reputation: Number(agent.reputation || 0),
+                    isActive: agent.active,
+                    source: "on-chain",
+                  });
+                }
+              } catch { continue; }
+            }
+          } catch { /* on-chain query failed, fall back to local only */ }
+
+          // Merge and deduplicate by address
+          const seen = new Set<string>();
+          const merged: Array<{ address: string; name: string; capabilities: string[]; lastSeen?: number; stakedEth?: string; reputation?: number; isActive?: boolean; source: string }> = [];
+          for (const p of localMatches) {
+            if (seen.has(p.address.toLowerCase())) continue;
+            seen.add(p.address.toLowerCase());
+            merged.push({ address: p.address, name: p.name, capabilities: p.capabilities, lastSeen: p.lastSeen, source: "local" });
+          }
+          for (const a of onChainMatches) {
+            if (seen.has(a.address.toLowerCase())) continue;
+            seen.add(a.address.toLowerCase());
+            merged.push(a);
+          }
+
           return formatReadResult({
             query: args.capability,
-            found: matches.length,
-            agents: matches.slice(0, 10).map(p => ({
+            found: merged.length,
+            agents: merged.slice(0, 10).map(p => ({
               address: p.address,
               name: p.name,
               capabilities: p.capabilities,
               lastSeen: p.lastSeen,
+              stakedEth: p.stakedEth,
+              reputation: p.reputation,
+              isActive: p.isActive,
+              source: p.source,
             })),
           }, "Agent Search");
         }

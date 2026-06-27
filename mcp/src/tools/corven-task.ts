@@ -94,7 +94,7 @@ export function registerTaskTools(server: McpServer): void {
         "ACTIONS:\n" +
         "  create — Post a new task with worker, payment, and deadline\n" +
         "  fund — Fund a created task with ETH\n" +
-        "  submit — Worker submits deliverable IPFS CID\n" +
+        "  submit — Worker submits deliverable IPFS CID or GitHub URL\n" +
         "  verify — Client approves or rejects completed work\n" +
         "  dispute — File a dispute on a task\n" +
         "  get — Get task details by ID\n" +
@@ -103,6 +103,12 @@ export function registerTaskTools(server: McpServer): void {
         "  verify_milestone — Client approves/rejects a milestone\n\n" +
         "WORKFLOW: create → fund → submit → verify\n" +
         "FEE: 1% protocol fee + priority fee deducted from payment\n\n" +
+        "WORKER SUBMISSION WORKFLOW:\n" +
+        "1. Create a GitHub repo for your deliverable\n" +
+        "2. Commit your code with tests and documentation\n" +
+        "3. Push to GitHub\n" +
+        "4. Submit the GitHub URL: corven_task({ action: 'submit', taskId: N, deliverableHash: 'https://github.com/...' })\n" +
+        "5. The auto-verifier clones the repo, runs static analysis, and scores it\n\n" +
         "WHEN TO USE: Any task that needs payment, delivery, and verification on-chain.\n\n" +
         "NEXT STEP: Wait for worker to submit, then call corven_task({ action: 'verify' })\n\n" +
         "CRITICAL SAFETY: The AI must NEVER auto-set confirm=true. ALWAYS present the cost summary to the user first and wait for explicit approval. This is real money. Violating this is unacceptable.\n\n" +
@@ -173,7 +179,7 @@ export function registerTaskTools(server: McpServer): void {
               confirmationRequired: true,
               action: "Submit deliverable for task #" + args.taskId,
               cost: "0 ETH (gas only)",
-              reason: "No direct cost, but commits your submission",
+              reason: "No direct cost, but commits your submission. Submission guide: The deliverableHash should be a GitHub HTTPS URL (https://github.com/user/repo) so the auto-verifier can clone, test, and score it. IPFS CIDs cannot be auto-verified.",
               toProceed: "Call corven_task again with confirm: true",
             }, "CONFIRMATION REQUIRED");
           }
