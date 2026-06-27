@@ -21,6 +21,7 @@ import { execSync } from "child_process";
 import { existsSync, rmSync } from "fs";
 import { createHash } from "crypto";
 import { CONTRACTS } from "./config.js";
+import { notifyAgent } from "./tools/corven-message.js";
 
 // ─── Configuration ───────────────────────────────────────────
 
@@ -503,6 +504,7 @@ export class AutoVerifier {
         // Only auto-approve if our wallet IS the task client
         if (walletAddr.toLowerCase() !== taskClient.toLowerCase()) {
           console.error(`[AutoVerifier] Task ${job.taskId}: Score ${result.score}/100 PASS, but wallet ${walletAddr} is not task client ${taskClient}. Cannot auto-approve. Client must approve manually.`);
+          notifyAgent(taskClient, "verification_pending", `Task #${job.taskId} scored ${result.score}/100 (PASS). Auto-approval skipped — your wallet must approve. Call corven_task({ action: 'verify', taskId: ${job.taskId}, confirm: true })`, Number(job.taskId));
           return;
         }
 
@@ -527,6 +529,8 @@ export class AutoVerifier {
         });
 
         console.error(`[AutoVerifier] Task ${job.taskId} APPROVED (${result.score}/100). TX: ${hash}`);
+        notifyAgent(taskClient, "task_approved", `Task #${job.taskId} auto-approved (${result.score}/100). Payment released to worker. TX: ${hash}`, Number(job.taskId));
+        notifyAgent(job.worker, "task_completed", `Task #${job.taskId} approved (${result.score}/100). Payment released. TX: ${hash}`, Number(job.taskId));
       } else if (result.verdict === "fail") {
         // failTask requires: authorizedArbitration OR authorizedSettlement OR owner
         // Check if our wallet is authorized
@@ -541,9 +545,12 @@ export class AutoVerifier {
         });
 
         console.error(`[AutoVerifier] Task ${job.taskId} REJECTED (${result.score}/100). TX: ${hash}`);
+        notifyAgent(taskClient, "task_rejected", `Task #${job.taskId} auto-rejected (${result.score}/100). Deliverable did not meet quality threshold.`, Number(job.taskId));
+        notifyAgent(job.worker, "task_rejected", `Task #${job.taskId} was rejected (${result.score}/100). Deliverable did not meet quality threshold.`, Number(job.taskId));
       } else {
         // Partial (40-69) — needs manual review
         console.error(`[AutoVerifier] Task ${job.taskId} PARTIAL (${result.score}/100) — flagged for manual review. Client must approve or reject.`);
+        notifyAgent(taskClient, "verification_review", `Task #${job.taskId} scored ${result.score}/100 (borderline). Needs manual review. Call corven_task({ action: 'verify', taskId: ${job.taskId} }) to approve or reject.`, Number(job.taskId));
       }
     } catch (e) {
       console.error(`[AutoVerifier] Auto-decision failed for task ${job.taskId}:`, e instanceof Error ? e.message : e);
